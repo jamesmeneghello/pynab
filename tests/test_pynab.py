@@ -11,18 +11,25 @@ Tests for `pynab` module.
 import unittest
 
 from pynab import pynab
+import config
 
 
 class TestPynab(unittest.TestCase):
-
     def setUp(self):
-        pass
+        self.test_connect()
 
-    def test_something(self):
+    def test_connect(self):
+        self.server = pynab.connect(config.news)
+        self.assertTrue(self.server)
+
+    def test_capabilities(self):
+        print(self.server.getcapabilities())
+
+    def test_fetch_headers(self):
         pass
 
     def tearDown(self):
-        pass
+        self.server.quit()
 
 if __name__ == '__main__':
     unittest.main()
