@@ -1,0 +1,15 @@
+db = {
+    'host': 'localhost',
+    'port': 27017,
+    'user': '',
+    'pass': '',
+    'name': 'indexer',
+}
+
+news = {
+    'host': 'news.supernews.com',
+    'user': '',
+    'pass': '',
+    'port': 443,
+    'ssl': False,
+}
