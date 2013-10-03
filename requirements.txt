@@ -1,2 +1,6 @@
 cymysql
 pymongo
+python-dateutil
+pynzb
+pympler
+pytz
