@@ -16,20 +16,7 @@ import xml.sax.saxutils
 import pytz
 import config as app_config
 
-def connect(config):
-    print('Attempting to connect to news server...')
-    ssl = config.pop('ssl', False)
-    try:
-        if ssl:
-            server = nntplib.NNTP_SSL(**config)
-        else:
-            server = nntplib.NNTP(**config)
-    except nntplib.NNTPError as e:
-        print('Could not connect to news server: ' + e.response)
-        return False
 
-    print('Connected!')
-    return server
 
 
 def scan(server, group_name, first, last, type='update'):

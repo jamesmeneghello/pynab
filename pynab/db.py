@@ -1,9 +1,12 @@
 import pymongo
+import config
 
+from pymongo.son_manipulator import SONManipulator
 
 class DB:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
+        self.mongo = None
+        self.config = config.db
         self.connect()
 
     def connect(self):
@@ -47,9 +50,13 @@ class DB:
         self.db().imdb.ensure_index('name', pymongo.ASCENDING)
 
         # binaries
+        self.db().binaries.ensure_index('name', pymongo.ASCENDING)
         self.db().binaries.ensure_index('group_name', pymongo.ASCENDING)
         self.db().binaries.ensure_index('total_parts', pymongo.ASCENDING)
-        self.db().binaries.ensure_index('release.name', pymongo.ASCENDING, sparse=True)
+
+        # parts
+        self.db().parts.ensure_index('subject', pymongo.ASCENDING)
+        self.db().parts.ensure_index('group_name', pymongo.ASCENDING)
 
         # releases
         self.db().releases.ensure_index('id', pymongo.ASCENDING)
@@ -64,6 +71,36 @@ class DB:
             ('search_name', pymongo.ASCENDING), ('posted', pymongo.ASCENDING)
         ])
 
+    def close(self):
+        self.mongo.close()
 
-def close(self):
-    self.mongo.close()
+
+class Collection:
+    _collection = ''
+
+    def post_get(self):
+        pass
+
+    @classmethod
+    def get_one(cls, **kwargs):
+        o = db[cls._collection].find_one(kwargs)
+        if o:
+            c = cls(**o)
+            c.post_get()
+            return c
+        else:
+            return None
+
+    @classmethod
+    def get(cls, **kwargs):
+        exhaust = kwargs.pop('exhaust', False)
+
+        objs = []
+        for o in db[cls._collection].find(kwargs, exhaust=exhaust):
+            c = cls(**o)
+            c.post_get()
+            objs.append(c)
+        return objs
+
+db = DB().db()
+
