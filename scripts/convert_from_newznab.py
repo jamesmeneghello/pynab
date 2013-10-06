@@ -1,7 +1,15 @@
+"""
+Functions to convert a Newznab installation to Pynab.
+
+NOTE: DESTRUCTIVE. DO NOT RUN ON ACTIVE PYNAB INSTALL.
+(unless you know what you're doing)
+"""
+
+# if you're using pycharm, don't install the bson package
+# it comes with pymongo
 import cymysql
-import pymongo
 import bson
-import pprint
+from pynab.db import db
 
 
 def mysql_connect(mysql_config):
@@ -16,17 +24,22 @@ def mysql_connect(mysql_config):
     return mysql
 
 
-def convert_groups(mysql, mongo):
+def convert_groups(mysql):
+    """Converts Newznab groups table into Pynab. Only really
+    copies backfill records and status."""
+    # removed minsize/minfiles, since we're not really using them
+    # most of the groups I index don't come up with too many stupid
+    # releases, so if anyone has problem groups they can re-add it
     from_query = """
-        SELECT name, first_record, last_record, minfilestoformrelease, minsizetoformrelease, active
+        SELECT name, first_record, last_record, active
         FROM groups;
     """
 
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'groups' in mongo.db().collection_names():
-        mongo.db().groups.drop()
+    if 'groups' in db.collection_names():
+        db.groups.drop()
 
     groups = []
     for r in cursor.fetchall():
@@ -34,17 +47,15 @@ def convert_groups(mysql, mongo):
             'name': r[0],
             'first': r[1],
             'last': r[2],
-            'min_files': r[3],
-            'min_size': r[4],
-            'active': r[5]
+            'active': r[3]
         }
         groups.append(group)
 
-    mongo.db().groups.insert(groups)
+    db.groups.insert(groups)
 
 
-
-def convert_categories(mysql, mongo):
+def convert_categories(mysql):
+    """Convert Newznab categories table into Pynab."""
     from_query = """
         SELECT ID, title, parentID, minsizetoformrelease, maxsizetoformrelease
         FROM category;
@@ -52,8 +63,8 @@ def convert_categories(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'categories' in mongo.db().collection_names():
-        mongo.db().categories.drop()
+    if 'categories' in db.collection_names():
+        db.categories.drop()
 
     categories = {}
     for r in cursor.fetchall():
@@ -65,17 +76,17 @@ def convert_categories(mysql, mongo):
         }
 
         if r[2]:
-            parent_id = mongo.db().categories.find_one({'name': categories[r[2]]['name']})['_id']
+            parent_id = db.categories.find_one({'name': categories[r[2]]['name']})['_id']
             category.update({'parent_id': parent_id})
         else:
             categories[r[0]] = category
 
-        mongo.db().categories.insert(category)
+        db.categories.insert(category)
 
 
-
-
-def convert_regex(mysql, mongo):
+def convert_regex(mysql):
+    """Converts Newznab releaseregex table into Pynab form. We leave the regex in
+    PHP-form because it includes case sensitivity flags etc in the string."""
     from_query = """
         SELECT groupname, regex, ordinal, releaseregex.status, category.title, releaseregex.description
         FROM releaseregex
@@ -85,13 +96,13 @@ def convert_regex(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'regexes' in mongo.db().collection_names():
-        mongo.db().regexes.drop()
+    if 'regexes' in db.collection_names():
+        db.regexes.drop()
 
     regexes = []
     for r in cursor.fetchall():
         if r[4]:
-            c_id = mongo.db().categories.find_one({'name': r[4]})['_id']
+            c_id = db.categories.find_one({'name': r[4]})['_id']
         else:
             c_id = None
 
@@ -106,12 +117,12 @@ def convert_regex(mysql, mongo):
 
         regexes.append(regex)
 
-    mongo.db().regexes.insert(regexes)
+    db.regexes.insert(regexes)
 
 
-
-
-def convert_blacklist(mysql, mongo):
+def convert_blacklist(mysql):
+    """Converts Newznab binaryblacklist table into Pynab format.
+    This isn't actually used yet."""
     from_query = """
         SELECT groupname, regex, status, description
         FROM binaryblacklist
@@ -120,8 +131,8 @@ def convert_blacklist(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'blacklists' in mongo.db().collection_names():
-        mongo.db().blacklists.drop()
+    if 'blacklists' in db.collection_names():
+        db.blacklists.drop()
 
     blacklists = []
     for r in cursor.fetchall():
@@ -134,11 +145,13 @@ def convert_blacklist(mysql, mongo):
 
         blacklists.append(blacklist)
 
-    mongo.db().blacklists.insert(blacklists)
+    db.blacklists.insert(blacklists)
 
 
-
-def convert_users(mysql, mongo):
+def convert_users(mysql):
+    """Converts Newznab users table into Pynab format. More or less
+    of this may be necessary depending on what people want. I'm pretty
+    much just after bare API access, so we only really need rsstoken."""
     from_query = """
         SELECT username, email, password, rsstoken, userseed, grabs
         FROM users
@@ -147,8 +160,8 @@ def convert_users(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'users' in mongo.db().collection_names():
-        mongo.db().users.drop()
+    if 'users' in db.collection_names():
+        db.users.drop()
 
     users = []
     for r in cursor.fetchall():
@@ -163,11 +176,12 @@ def convert_users(mysql, mongo):
 
         users.append(user)
 
-    mongo.db().users.insert(users)
+    db.users.insert(users)
 
 
-
-def convert_tvdb(mysql, mongo):
+def convert_tvdb(mysql):
+    """Converts Newznab tvdb table into Pynab format. Actually
+    useful, since we re-use the same data regardless."""
     from_query = """
         SELECT tvdbID, seriesname
         FROM thetvdb
@@ -177,8 +191,8 @@ def convert_tvdb(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'tvdb' in mongo.db().collection_names():
-        mongo.db().tvdb.drop()
+    if 'tvdb' in db.collection_names():
+        db.tvdb.drop()
 
     tvdbs = []
     for r in cursor.fetchall():
@@ -189,11 +203,11 @@ def convert_tvdb(mysql, mongo):
 
         tvdbs.append(tvdb)
 
-    mongo.db().tvdb.insert(tvdbs)
+    db.tvdb.insert(tvdbs)
 
 
-
-def convert_tvrage(mysql, mongo):
+def convert_tvrage(mysql):
+    """Converts Newznab tvrage table into Pynab format."""
     from_query = """
         SELECT rageID, releasetitle
         FROM tvrage
@@ -203,8 +217,8 @@ def convert_tvrage(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'tvrage' in mongo.db().collection_names():
-        mongo.db().tvrage.drop()
+    if 'tvrage' in db.collection_names():
+        db.tvrage.drop()
 
     tvrages = []
     for r in cursor.fetchall():
@@ -215,11 +229,11 @@ def convert_tvrage(mysql, mongo):
 
         tvrages.append(tvrage)
 
-    mongo.db().tvrage.insert(tvrages)
+    db.tvrage.insert(tvrages)
 
 
-
-def convert_imdb(mysql, mongo):
+def convert_imdb(mysql):
+    """Converts Newznab imdb table into Pynab format."""
     from_query = """
         SELECT imdbID, title, year, language
         FROM movieinfo
@@ -229,8 +243,8 @@ def convert_imdb(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'imdb' in mongo.db().collection_names():
-        mongo.db().imdb.drop()
+    if 'imdb' in db.collection_names():
+        db.imdb.drop()
 
     imdbs = []
     for r in cursor.fetchall():
@@ -243,12 +257,13 @@ def convert_imdb(mysql, mongo):
 
         imdbs.append(imdb)
 
-    mongo.db().imdb.insert(imdbs)
-
+    db.imdb.insert(imdbs)
 
 
 # the biggun'
-def convert_releases(mysql, mongo):
+def convert_releases(mysql):
+    """Converts Newznab releases table into Pynab format.
+    Probably a bad idea - import the NZBs instead."""
     from_query = """
         SELECT releases.gid, releases.name, releases.searchname,
             releases.groupID, groups.name,
@@ -272,8 +287,8 @@ def convert_releases(mysql, mongo):
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
-    if 'releases' in mongo.db().collection_names():
-        mongo.db().releases.drop()
+    if 'releases' in db.collection_names():
+        db.releases.drop()
 
     releases = []
     for r in cursor.fetchall():
@@ -283,26 +298,26 @@ def convert_releases(mysql, mongo):
                        add_date=r[25])
 
         # the tricker ones: group
-        release['group_id'] = mongo.db().groups.find_one({'name': r[4]})['_id']
+        release['group_id'] = db.groups.find_one({'name': r[4]})['_id']
 
         # category
-        release['category_id'] = mongo.db().categories.find_one({'id': r[11]})['_id']
+        release['category_id'] = db.categories.find_one({'id': r[11]})['_id']
 
         # rageID
         if r[12]:
-            release['tvrage'] = mongo.db().tvrage.find_one({'id': r[12]})
+            release['tvrage'] = db.tvrage.find_one({'id': r[12]})
         else:
             release['tvrage'] = None
 
         # tvdbID
         if r[13]:
-            release['tvdb'] = mongo.db().tvdb.find_one({'id': r[13]})
+            release['tvdb'] = db.tvdb.find_one({'id': r[13]})
         else:
             release['tvdb'] = None
 
         # imdbID
         if r[14]:
-            release['imdb'] = mongo.db().imdb.find_one({'id': r[14]})
+            release['imdb'] = db.imdb.find_one({'id': r[14]})
         else:
             release['imdb'] = None
 
@@ -328,4 +343,4 @@ def convert_releases(mysql, mongo):
 
         releases.append(release)
 
-    mongo.db().releases.insert(releases)
+    db.releases.insert(releases)

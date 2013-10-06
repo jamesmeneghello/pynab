@@ -3,7 +3,7 @@
 History
 -------
 
-0.1.0 (2013-09-30)
+0.1.0 (2013-10-06)
 ++++++++++++++++++
 
-* First release on PyPI.
+* Indexing and NZB creation complete.

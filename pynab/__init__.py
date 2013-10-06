@@ -4,3 +4,8 @@
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
 __version__ = '0.1.0'
+
+import logging
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
