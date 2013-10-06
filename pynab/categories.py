@@ -2,6 +2,8 @@ import re
 import collections
 from pynab import log
 
+# category codes
+# these are stored in the db, as well
 CAT_GAME_NDS = 1010
 CAT_GAME_PSP = 1020
 CAT_GAME_WII = 1030
@@ -56,6 +58,209 @@ CAT_PARENT_XXX = 6000
 CAT_PARENT_BOOK = 7000
 CAT_PARENT_MISC = 8000
 
+"""
+This dict maps groups to potential categories. Some groups tend
+to favour some release types over others, so you can specify those
+here. If none of the suggestions for that group match, it'll just
+try all possible categories. Categories are listed in order of priority.
+
+There are two options for the list: either a parent category, or a subcategory.
+If a parent category is supplied, the release will be checked against every
+sub-category. If a subcategory is supplied, the release will automatically
+be categorised as that.
+
+ie.
+[CAT_PARENT_PC, CAT_PC_0DAY]
+
+Will attempt to categorise the release by every subcategory of PC. If no
+match is found, it'll tag it as PC_0DAY.
+
+You can also just leave it with only parent categories, in which case
+the algorithm will fall through to attempting every single subcat (or failing).
+A release is only categorised here on no-match if the array ends on a subcategory.
+"""
+group_regex = {
+    re.compile('alt\.binaries\.0day', re.I): [
+        CAT_PARENT_PC, CAT_PC_0DAY
+    ],
+    re.compile('alt\.binaries\.ath', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_MUSIC,
+        CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.b4e', re.I): [
+        CAT_PARENT_PC, CAT_PARENT_BOOK
+    ],
+    re.compile('alt\.binaries\..*?audiobook.*?', re.I): [
+        CAT_MUSIC_AUDIOBOOK
+    ],
+    re.compile('lossless|flac', re.I): [
+        CAT_MUSIC_LOSSLESS
+    ],
+    re.compile('alt\.binaries\.sounds.*?|alt\.binaries\.mp3.*?|alt\.binaries.*?\.mp3', re.I): [
+        CAT_PARENT_MUSIC, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.console.ps3', re.I): [
+        CAT_PARENT_GAME, CAT_GAME_PS3
+    ],
+    re.compile('alt\.binaries\.games\.xbox*', re.I): [
+        CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.games$', re.I): [
+        CAT_PARENT_GAME, CAT_PC_GAMES
+    ],
+    re.compile('alt\.binaries\.games\.wii', re.I): [
+        CAT_PARENT_GAME
+    ],
+    re.compile('alt\.binaries\.dvd.*?', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.hdtv*|alt\.binaries\.x264|alt\.binaries\.tv$', re.I): [
+        CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.nospam\.cheerleaders', re.I): [
+        CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.classic\.tv.*?', re.I): [
+        CAT_PARENT_TV, CAT_TV_OTHER
+    ],
+    re.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', re.I): [
+        CAT_TV_ANIME
+    ],
+    re.compile('alt\.binaries\.anime', re.I): [
+        CAT_TV_ANIME
+    ],
+    re.compile('alt\.binaries\.e(-|)book*?', re.I): [
+        CAT_PARENT_BOOK, CAT_BOOK_EBOOK
+    ],
+    re.compile('alt\.binaries\.comics.*?', re.I): [
+        CAT_BOOK_COMICS
+    ],
+    re.compile('alt\.binaries\.cores.*?', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_TV,
+        CAT_PARENT_MOVIE, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.lou', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE,
+        CAT_PARENT_MUSIC, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.cd.image|alt\.binaries\.audio\.warez', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PC_0DAY
+    ],
+    re.compile('alt\.binaries\.pro\-wrestling', re.I): [
+        CAT_TV_SPORT
+    ],
+    re.compile('alt\.binaries\.sony\.psp', re.I): [
+        CAT_GAME_PSP
+    ],
+    re.compile('alt\.binaries\.nintendo\.ds|alt\.binaries\.games\.nintendods', re.I): [
+        CAT_GAME_NDS
+    ],
+    re.compile('alt\.binaries\.mpeg\.video\.music', re.I): [
+        CAT_MUSIC_VIDEO
+    ],
+    re.compile('alt\.binaries\.mac', re.I): [
+        CAT_PC_MAC
+    ],
+    re.compile('linux', re.I): [
+        CAT_PC_ISO
+    ],
+    re.compile('alt\.binaries\.illuminaten', re.I): [
+        CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV, CAT_PARENT_MOVIE,
+        CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.ipod\.videos\.tvshows', re.I): [
+        CAT_TV_OTHER
+    ],
+    re.compile('alt\.binaries\.documentaries', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.drummers', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.tv\.swedish', re.I): [
+        CAT_TV_FOREIGN
+    ],
+    re.compile('alt\.binaries\.tv\.deutsch', re.I): [
+        CAT_TV_FOREIGN
+    ],
+    re.compile('alt\.binaries\.erotica\.divx', re.I): [
+        CAT_PARENT_XXX, CAT_XXX_OTHER
+    ],
+    re.compile('alt\.binaries\.ghosts', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
+        CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.mom', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
+        CAT_PARENT_MOVIE, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports.*?', re.I): [
+        CAT_TV_SPORT
+    ],
+    re.compile('alt\.binaries\.b4e$', re.I): [
+        CAT_PARENT_PC
+    ],
+    re.compile('alt\.binaries\.warez\.smartphone', re.I): [
+        CAT_PARENT_PC
+    ],
+    re.compile('alt\.binaries\.warez\.ibm\-pc\.0\-day|alt\.binaries\.warez', re.I): [
+        CAT_PARENT_GAME, CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_PC, CAT_PARENT_TV,
+        CAT_PARENT_MOVIE, CAT_PC_0DAY
+    ],
+    re.compile('erotica|ijsklontje|kleverig', re.I): [
+        CAT_PARENT_XXX, CAT_XXX_OTHER
+    ],
+    re.compile('french', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_MOVIE_FOREIGN
+    ],
+    re.compile('alt\.binaries\.movies\.xvid|alt\.binaries\.movies\.divx|alt\.binaries\.movies', re.I): [
+        CAT_PARENT_BOOK, CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_PC, CAT_MISC_OTHER
+    ],
+    re.compile('wmvhd', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
+    ],
+    re.compile('inner\-sanctum', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_BOOK, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.worms', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MUSIC, CAT_PARENT_MOVIE
+    ],
+    re.compile('alt\.binaries\.x264', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MOVIE_OTHER
+    ],
+    re.compile('dk\.binaer\.ebooks', re.I): [
+        CAT_PARENT_BOOK, CAT_BOOK_EBOOK
+    ],
+    re.compile('dk\.binaer\.film', re.I): [
+        CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
+    ],
+    re.compile('dk\.binaer\.musik', re.I): [
+        CAT_PARENT_MUSIC, CAT_MISC_OTHER
+    ],
+    re.compile('alt\.binaries\.(teevee|multimedia|tv|tvseries).*?', re.I): [
+        CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
+        CAT_MISC_OTHER
+    ],
+}
+
+"""
+This dict holds parent categories, initial regexes and potential actions.
+
+Dict is called in parts (ie. just the. CAT_PARENT_TV section)
+In order, the library will try to match the release name against
+each parent regex - on success, it will proceed to execute individual
+category regex in the order supplied. If there's no match, it'll try the
+next parent regex - if none match, the function will return False. This
+means that the next category suggested by the group will be tried.
+
+Note that if the array ends on an OTHER subcategory (ie. a category not listed
+in category_regex), it'll automatically tag the release as that.
+
+As an example, we attempt to match the release to every type of movie
+before failing through to CAT_MOVIE_OTHER if 'xvid' is in the title. In
+that example, if it matches no category and doesn't have xvid in the title,
+it'll be returned to whatever called it for further processing.
+"""
 parent_category_regex = {
     CAT_PARENT_TV: collections.OrderedDict([
         (re.compile('(S?(\d{1,2})\.?(E|X|D)(\d{1,2})[\. _-]+)|(dsr|pdtv|hdtv)[\.\-_]', re.I), [
@@ -112,6 +317,39 @@ parent_category_regex = {
     ])
 }
 
+"""
+This contains acceptable regex for each category. Again, it's called in
+chunks - one category at a time. Functions will attempt each regex (in
+order) until it matches (and returns that category) or fails.
+
+Each element in the array can be three things:
+- a Dict
+- a Tuple
+- or anything else (generally a compiled regex pattern)
+
+--Dicts--
+CAT_MOVIE_3D: [
+    {
+        re.compile('3D', re.I): True,
+        re.compile('[\-\. _](H?SBS|OU)([\-\. _]|$)', re.I): True
+    }
+]
+The dict signifies that both regexes must match their supplied values
+for the category to be applied. In this case, both regexes must match.
+If we wanted one to match and one to not, we'd mark one as False.
+
+--Lists--
+(re.compile('DVDRIP|XVID.*?AC3|DIVX\-GERMAN', re.I), False)
+In this example, we set the category to fail if the regex matches.
+Consider it as: (regex, categorise?)
+
+--Patterns--
+CAT_TV_HD: [
+    re.compile('1080|720', re.I)
+],
+The majority of entries look like this: match this release to this category
+if this regex matches.
+"""
 category_regex = {
     CAT_TV_FOREIGN: [
         re.compile(
@@ -296,172 +534,9 @@ category_regex = {
     ]
 }
 
-group_regex = {
-    re.compile('alt\.binaries\.0day', re.I): [
-        CAT_PARENT_PC, CAT_PC_0DAY
-    ],
-    re.compile('alt\.binaries\.ath', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_MUSIC,
-        CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.b4e', re.I): [
-        CAT_PARENT_PC, CAT_PARENT_BOOK
-    ],
-    re.compile('alt\.binaries\..*?audiobook.*?', re.I): [
-        CAT_MUSIC_AUDIOBOOK
-    ],
-    re.compile('lossless|flac', re.I): [
-        CAT_MUSIC_LOSSLESS
-    ],
-    re.compile('alt\.binaries\.sounds.*?|alt\.binaries\.mp3.*?|alt\.binaries.*?\.mp3', re.I): [
-        CAT_PARENT_MUSIC, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.console.ps3', re.I): [
-        CAT_PARENT_GAME, CAT_GAME_PS3
-    ],
-    re.compile('alt\.binaries\.games\.xbox*', re.I): [
-        CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.games$', re.I): [
-        CAT_PARENT_GAME, CAT_PC_GAMES
-    ],
-    re.compile('alt\.binaries\.games\.wii', re.I): [
-        CAT_PARENT_GAME
-    ],
-    re.compile('alt\.binaries\.dvd.*?', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.hdtv*|alt\.binaries\.x264|alt\.binaries\.tv$', re.I): [
-        CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.nospam\.cheerleaders', re.I): [
-        CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.classic\.tv.*?', re.I): [
-        CAT_PARENT_TV, CAT_TV_OTHER
-    ],
-    re.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', re.I): [
-        CAT_TV_ANIME
-    ],
-    re.compile('alt\.binaries\.anime', re.I): [
-        CAT_TV_ANIME
-    ],
-    re.compile('alt\.binaries\.e(-|)book*?', re.I): [
-        CAT_PARENT_BOOK, CAT_BOOK_EBOOK
-    ],
-    re.compile('alt\.binaries\.comics.*?', re.I): [
-        CAT_BOOK_COMICS
-    ],
-    re.compile('alt\.binaries\.cores.*?', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_TV,
-        CAT_PARENT_MOVIE, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.lou', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE,
-        CAT_PARENT_MUSIC, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.cd.image|alt\.binaries\.audio\.warez', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PC_0DAY
-    ],
-    re.compile('alt\.binaries\.pro\-wrestling', re.I): [
-        CAT_TV_SPORT
-    ],
-    re.compile('alt\.binaries\.sony\.psp', re.I): [
-        CAT_GAME_PSP
-    ],
-    re.compile('alt\.binaries\.nintendo\.ds|alt\.binaries\.games\.nintendods', re.I): [
-        CAT_GAME_NDS
-    ],
-    re.compile('alt\.binaries\.mpeg\.video\.music', re.I): [
-        CAT_MUSIC_VIDEO
-    ],
-    re.compile('alt\.binaries\.mac', re.I): [
-        CAT_PC_MAC
-    ],
-    re.compile('linux', re.I): [
-        CAT_PC_ISO
-    ],
-    re.compile('alt\.binaries\.illuminaten', re.I): [
-        CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV, CAT_PARENT_MOVIE,
-        CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.ipod\.videos\.tvshows', re.I): [
-        CAT_TV_OTHER
-    ],
-    re.compile('alt\.binaries\.documentaries', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.drummers', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.tv\.swedish', re.I): [
-        CAT_TV_FOREIGN
-    ],
-    re.compile('alt\.binaries\.tv\.deutsch', re.I): [
-        CAT_TV_FOREIGN
-    ],
-    re.compile('alt\.binaries\.erotica\.divx', re.I): [
-        CAT_PARENT_XXX, CAT_XXX_OTHER
-    ],
-    re.compile('alt\.binaries\.ghosts', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
-        CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.mom', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
-        CAT_PARENT_MOVIE, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports.*?', re.I): [
-        CAT_TV_SPORT
-    ],
-    re.compile('alt\.binaries\.b4e$', re.I): [
-        CAT_PARENT_PC
-    ],
-    re.compile('alt\.binaries\.warez\.smartphone', re.I): [
-        CAT_PARENT_PC
-    ],
-    re.compile('alt\.binaries\.warez\.ibm\-pc\.0\-day|alt\.binaries\.warez', re.I): [
-        CAT_PARENT_GAME, CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_PC, CAT_PARENT_TV,
-        CAT_PARENT_MOVIE, CAT_PC_0DAY
-    ],
-    re.compile('erotica|ijsklontje|kleverig', re.I): [
-        CAT_PARENT_XXX, CAT_XXX_OTHER
-    ],
-    re.compile('french', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_MOVIE_FOREIGN
-    ],
-    re.compile('alt\.binaries\.movies\.xvid|alt\.binaries\.movies\.divx|alt\.binaries\.movies', re.I): [
-        CAT_PARENT_BOOK, CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_PC, CAT_MISC_OTHER
-    ],
-    re.compile('wmvhd', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
-    ],
-    re.compile('inner\-sanctum', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_BOOK, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.worms', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MUSIC, CAT_PARENT_MOVIE
-    ],
-    re.compile('alt\.binaries\.x264', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MOVIE_OTHER
-    ],
-    re.compile('dk\.binaer\.ebooks', re.I): [
-        CAT_PARENT_BOOK, CAT_BOOK_EBOOK
-    ],
-    re.compile('dk\.binaer\.film', re.I): [
-        CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
-    ],
-    re.compile('dk\.binaer\.musik', re.I): [
-        CAT_PARENT_MUSIC, CAT_MISC_OTHER
-    ],
-    re.compile('alt\.binaries\.(teevee|multimedia|tv|tvseries).*?', re.I): [
-        CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
-        CAT_MISC_OTHER
-    ],
-}
-
 
 def determine_category(name, group_name=''):
+    """Categorise release based on release name and group name."""
     log.debug('Attempting to determine category for {0}...'.format(name))
 
     if is_hashed(name):
@@ -480,10 +555,14 @@ def determine_category(name, group_name=''):
 
 
 def is_hashed(name):
+    """Check if the release name is a hash."""
     return not re.match('( |\.|\-)', name, re.I) and re.match('^[a-z0-9]+$', name, re.I)
 
 
 def check_group_category(name, group_name):
+    """Check the group name against our list and
+    take appropriate action - match against categories
+    as dictated in the dicts above."""
     for regex, actions in group_regex.items():
         if regex.search(group_name):
             log.debug('Matched group regex {0}...'.format(regex.pattern))
@@ -499,6 +578,8 @@ def check_group_category(name, group_name):
 
 
 def check_parent_category(name, parent_category):
+    """Check the release against a single parent category, which will
+    call appropriate sub-category checks."""
     log.debug('Checking parent category: {:d}'.format(parent_category))
 
     for test, actions in parent_category_regex[parent_category].items():
@@ -517,6 +598,7 @@ def check_parent_category(name, parent_category):
 
 
 def check_single_category(name, category):
+    """Check release against a single category."""
     log.debug('Checking single category {0}...'.format(category))
 
     for regex in category_regex[category]:

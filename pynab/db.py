@@ -11,16 +11,23 @@ class DB:
         self.connect()
 
     def connect(self):
+        """Create a MongoDB connection for use."""
+        #TODO: txMongo
         self.mongo = pymongo.MongoClient(self.config['host'], self.config['port'])
         self.create_indexes()
 
     def db(self):
+        """Return the database instance."""
         return self.mongo[self.config['db']]
 
     def fs(self):
+        """Return the GridFS instance for file saves."""
         return gridfs.GridFS(self.mongo[self.config['db']])
 
     def create_indexes(self):
+        """Ensures that indexes for collections exist.
+        Add all new appropriate indexes here. Gets called
+        once per script run."""
         # rather than scatter index creation everywhere, centralise it so it only runs once
 
         # categories
@@ -76,9 +83,12 @@ class DB:
         ])
 
     def close(self):
+        """Close the MongoDB connection."""
         self.mongo.close()
 
 
 base = DB()
+
+# allow for "from pynab.db import db, fs"
 db = base.db()
 fs = base.fs()

@@ -13,6 +13,7 @@ class Server:
         self.connection = None
 
     def connect(self):
+        """Creates a connection to a news server."""
         log.info('Attempting to connect to news server...')
 
         # i do this because i'm lazy
@@ -31,6 +32,7 @@ class Server:
         log.info('Connected!')
 
     def scan(self, group_name, first, last):
+        """Scan a group for segments and return a list."""
         log.info('Collecting parts {0:d} to {1:d} from {2}...'.format(first, last, group_name))
 
         start = time.clock()

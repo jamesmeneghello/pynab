@@ -14,6 +14,8 @@ import pynab.categories
 
 
 def clean_release_name(name):
+    """Strip dirty characters out of release names. The API
+    will match against clean names."""
     chars = ['#', '@', '$', '%', '^', '§', '¨', '©', 'Ö']
     for c in chars:
         name = name.replace(c, '')
@@ -21,6 +23,10 @@ def clean_release_name(name):
 
 
 def process():
+    """Helper function to begin processing binaries. Checks
+    for 100% completion and will create NZBs/releases for
+    each complete release. Will also categorise releases,
+    and delete old binaries."""
     log.info('Processing complete binaries and generating releases...')
     start = time.clock()
 
@@ -47,22 +53,30 @@ def process():
     # no reduce needed, since we're returning single values
     reducer = Code("""function(key, values){}""")
 
+    # returns a list of _ids, so we need to get each binary
     for result in db.binaries.inline_map_reduce(mapper, reducer):
         if result['value']:
             binary = db.binaries.find_one({'_id': result['_id']})
+
+            # generate a gid, not useful since we're storing in GridFS
             gid = hashlib.md5(uuid.uuid1().bytes).hexdigest()
+
+            # clean the name for searches
             clean_name = clean_release_name(binary['name'])
 
+            # if the regex used to generate the binary gave a category, use that
             category_id = None
             if binary['category_id']:
                 result = db.categories.find_one({'id': binary['category_id']})
                 if result:
                     category_id = result['_id']
 
+            # otherwise, categorise it with our giant regex blob
             if not category_id:
                 id = pynab.categories.determine_category(binary['name'], binary['group_name'])
                 category_id = db.categories.find_one({'id': id})['_id']
 
+            # create the nzb, store it in GridFS and link it here
             nzb = pynab.nzb.create(gid, clean_name, binary)
             if nzb:
                 log.debug('Adding release: {0}'.format(clean_name))
@@ -104,6 +118,7 @@ def process():
                     upsert=True
                 )
 
+                # delete processed binaries
                 db.binaries.remove({'_id': binary['_id']})
 
     end = time.clock()

@@ -12,6 +12,8 @@ CHUNK_SIZE = 500
 
 
 def save(binary):
+    """Save a single binary to the DB, including all
+    segments/parts (which takes the longest)."""
     log.debug('Saving to binary: ' + binary['name'])
 
     # because for some reason we can't do a batch find_and_modify
@@ -59,6 +61,13 @@ def save(binary):
 
 
 def save_and_clear(binaries=None, parts=None):
+    """Helper function to save a set of binaries
+    and delete associated parts from the DB. This
+    is a lot faster than Newznab's part deletion,
+    which routinely took 10+ hours on my server.
+    Turns out MySQL kinda sucks at deleting lots
+    of shit. If we need more speed, move the parts
+    away and drop the temporary table instead."""
     log.info('Saving discovered binaries...')
     for binary in binaries.values():
         save(binary)
@@ -69,6 +78,10 @@ def save_and_clear(binaries=None, parts=None):
 
 
 def process():
+    """Helper function to process parts into binaries
+    based on regex in DB. Copies parts/segments across
+    to the binary document. Keeps a list of parts that
+    were processed for deletion."""
     log.info('Starting to process parts and build binaries...')
     start = time.clock()
 
@@ -115,6 +128,8 @@ def process():
                 if not match.get('name'):
                     continue
 
+                # if the binary has no part count and is 3 hours old
+                # turn it into something anyway
                 timediff = pytz.utc.localize(datetime.datetime.now()) \
                            - pytz.utc.localize(part['posted'])
 
@@ -127,12 +142,15 @@ def process():
                         match['parts'] = match['parts'].replace('-', '/') \
                             .replace('~', '/').replace(' of ', '/')
 
+                    # check for reposts and tag it as such
                     repost = re.search('(repost|re\-?up)', match['name'], flags=re.I)
                     if repost:
                         match['name'] += ' ' + result.group(0)
 
                     current, total = match['parts'].split('/')
 
+                    # if the binary is already in our chunk,
+                    # just append to it to reduce query numbers
                     if match['name'] in binaries:
                         binaries[match['name']]['parts'][current] = part
                     else:
@@ -151,6 +169,7 @@ def process():
 
                         binaries[match['name']] = b
 
+            # add the part to a list so we can delete it later
             processed_parts.append(part['_id'])
 
             # save and delete stuff in chunks
@@ -170,3 +189,12 @@ def process():
     log.info('Time elapsed: {:.2f}s'.format(end - start))
 
 
+def parse_xref(xref):
+    """Parse the header XREF into groups."""
+    groups = []
+    raw_groups = xref.split(' ')
+    for raw_group in raw_groups:
+        result = re.search('^([a-z0-9\.\-_]+):(\d+)?$', raw_group, re.I)
+        if result:
+            groups.append(result.group(1))
+    return groups

@@ -1,5 +1,4 @@
 import gzip
-import re
 
 from mako.template import Template
 from mako import exceptions
@@ -9,6 +8,8 @@ import pynab
 
 
 def create(gid, name, binary):
+    """Create the NZB, store it in GridFS and return the ID
+    to be linked to the release."""
     log.debug('Creating NZB {0}.nzb.gz and storing it to GridFS...'.format(gid))
     if binary['category_id']:
         category = db.categories.find_one({'id': binary['category_id']})
@@ -24,13 +25,3 @@ def create(gid, name, binary):
         return None
 
     return fs.put(gzip.compress(xml.encode('utf-8')), filename='.'.join([gid, 'nzb', 'gz']))
-
-
-def parse_xref(xref):
-    groups = []
-    raw_groups = xref.split(' ')
-    for raw_group in raw_groups:
-        result = re.search('^([a-z0-9\.\-_]+):(\d+)?$', raw_group, re.I)
-        if result:
-            groups.append(result.group(1))
-    return groups

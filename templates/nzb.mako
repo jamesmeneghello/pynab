@@ -2,7 +2,7 @@
 <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
     <%!
         import pytz
-        from pynab.nzb import NZB
+        from pynab import binaries
     %>
 <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
     <head>
@@ -19,7 +19,7 @@
     %>
         <file poster="${part['posted_by'] | x}" date="${timestamp | x}" subject="${subject | x}">
             <groups>
-                % for group in NZB.parse_xref(binary['xref']):
+                % for group in pynab.binaries.parse_xref(binary['xref']):
                     <group>${group}</group>
                 % endfor
             </groups>
