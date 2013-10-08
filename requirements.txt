@@ -3,3 +3,5 @@ pymongo
 python-dateutil
 pytz
 mako
+bottle
+xmltodict

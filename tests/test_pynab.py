@@ -37,7 +37,7 @@ class TestPynab(unittest.TestCase):
         groups = ['alt.binaries.teevee', 'alt.binaries.e-book', 'alt.binaries.moovee']
         for group in groups:
             (_, _, first, last, _) = self.server.connection.group(group)
-            for x in range(0, 250000, 20000):
+            for x in range(0, 2000000, 20000):
                 y = x + 20000 - 1
                 parts = self.server.scan(group, last - y, last - x)
                 pynab.parts.save_all(parts)

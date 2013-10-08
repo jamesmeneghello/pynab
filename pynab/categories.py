@@ -553,6 +553,9 @@ def determine_category(name, group_name=''):
             log.debug('Category found as: {:d}'.format(category))
             return category
 
+    # if all else fails
+    return CAT_MISC_OTHER
+
 
 def is_hashed(name):
     """Check if the release name is a hash."""

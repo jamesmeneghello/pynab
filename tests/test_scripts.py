@@ -42,15 +42,15 @@ class TestScripts(unittest.TestCase):
 
     def test_convert_tvdb(self):
         convert_from_newznab.convert_tvdb(self.mysql)
-        self.assertEqual(db.tvdb.count(), 509)
+        self.assertEqual(db.tvdb.count(), 498)
 
     def test_convert_tvrage(self):
         convert_from_newznab.convert_tvrage(self.mysql)
-        self.assertEqual(db.tvrage.count(), 14742)
+        self.assertEqual(db.tvrage.count(), 14719)
 
     def test_convert_imdb(self):
         convert_from_newznab.convert_imdb(self.mysql)
-        self.assertEqual(db.imdb.count(), 26769)
+        self.assertEqual(db.imdb.count(), 26771)
 
     def test_convert_releases(self):
         convert_from_newznab.convert_releases(self.mysql)

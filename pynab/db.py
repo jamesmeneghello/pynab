@@ -72,15 +72,13 @@ class DB:
         # releases
         self.db().releases.ensure_index('id', pymongo.ASCENDING)
         self.db().releases.ensure_index('name', pymongo.ASCENDING)
-        self.db().releases.ensure_index('search_name', pymongo.ASCENDING)
+        self.db().releases.ensure_index([
+            ('search_name', 'text')
+        ])
         self.db().releases.ensure_index('category_id', pymongo.ASCENDING)
         self.db().releases.ensure_index('rage.id', pymongo.ASCENDING)
         self.db().releases.ensure_index('imdb.id', pymongo.ASCENDING)
         self.db().releases.ensure_index('tvdb.id', pymongo.ASCENDING)
-        self.db().releases.ensure_index('spotnab_id', pymongo.ASCENDING)
-        self.db().releases.ensure_index([
-            ('search_name', pymongo.ASCENDING), ('posted', pymongo.ASCENDING)
-        ])
 
     def close(self):
         """Close the MongoDB connection."""

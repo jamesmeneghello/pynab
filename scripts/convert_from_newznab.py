@@ -3,6 +3,21 @@ Functions to convert a Newznab installation to Pynab.
 
 NOTE: DESTRUCTIVE. DO NOT RUN ON ACTIVE PYNAB INSTALL.
 (unless you know what you're doing)
+
+Note 2:
+If there are duplicate rageID/tvdbID/imdbID's in their
+respective tables, you'll need to trim duplicates first
+or these scripts will fail. You can do so with:
+
+alter ignore table tvrage add unique key (rageid);
+
+If they're running InnoDB you can't always do this, so
+you'll need to do:
+
+alter table tvrage engine myisam;
+alter ignore table tvrage add unique key (rageid);
+alter table tvrage engine innodb;
+
 """
 
 # if you're using pycharm, don't install the bson package
@@ -69,17 +84,12 @@ def convert_categories(mysql):
     categories = {}
     for r in cursor.fetchall():
         category = {
-            'id': r[0],
+            '_id': r[0],
             'name': r[1],
+            'parent_id': r[2],
             'min_size': r[3],
             'max_size': r[4]
         }
-
-        if r[2]:
-            parent_id = db.categories.find_one({'name': categories[r[2]]['name']})['_id']
-            category.update({'parent_id': parent_id})
-        else:
-            categories[r[0]] = category
 
         db.categories.insert(category)
 
@@ -169,8 +179,8 @@ def convert_users(mysql):
             'username': r[0],
             'email': r[1],
             'password': r[2],
-            'rsstoken': r[3],
-            'userseed': r[4],
+            'api_key': r[3],
+            'seed': r[4],
             'grabs': r[5]
         }
 
@@ -197,7 +207,7 @@ def convert_tvdb(mysql):
     tvdbs = []
     for r in cursor.fetchall():
         tvdb = {
-            'id': r[0],
+            '_id': r[0],
             'name': r[1]
         }
 
@@ -223,7 +233,7 @@ def convert_tvrage(mysql):
     tvrages = []
     for r in cursor.fetchall():
         tvrage = {
-            'id': r[0],
+            '_id': r[0],
             'name': r[1]
         }
 
@@ -249,7 +259,7 @@ def convert_imdb(mysql):
     imdbs = []
     for r in cursor.fetchall():
         imdb = {
-            'id': r[0],
+            '_id': r[0],
             'name': r[1],
             'year': r[2],
             'lang': r[3]
@@ -293,7 +303,8 @@ def convert_releases(mysql):
     releases = []
     for r in cursor.fetchall():
         # get the easy ones out of the way first
-        release = dict(id=r[0], name=r[1], search_name=r[2], total_parts=int(r[5]), size=int(r[6]), posted=r[7], spotnab_id=r[8],
+        release = dict(id=r[0], name=r[1], search_name=r[2], total_parts=int(r[5]), size=int(r[6]), posted=r[7],
+                       spotnab_id=r[8],
                        posted_by=r[9], completion=r[10], grabs=r[21], passworded=r[22], file_count=r[23], status=r[24],
                        add_date=r[25])
 
@@ -301,23 +312,23 @@ def convert_releases(mysql):
         release['group_id'] = db.groups.find_one({'name': r[4]})['_id']
 
         # category
-        release['category_id'] = db.categories.find_one({'id': r[11]})['_id']
+        release['category_id'] = r[11]
 
         # rageID
         if r[12]:
-            release['tvrage'] = db.tvrage.find_one({'id': r[12]})
+            release['tvrage'] = db.tvrage.find_one({'_id': r[12]})
         else:
             release['tvrage'] = None
 
         # tvdbID
         if r[13]:
-            release['tvdb'] = db.tvdb.find_one({'id': r[13]})
+            release['tvdb'] = db.tvdb.find_one({'_id': r[13]})
         else:
             release['tvdb'] = None
 
         # imdbID
         if r[14]:
-            release['imdb'] = db.imdb.find_one({'id': r[14]})
+            release['imdb'] = db.imdb.find_one({'_id': r[14]})
         else:
             release['imdb'] = None
 

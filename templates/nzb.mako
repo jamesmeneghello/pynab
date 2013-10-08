@@ -19,7 +19,7 @@
     %>
         <file poster="${part['posted_by'] | x}" date="${timestamp | x}" subject="${subject | x}">
             <groups>
-                % for group in pynab.binaries.parse_xref(binary['xref']):
+                % for group in binaries.parse_xref(binary['xref']):
                     <group>${group}</group>
                 % endfor
             </groups>

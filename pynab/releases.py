@@ -65,19 +65,21 @@ def process():
             clean_name = clean_release_name(binary['name'])
 
             # if the regex used to generate the binary gave a category, use that
-            category_id = None
+            category = None
             if binary['category_id']:
-                result = db.categories.find_one({'id': binary['category_id']})
-                if result:
-                    category_id = result['_id']
+                category = db.categories.find_one({'_id': binary['category_id']})
 
             # otherwise, categorise it with our giant regex blob
-            if not category_id:
+            if not category:
                 id = pynab.categories.determine_category(binary['name'], binary['group_name'])
-                category_id = db.categories.find_one({'id': id})['_id']
+                category = db.categories.find_one({'_id': id})
+
+            # if this isn't a parent category, add those details as well
+            if 'parent_id' in category:
+                category['parent'] = db.categories.find_one({'_id': category['parent_id']})
 
             # create the nzb, store it in GridFS and link it here
-            nzb = pynab.nzb.create(gid, clean_name, binary)
+            nzb, nzb_size = pynab.nzb.create(gid, clean_name, binary)
             if nzb:
                 log.debug('Adding release: {0}'.format(clean_name))
 
@@ -110,9 +112,10 @@ def process():
                             'posted_by': binary['posted_by'],
                             'status': 1,
                             'updated': pytz.utc.localize(datetime.datetime.now()),
-                            'group_id': db.groups.find_one({'name': binary['group_name']})['_id'],
-                            'category_id': category_id,
-                            'nzb': nzb
+                            'group': db.groups.find_one({'name': binary['group_name']}),
+                            'category': category,
+                            'nzb': nzb,
+                            'nzb_size': nzb_size
                         }
                     },
                     upsert=True

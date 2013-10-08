@@ -1,4 +1,5 @@
 import gzip
+import sys
 
 from mako.template import Template
 from mako import exceptions
@@ -24,4 +25,5 @@ def create(gid, name, binary):
         log.error('Failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
         return None
 
-    return fs.put(gzip.compress(xml.encode('utf-8')), filename='.'.join([gid, 'nzb', 'gz']))
+    data = gzip.compress(xml.encode('utf-8'))
+    return fs.put(data, filename='.'.join([gid, 'nzb', 'gz'])), sys.getsizeof(data)
