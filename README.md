@@ -2,10 +2,10 @@ pynab
 =====
 
 Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
-consisting of (currently) ~2000 SLoC, compared to Newznab's ~82600. Performance
-and reliability are significantly improved, as is maintainability and a noted
-reduction in the sheer terror I experienced upon looking at some of the NN code
-in an attempt to fix a few annoying bugs.
+consisting of (currently) ~2,400 SLoC, compared to Newznab's ~104,000 lines of
+php/template. Performance and reliability are significantly improved, as is
+maintainability and a noted reduction in the sheer terror I experienced upon
+looking at some of the NN code in an attempt to fix a few annoying bugs.
 
 This project was written almost entirely for my own amusement and use, so it's
 specifically tailored towards what I was looking for in an indexer - fast,
@@ -37,6 +37,7 @@ In development:
 ---------------
 
 - Update scripts (heh)
+- Postprocessing (and thereby tv/m-search)
 - Console management (for users, etc - use mongo currently)
 - Some minor extra features
 - User authentication
