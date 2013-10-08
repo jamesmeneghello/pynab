@@ -8,9 +8,9 @@
         <title>${config.site['title']}</title>
         <description>${config.site['description']}</description>
 
-        <!-- this pynab tracker does not support the offset argument for direct searches -->
-        <!-- works fine for rss feeds, though -->
         % if search:
+            <!-- this pynab tracker does not support the offset argument for direct searches -->
+            <!-- works fine for rss feeds, though -->
             <newznab:response offset="${offset}" total="${total}"/>
         % endif
 

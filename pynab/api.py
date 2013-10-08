@@ -1,6 +1,5 @@
 import datetime
 import os
-import pprint
 
 import pymongo
 from mako.template import Template
@@ -52,8 +51,28 @@ def auth():
         return False
 
 
+def movie_search():
+    query = dict()
+    query['category.id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
+
+    try:
+        imdb_id = request.query.imdbid or None
+        if imdb_id:
+            query['imdb.id'] = int(imdb_id)
+
+        genres = request.query.genre or None
+        if genres:
+            genres = genres.split(',')
+            query['imdb.genre'] = {'$in': genres}
+    except:
+        api_error(201)
+
+    return search(query)
+
+
 def tv_search():
     query = dict()
+    query['category.id'] = {'$in': [5030, 5040, 5050, 5060, 5070, 5080]}
 
     try:
         tvrage_id = request.query.rid or None
@@ -76,8 +95,7 @@ def tv_search():
     except:
         api_error(201)
 
-    pprint.pprint(query)
-    search(query)
+    return search(query)
 
 
 def details():
@@ -161,7 +179,7 @@ def search(params=None):
                         categories.append(child['_id'])
                 else:
                     categories.append(category['_id'])
-            query['category_id'] = {'$in': categories}
+            query['category.id'].update({'$in': categories})
 
         # group names
         grp_names = request.query.group or []
@@ -180,7 +198,7 @@ def search(params=None):
         # but we don't distinguish between errors, so it's fine
         return api_error(201)
 
-    pprint.pprint(query)
+    log.debug('Query parameters: {0}'.format(query))
 
     search_terms = request.query.query or None
     if search_terms:
@@ -235,6 +253,7 @@ functions = {
     'c|caps': caps,
     'd|details': details,
     'tv|tvsearch': tv_search,
+    'm|movie': movie_search,
 }
 """
 
@@ -243,6 +262,6 @@ functions = {
 
 
 
-'m|movie': movie_search,
-'b|book': book_search
+
+
 """
