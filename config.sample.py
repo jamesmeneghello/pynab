@@ -1,9 +1,22 @@
-# general site configuration
+import pynab
+
 site = {
-    # should be a 128-bit randomised hex string
-    # you can generate one with:
-    # print("%032x" % random.getrandbits(128))
-    'seed': ''
+    # general site settings
+    'title': 'pynab',
+    'description': 'a pynab api',
+    'version': pynab.__version__,
+    'api_version': '0.1',
+    'email': '',
+    'seed': '',
+
+    # api settings
+    'result_limit': 100,
+    'result_default': 20,
+
+    # scanning settings
+    'new_group_scan_days': 5,
+    'message_scan_limit': 20000,
+    'backfill_days': 10
 }
 
 # mongodb details
