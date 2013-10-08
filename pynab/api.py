@@ -1,10 +1,12 @@
 import datetime
 import os
-import pymongo
+import pprint
 
+import pymongo
 from mako.template import Template
 from mako import exceptions
 from bottle import request
+
 from pynab.db import db
 from pynab import log
 import config
@@ -48,6 +50,34 @@ def auth():
         return True
     else:
         return False
+
+
+def tv_search():
+    query = dict()
+
+    try:
+        tvrage_id = request.query.rid or None
+        if tvrage_id:
+            query['tvrage.id'] = int(tvrage_id)
+
+        season = request.query.season or None
+        if season:
+            if season.isdigit():
+                query['tv.season'] = 'S{:02d}'.format(int(season))
+            else:
+                query['tv.season'] = season
+
+        episode = request.query.ep or None
+        if episode:
+            if episode.isdigit():
+                query['tv.episode'] = 'E{:02d}'.format(int(episode))
+            else:
+                query['tv.episode'] = episode
+    except:
+        api_error(201)
+
+    pprint.pprint(query)
+    search(query)
 
 
 def details():
@@ -102,6 +132,7 @@ def caps():
 
 def search(params=None):
     # build the mongo query
+    # add params if coming from a tv-search or something
     if params:
         query = dict(params)
     else:
@@ -148,6 +179,8 @@ def search(params=None):
         # normally a try block this long would make me shudder
         # but we don't distinguish between errors, so it's fine
         return api_error(201)
+
+    pprint.pprint(query)
 
     search_terms = request.query.query or None
     if search_terms:
@@ -197,11 +230,11 @@ def search(params=None):
         log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
         return None
 
-
 functions = {
     's|search': search,
     'c|caps': caps,
     'd|details': details,
+    'tv|tvsearch': tv_search,
 }
 """
 
@@ -209,7 +242,7 @@ functions = {
 'gn|getnfo': get_nfo,
 
 
-'tv|tvsearch': tv_search,
+
 'm|movie': movie_search,
 'b|book': book_search
 """
