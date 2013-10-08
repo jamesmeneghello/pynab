@@ -50,6 +50,29 @@ def auth():
         return False
 
 
+def details():
+    dataset = dict()
+
+    if request.query.id:
+        release = db.releases.find_one({'id': request.query.id})
+        if release:
+            dataset['releases'] = [release]
+            dataset['detail'] = True
+
+            try:
+                tmpl = Template(
+                    filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                                          'templates/api/result.mako'))
+                return tmpl.render(**dataset)
+            except:
+                log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+                return None
+        else:
+            api_error(300)
+    else:
+        api_error(200)
+
+
 def caps():
     dataset = dict()
 
@@ -164,10 +187,11 @@ def search(params=None):
     dataset['releases'] = results
     dataset['offset'] = offset
     dataset['total'] = total
+    dataset['search'] = True
 
     try:
         tmpl = Template(
-            filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/search.mako'))
+            filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/result.mako'))
         return tmpl.render(**dataset)
     except:
         log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
@@ -177,9 +201,10 @@ def search(params=None):
 functions = {
     's|search': search,
     'c|caps': caps,
+    'd|details': details,
 }
 """
-'d|details': details,
+
 'g|get': get_data,
 'gn|getnfo': get_nfo,
 

@@ -10,7 +10,9 @@
 
         <!-- this pynab tracker does not support the offset argument for direct searches -->
         <!-- works fine for rss feeds, though -->
-        <newznab:response offset="${offset}" total="${total}"/>
+        % if search:
+            <newznab:response offset="${offset}" total="${total}"/>
+        % endif
 
         % for release in releases:
             <item>
@@ -33,6 +35,14 @@
                 % endif
                 % if release.get('size'):
                     <newznab:attr name="size" value="${release['size']}"/>
+                % endif
+                % if detail:
+                    <newznab:attr name="size" value="${release['size']}"/>
+                    <newznab:attr name="files" value="${release['file_count']}"/>
+                    <newznab:attr name="poster" value="${release['posted_by']}"/>
+                    <newznab:attr name="grabs" value="${release['grabs']}"/>
+                    <newznab:attr name="usenetdate" value="${release['posted']}"/>
+                    <newznab:attr name="group" value="${release['group']['name']}"/>
                 % endif
                 <newznab:attr name="guid" value="${release['id']}"/>
             </item>
