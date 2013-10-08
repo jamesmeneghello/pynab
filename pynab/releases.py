@@ -112,7 +112,7 @@ def process():
                             'posted_by': binary['posted_by'],
                             'status': 1,
                             'updated': pytz.utc.localize(datetime.datetime.now()),
-                            'group': db.groups.find_one({'name': binary['group_name']}),
+                            'group': db.groups.find_one({'name': binary['group_name']}, {'name': 1}),
                             'category': category,
                             'nzb': nzb,
                             'nzb_size': nzb_size

@@ -17,6 +17,8 @@ import pynab.binaries
 import pynab.releases
 import pynab.parts
 import pynab.categories
+import pynab.groups
+import pynab.nzb
 
 
 class TestPynab(unittest.TestCase):
@@ -61,6 +63,19 @@ class TestPynab(unittest.TestCase):
         for release in releases:
             group_name = db.groups.find_one({'_id': release['group_id']})['name']
             pynab.categories.determine_category(release['name'], group_name)
+
+    def test_day_to_post(self):
+        self.test_connect()
+        self.server.day_to_post('alt.binaries.teevee', 5)
+
+    def test_group_update(self):
+        pynab.groups.update('alt.binaries.teevee')
+
+    def test_group_backfill(self):
+        pynab.groups.backfill('alt.binaries.teevee')
+
+    def test_nzb_import(self):
+        pynab.nzb.import_nzb('c:\\temp\\nzbs\\The.Legend.of.Korra.S02E05.720p.WEB-DL.DD5.1.H.264-BS.nzb')
 
     def tearDown(self):
         try:

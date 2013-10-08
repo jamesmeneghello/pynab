@@ -5,3 +5,4 @@ pytz
 mako
 bottle
 xmltodict
+pynzb

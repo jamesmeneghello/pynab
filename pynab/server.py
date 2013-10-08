@@ -1,8 +1,11 @@
 import nntplib
 import re
 import time
+import datetime
+import math
 
 import dateutil.parser
+import pytz
 
 from pynab import log
 import config
@@ -11,6 +14,18 @@ import config
 class Server:
     def __init__(self):
         self.connection = None
+
+    def group(self, group_name):
+        if not self.connection:
+            self.connect()
+
+        try:
+            response, count, first, last, name = self.connection.group(group_name)
+        except nntplib.NNTPError:
+            log.error('Problem sending group command to server.')
+            return False
+
+        return response, count, first, last, name
 
     def connect(self):
         """Creates a connection to a news server."""
@@ -30,6 +45,7 @@ class Server:
             return False
 
         log.info('Connected!')
+        return True
 
     def scan(self, group_name, first, last):
         """Scan a group for segments and return a list."""
@@ -37,9 +53,12 @@ class Server:
 
         start = time.clock()
 
-        # grab the headers we're after
-        self.connection.group(group_name)
-        count, overviews = self.connection.over((first, last))
+        try:
+            # grab the headers we're after
+            self.connection.group(group_name)
+            count, overviews = self.connection.over((first, last))
+        except nntplib.NNTPError:
+            return None
 
         messages = {}
         ignored = 0
@@ -87,9 +106,9 @@ class Server:
                 else:
                     # dateutil will parse the date as whatever and convert to UTC
                     message = {
-                        'subject': subject.encode('utf-8', 'surrogateescape').decode('latin-1'),
+                        'subject': nntplib.decode_header(subject),
                         'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': overview['from'].encode('utf-8', 'surrogateescape').decode('latin-1'),
+                        'posted_by': nntplib.decode_header(overview['from']),
                         'group_name': group_name,
                         'xref': overview['xref'],
                         'total_segments': int(total_segments),
@@ -103,8 +122,8 @@ class Server:
                 ignored += 1
 
         log.info(
-            'Received ' + str(len(received)) + ' articles of ' + str(last - first + 1) +
-            ' with ' + str(ignored) + ' ignored.'
+            'Received {:d} articles of {:d} with {:d} ignored.'
+            .format(len(received), last - first + 1, ignored)
         )
 
         # TODO: implement re-checking of missed messages, or maybe not
@@ -115,3 +134,90 @@ class Server:
         log.info('Time elapsed: {:.2f}s'.format(end - start))
 
         return messages
+
+    def post_date(self, group_name, article):
+        log.debug('Retrieving date of article {:d}'.format(article))
+        try:
+            self.connection.group(group_name)
+            _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
+        except nntplib.NNTPError as e:
+            log.warning('Error with news server: {0}'.format(e))
+            return None
+
+        try:
+            art_num, overview = articles[0]
+        except IndexError:
+            log.warning('Server was missing article {:d}.'.format(article))
+
+            # if the server is missing an article, it's usually part of a large group
+            # so skip along quickishly, the datefinder will autocorrect itself anyway
+            return self.post_date(group_name, article + int(article * 0.001))
+
+        if art_num and overview:
+            return dateutil.parser.parse(overview['date'])
+        else:
+            return None
+
+    def days_old(self, date):
+        return (datetime.datetime.now(pytz.utc) - date).days
+
+    def day_to_post(self, group_name, days):
+        log.debug('Finding post {0:d} days old in group {1}...'.format(days, group_name))
+
+        _, count, first, last, _ = self.connection.group(group_name)
+        target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
+
+        first_date = self.post_date(group_name, first)
+        last_date = self.post_date(group_name, last)
+
+        if first_date and last_date:
+            if target_date < first_date:
+                log.warning('First available article is newer than target date, starting from first available.')
+                return first
+            elif target_date > last_date:
+                log.warning('Target date is more recent than newest article. Try a longer backfill.')
+                return False
+            log.debug('Searching for post where goal: {0}, first: {0}, last: {0}'
+            .format(target_date, first_date, last_date)
+            )
+
+            upper = last
+            lower = first
+            interval = math.floor((upper - lower) * 0.5)
+            next_date = last_date
+
+            log.debug('Start: {:d} End: {:d} Interval: {:d}'.format(lower, upper, interval))
+
+            while self.days_old(next_date) < days:
+                skip = 1
+                temp_date = self.post_date(group_name, upper - interval)
+                while temp_date > target_date:
+                    upper = upper - interval - (skip - 1)
+                    log.debug('New upperbound: {:d} is {:d} days old.'
+                    .format(upper, self.days_old(temp_date))
+                    )
+                    skip *= 2
+                    temp_date = self.post_date(group_name, upper - interval)
+
+                interval = math.ceil(interval / 2)
+                if interval <= 0:
+                    break
+                skip = 1
+                log.debug('Set interval to {:d} articles.'.format(interval))
+
+                next_date = self.post_date(group_name, upper - 1)
+                while not next_date:
+                    upper = upper - skip
+                    skip *= 2
+                    log.debug('Article was lost, getting next: {:d}'.format(upper))
+                    next_date = self.post_date(group_name, upper - 1)
+
+            log.debug('Article is {:d} which is {:d} days old.'.format(upper, self.days_old(next_date)))
+            return upper
+        else:
+            log.error('Could not get group information.')
+            return False
+
+
+
+
