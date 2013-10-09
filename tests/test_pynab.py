@@ -69,13 +69,17 @@ class TestPynab(unittest.TestCase):
         self.server.day_to_post('alt.binaries.teevee', 5)
 
     def test_group_update(self):
-        pynab.groups.update('alt.binaries.teevee')
+        pynab.groups.update('alt.binaries.e-book.technical')
 
     def test_group_backfill(self):
         pynab.groups.backfill('alt.binaries.teevee')
 
     def test_nzb_import(self):
         pynab.nzb.import_nzb('c:\\temp\\nzbs\\The.Legend.of.Korra.S02E05.720p.WEB-DL.DD5.1.H.264-BS.nzb')
+
+    def test_nfo_scan(self):
+        release = db.releases.find_one()
+        #pynab.nfos.scan(release)
 
     def tearDown(self):
         try:

@@ -71,8 +71,13 @@ def import_nzb(filepath, quick=True):
         if not r:
             release['id'] = hashlib.md5(uuid.uuid1().bytes).hexdigest()
             release['search_name'] = release['name']
-            release['posted'] = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
+
             release['status'] = 2
+
+            if 'posted' in release:
+                release['posted'] = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
+            else:
+                release['posted'] = None
 
             if 'category' in release:
                 parent, child = release['category'].split(' > ')

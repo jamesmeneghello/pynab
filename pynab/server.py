@@ -16,6 +16,15 @@ class Server:
     def __init__(self):
         self.connection = None
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.quit()
+        return True
+
+
     def group(self, group_name):
         if not self.connection:
             self.connect()

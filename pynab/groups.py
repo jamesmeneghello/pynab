@@ -86,89 +86,86 @@ def backfill(group_name, date=None):
 def update(group_name):
     log.info('{}: Updating group...'.format(group_name))
 
-    server = Server()
-    if not server.connect():
-        return False
+    with Server() as server:
+        _, count, first, last, _ = server.group(group_name)
 
-    _, count, first, last, _ = server.group(group_name)
+        group = db.groups.find_one({'name': group_name})
+        if group:
+            # if the group has been scanned before
+            if group['last']:
+                # pick up where we left off
+                start = group['last'] + 1
 
-    group = db.groups.find_one({'name': group_name})
-    if group:
-        # if the group has been scanned before
-        if group['last']:
-            # pick up where we left off
-            start = group['last'] + 1
-
-            # if our last article is newer than the server's, something's wrong
-            if last < group['last']:
-                log.error('{}: Server\'s last article {:d} is lower than the local {:d}'.format(group_name, last,
-                                                                                                group['last']))
-                return False
-        else:
-            # otherwise, start from x days old
-            start = server.day_to_post(group_name, config.site['new_group_scan_days'])
-            if not start:
-                log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
-                return False
-            else:
-                db.groups.update({
-                                     '_id': group['_id']
-                                 },
-                                 {
-                                     '$set': {
-                                         'first': start
-                                     }
-                                 })
-
-        # either way, we're going upwards so end is the last available
-        end = last
-
-        # if total > 0, we have new parts
-        total = end - start + 1
-
-        log.debug('{}: Start: {:d} End: {:d} Total: {:d}'.format(group_name, start, end, total))
-        if total > 0:
-            if not group['last']:
-                log.info('{}: Starting new group with {:d} days and {:d} new parts.'
-                .format(group_name, config.site['new_group_scan_days'], total))
-            else:
-                log.info('{}: Group has {:d} new parts.'.format(group_name, total))
-
-            # until we're finished, loop
-            while True:
-                # break the load into segments
-                if total > MESSAGE_LIMIT:
-                    if start + MESSAGE_LIMIT > last:
-                        end = last
-                    else:
-                        end = start + MESSAGE_LIMIT
-
-                messages = server.scan(group_name, start, end)
-                if not messages:
-                    log.error('{}: Could not scan group.'.format(group_name))
+                # if our last article is newer than the server's, something's wrong
+                if last < group['last']:
+                    log.error('{}: Server\'s last article {:d} is lower than the local {:d}'.format(group_name, last,
+                                                                                                    group['last']))
                     return False
-
-                if parts.save_all(messages):
+            else:
+                # otherwise, start from x days old
+                start = server.day_to_post(group_name, config.site['new_group_scan_days'])
+                if not start:
+                    log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
+                    return False
+                else:
                     db.groups.update({
                                          '_id': group['_id']
                                      },
                                      {
                                          '$set': {
-                                             'last': end
+                                             'first': start
                                          }
                                      })
-                else:
-                    log.error('{0}: Failed while saving parts.'.format(group_name))
-                    return False
 
-                if end == last:
-                    return True
+            # either way, we're going upwards so end is the last available
+            end = last
+
+            # if total > 0, we have new parts
+            total = end - start + 1
+
+            log.debug('{}: Start: {:d} End: {:d} Total: {:d}'.format(group_name, start, end, total))
+            if total > 0:
+                if not group['last']:
+                    log.info('{}: Starting new group with {:d} days and {:d} new parts.'
+                    .format(group_name, config.site['new_group_scan_days'], total))
                 else:
-                    end = start + MESSAGE_LIMIT
-                    start = end + 1
+                    log.info('{}: Group has {:d} new parts.'.format(group_name, total))
+
+                # until we're finished, loop
+                while True:
+                    # break the load into segments
+                    if total > MESSAGE_LIMIT:
+                        if start + MESSAGE_LIMIT > last:
+                            end = last
+                        else:
+                            end = start + MESSAGE_LIMIT
+
+                    messages = server.scan(group_name, start, end)
+                    if not messages:
+                        log.error('{}: Could not scan group.'.format(group_name))
+                        return False
+
+                    if parts.save_all(messages):
+                        db.groups.update({
+                                             '_id': group['_id']
+                                         },
+                                         {
+                                             '$set': {
+                                                 'last': end
+                                             }
+                                         })
+                    else:
+                        log.error('{0}: Failed while saving parts.'.format(group_name))
+                        return False
+
+                    if end == last:
+                        return True
+                    else:
+                        end = start + MESSAGE_LIMIT
+                        start = end + 1
+            else:
+                log.info('{}: No new records for group.'.format(group_name))
+                return True
         else:
-            log.info('{}: No new records for group.'.format(group_name))
-            return True
-    else:
-        log.error('{}: No such group exists in the db.'.format(group_name))
-        return False
+            log.error('{}: No such group exists in the db.'.format(group_name))
+            return False
