@@ -50,7 +50,7 @@ Installation and execution is reasonably easy.
 Requirements
 ------------
 
-- Python 3.2? or higher
+- Python 3.3 or higher
 - A WSGI-capable webserver (or use CherryPy)
 
 Installation

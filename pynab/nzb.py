@@ -39,25 +39,28 @@ def import_nzb(filepath, quick=True):
     file, ext = os.path.splitext(filepath)
 
     if ext == '.nzb.gz':
-        f = gzip.open(filepath, 'r')
+        f = gzip.open(filepath, 'r', encoding='utf-8', errors='ignore')
     else:
-        f = open(filepath, 'r')
+        f = open(filepath, 'r', encoding='utf-8', errors='ignore')
 
     if quick:
         release = {'added': pytz.utc.localize(datetime.datetime.now()), 'size': None, 'spotnab_id': None,
                    'completion': None, 'grabs': 0, 'passworded': None, 'file_count': None, 'tvrage': None,
                    'tvdb': None, 'imdb': None, 'nfo': None, 'tv': None, 'total_parts': 0}
 
-        for event, elem in cet.iterparse(f):
-            #print('{0}: {1}'.format(event, elem))
-            if 'meta' in elem.tag:
-                release[elem.attrib['type']] = elem.text
-            if 'file' in elem.tag:
-                release['total_parts'] += 1
-                release['posted'] = elem.get('date')
-                release['posted_by'] = elem.get('poster')
-            if 'group' in elem.tag and 'groups' not in elem.tag:
-                release['group_name'] = elem.text
+        try:
+            for event, elem in cet.iterparse(f):
+                if 'meta' in elem.tag:
+                    release[elem.attrib['type']] = elem.text
+                if 'file' in elem.tag:
+                    release['total_parts'] += 1
+                    release['posted'] = elem.get('date')
+                    release['posted_by'] = elem.get('poster')
+                if 'group' in elem.tag and 'groups' not in elem.tag:
+                    release['group_name'] = elem.text
+        except:
+            log.error('Error parsing NZB files: file appears to be corrupt.')
+            return False
 
         if 'name' not in release:
             log.error('Failed to import nzb: {0}'.format(filepath))
