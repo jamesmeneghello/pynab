@@ -90,7 +90,7 @@ def import_nzb(filepath, quick=True):
             if 'group_name' in release:
                 group = db.groups.find_one({'name': release['group_name']}, {'name': 1})
                 if not group:
-                    log.error('Could not add release - group {0} doesn\'t exist.')
+                    log.error('Could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
                     return False
                 release['group'] = group
                 del release['group_name']
