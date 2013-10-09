@@ -18,9 +18,7 @@
             <item>
                 <title>${release['search_name']}</title>
                 <guid isPermaLink="true">${get_link('/api')}?t=d&id=${release['id']}&apikey=${api_key}</guid>
-                <link>
-                ${get_link('/api')}?t=g&guid=${release['id']}&apikey=${api_key}
-                </link>
+                <link>${get_link('/api')}?t=g&guid=${release['id']}&apikey=${api_key}</link>
                 <pubDate>${release['added']}</pubDate>
                 % if 'parent_id' in release['category']:
                     <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>

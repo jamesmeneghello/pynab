@@ -129,11 +129,12 @@ class Server:
         # so we typically only end up checking the blacklist for ~150 parts instead of thousands
         blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name)]
         blacklisted = len(blacklist)
-        for k in blacklist: del messages[k]
+        for k in blacklist:
+            del messages[k]
 
         log.info(
             'Received {:d} articles of {:d} with {:d} ignored and {:d} blacklisted.'
-            .format(len(received), last - first + 1, ignored, blacklisted)
+            .format(len(received), last - first, ignored, blacklisted)
         )
 
         # TODO: implement re-checking of missed messages, or maybe not

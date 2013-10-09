@@ -6,6 +6,7 @@ __email__ = 'murodese@gmail.com'
 __version__ = '0.1.0'
 
 import logging
+import config
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=config.site['logging_level'])

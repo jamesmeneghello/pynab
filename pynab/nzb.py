@@ -83,8 +83,13 @@ def import_nzb(filepath, quick=True):
             else:
                 release['category'] = None
 
+            # make sure the release belongs to a group we have in our db
             if 'group_name' in release:
-                release['group'] = db.groups.find_one({'name': release['group_name']}, {'name': 1})
+                group = db.groups.find_one({'name': release['group_name']}, {'name': 1})
+                if not group:
+                    log.error('Could not add release - group {0} doesn\'t exist.')
+                    return False
+                release['group'] = group
                 del release['group_name']
 
             # rebuild the nzb, gzipped
