@@ -17,9 +17,9 @@
         % for release in releases:
             <item>
                 <title>${release['search_name']}</title>
-                <guid isPermaLink="true">/details/${release['id']}</guid>
+                <guid isPermaLink="true">/details/${release['id']}&apikey=${api_key}</guid>
                 <link>
-                /getnzb/${release['id']}</link>
+                /api?t=g&guid=${release['id']}&apikey=${api_key}</link>
                 <pubDate>${release['added']}</pubDate>
                 % if 'parent_id' in release['category']:
                     <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>
@@ -27,8 +27,8 @@
                     <category>${release['category']['name']}</category>
                 % endif
                 <description>${release['search_name']}</description>
-                <enclosure url="/getnzb/${release['id']}" length="${release['nzb_size']}"
-                           type="application/x-nzb-compressed"/>
+                <enclosure url="/api?t=g&guid=${release['id']}&apikey=${api_key}" length="${release['nzb_size']}"
+                           type="application/x-nzb"/>
                 <newznab:attr name="category" value="${release['category']['_id']}"/>
                 % if 'parent_id' in release['category']:
                     <newznab:attr name="category" value="${release['category']['parent_id']}"/>

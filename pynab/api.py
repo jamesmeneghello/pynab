@@ -1,12 +1,13 @@
 import datetime
 import os
-
+import gzip
 import pymongo
+
 from mako.template import Template
 from mako import exceptions
-from bottle import request
+from bottle import request, response
 
-from pynab.db import db
+from pynab.db import db, fs
 from pynab import log
 import config
 
@@ -41,6 +42,28 @@ def api_error(code):
     return '{0}\n<error code=\"{1:d}\" description=\"{2}\" />'.format(xml_header, code, error)
 
 
+def get_nzb():
+    if auth():
+        guid = request.query.guid or None
+        if guid:
+            release = db.releases.find_one({'id': guid})
+            if release:
+                data = fs.get(release['nzb']).read()
+                response.set_header('Content-type', 'application/x-nzb')
+                response.set_header('X-DNZB-Name', release['search_name'])
+                response.set_header('X-DNZB-Category', release['category']['name'])
+                response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                .format(release['search_name'].replace(' ', '_') + '.nzb')
+                )
+                return gzip.decompress(data)
+            else:
+                return api_error(300)
+        else:
+            return api_error(200)
+    else:
+        return api_error(100)
+
+
 def auth():
     api_key = request.query.apikey or ''
 
@@ -52,73 +75,82 @@ def auth():
 
 
 def movie_search():
-    query = dict()
-    query['category.id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
+    if auth():
+        query = dict()
+        query['category.id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
 
-    try:
-        imdb_id = request.query.imdbid or None
-        if imdb_id:
-            query['imdb.id'] = int(imdb_id)
+        try:
+            imdb_id = request.query.imdbid or None
+            if imdb_id:
+                query['imdb.id'] = int(imdb_id)
 
-        genres = request.query.genre or None
-        if genres:
-            genres = genres.split(',')
-            query['imdb.genre'] = {'$in': genres}
-    except:
-        api_error(201)
+            genres = request.query.genre or None
+            if genres:
+                genres = genres.split(',')
+                query['imdb.genre'] = {'$in': genres}
+        except:
+            return api_error(201)
 
-    return search(query)
+        return search(query)
+    else:
+        return api_error(100)
 
 
 def tv_search():
-    query = dict()
-    query['category.id'] = {'$in': [5030, 5040, 5050, 5060, 5070, 5080]}
+    if auth():
+        query = dict()
+        query['category._id'] = {'$in': [5030, 5040, 5050, 5060, 5070, 5080]}
 
-    try:
-        tvrage_id = request.query.rid or None
-        if tvrage_id:
-            query['tvrage.id'] = int(tvrage_id)
+        try:
+            tvrage_id = request.query.rid or None
+            if tvrage_id:
+                query['tvrage.id'] = int(tvrage_id)
 
-        season = request.query.season or None
-        if season:
-            if season.isdigit():
-                query['tv.season'] = 'S{:02d}'.format(int(season))
-            else:
-                query['tv.season'] = season
+            season = request.query.season or None
+            if season:
+                if season.isdigit():
+                    query['tv.season'] = 'S{:02d}'.format(int(season))
+                else:
+                    query['tv.season'] = season
 
-        episode = request.query.ep or None
-        if episode:
-            if episode.isdigit():
-                query['tv.episode'] = 'E{:02d}'.format(int(episode))
-            else:
-                query['tv.episode'] = episode
-    except:
-        api_error(201)
+            episode = request.query.ep or None
+            if episode:
+                if episode.isdigit():
+                    query['tv.episode'] = 'E{:02d}'.format(int(episode))
+                else:
+                    query['tv.episode'] = episode
+        except:
+            return api_error(201)
 
-    return search(query)
+        return search(query)
+    else:
+        return api_error(100)
 
 
 def details():
-    dataset = dict()
+    if auth():
+        dataset = dict()
 
-    if request.query.id:
-        release = db.releases.find_one({'id': request.query.id})
-        if release:
-            dataset['releases'] = [release]
-            dataset['detail'] = True
+        if request.query.id:
+            release = db.releases.find_one({'id': request.query.id})
+            if release:
+                dataset['releases'] = [release]
+                dataset['detail'] = True
 
-            try:
-                tmpl = Template(
-                    filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
-                                          'templates/api/result.mako'))
-                return tmpl.render(**dataset)
-            except:
-                log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
-                return None
+                try:
+                    tmpl = Template(
+                        filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                                              'templates/api/result.mako'))
+                    return tmpl.render(**dataset)
+                except:
+                    log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+                    return None
+            else:
+                return api_error(300)
         else:
-            api_error(300)
+            return api_error(200)
     else:
-        api_error(200)
+        return api_error(100)
 
 
 def caps():
@@ -149,104 +181,108 @@ def caps():
 
 
 def search(params=None):
-    # build the mongo query
-    # add params if coming from a tv-search or something
-    if params:
-        query = dict(params)
-    else:
-        query = dict()
-
-    try:
-        # set limit to request or default
-        # this will also match limit == 0, which would be infinite
-        limit = request.query.limit or None
-        if not limit or limit > int(config.site['result_limit']):
-            limit = int(config.site['result_default'])
-
-        # offset is only available for rss searches and won't work with text
-        offset = request.query.offset or None
-        if not offset or int(offset) < 0:
-            offset = 0
-
-        # get categories
-        cat_ids = request.query.cat or []
-        if cat_ids:
-            cat_ids = [int(c) for c in cat_ids.split(',')]
-            categories = []
-            for category in db.categories.find({'id': {'$in': cat_ids}}):
-                if 'parent_id' not in category:
-                    for child in db.categories.find({'parent_id': category['_id']}):
-                        categories.append(child['_id'])
-                else:
-                    categories.append(category['_id'])
-            query['category.id'].update({'$in': categories})
-
-        # group names
-        grp_names = request.query.group or []
-        if grp_names:
-            grp_names = grp_names.split(',')
-            groups = [g['_id'] for g in db.groups.find({'name': {'$in': grp_names}})]
-            query['group_id'] = {'$in': groups}
-
-        # max age
-        max_age = request.query.maxage or None
-        if max_age:
-            oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
-            query['posted'] = {'$gte': oldest}
-    except:
-        # normally a try block this long would make me shudder
-        # but we don't distinguish between errors, so it's fine
-        return api_error(201)
-
-    log.debug('Query parameters: {0}'.format(query))
-
-    search_terms = request.query.query or None
-    if search_terms:
-        # we're searching specifically for a show or something
-
-        # mash search terms into a single string
-        # we remove carets because mongo's FT search is probably smart enough
-        terms = ''
-        if search_terms:
-            terms = '{0}'.format(' '.join(search_terms.replace('^', ' ').split(' '))).strip()
-
-        # build the full query - db.command() uses a different format
-        full = {
-            'command': 'text',
-            'value': 'releases',
-            'search': terms,
-            'filter': query,
-            'limit': limit,
-        }
-
-        results = db.command(**full)['results']
-        if results:
-            results = [r['obj'] for r in results]
+    if auth():
+        # build the mongo query
+        # add params if coming from a tv-search or something
+        if params:
+            query = dict(params)
         else:
-            results = []
+            query = dict()
 
-        # since FT searches don't support offsets
-        total = limit
-        offset = 0
+        try:
+            # set limit to request or default
+            # this will also match limit == 0, which would be infinite
+            limit = request.query.limit or None
+            if not limit or limit > int(config.site['result_limit']):
+                limit = int(config.site['result_default'])
+
+            # offset is only available for rss searches and won't work with text
+            offset = request.query.offset or None
+            if not offset or int(offset) < 0:
+                offset = 0
+
+            # get categories
+            cat_ids = request.query.cat or []
+            if cat_ids:
+                cat_ids = [int(c) for c in cat_ids.split(',')]
+                categories = []
+                for category in db.categories.find({'id': {'$in': cat_ids}}):
+                    if 'parent_id' not in category:
+                        for child in db.categories.find({'parent_id': category['_id']}):
+                            categories.append(child['_id'])
+                    else:
+                        categories.append(category['_id'])
+                query['category.id'].update({'$in': categories})
+
+            # group names
+            grp_names = request.query.group or []
+            if grp_names:
+                grp_names = grp_names.split(',')
+                groups = [g['_id'] for g in db.groups.find({'name': {'$in': grp_names}})]
+                query['group_id'] = {'$in': groups}
+
+            # max age
+            max_age = request.query.maxage or None
+            if max_age:
+                oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
+                query['posted'] = {'$gte': oldest}
+        except:
+            # normally a try block this long would make me shudder
+            # but we don't distinguish between errors, so it's fine
+            return api_error(201)
+
+        log.debug('Query parameters: {0}'.format(query))
+
+        search_terms = request.query.query or None
+        if search_terms:
+            # we're searching specifically for a show or something
+
+            # mash search terms into a single string
+            # we remove carets because mongo's FT search is probably smart enough
+            terms = ''
+            if search_terms:
+                terms = '{0}'.format(' '.join(search_terms.replace('^', ' ').split(' '))).strip()
+
+            # build the full query - db.command() uses a different format
+            full = {
+                'command': 'text',
+                'value': 'releases',
+                'search': terms,
+                'filter': query,
+                'limit': limit,
+            }
+
+            results = db.command(**full)['results']
+            if results:
+                results = [r['obj'] for r in results]
+            else:
+                results = []
+
+            # since FT searches don't support offsets
+            total = limit
+            offset = 0
+        else:
+            # we're looking for an rss feed
+            # return results and sort by postdate ascending
+            total = db.releases.find(query).count()
+            results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.ASCENDING)
+
+        dataset = dict()
+        dataset['releases'] = results
+        dataset['offset'] = offset
+        dataset['total'] = total
+        dataset['search'] = True
+
+        try:
+            tmpl = Template(
+                filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/result.mako'))
+            return tmpl.render(**dataset)
+        except:
+            log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+            return None
     else:
-        # we're looking for an rss feed
-        # return results and sort by postdate ascending
-        total = db.releases.find(query).count()
-        results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.ASCENDING)
+        return api_error(100)
 
-    dataset = dict()
-    dataset['releases'] = results
-    dataset['offset'] = offset
-    dataset['total'] = total
-    dataset['search'] = True
-
-    try:
-        tmpl = Template(
-            filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/result.mako'))
-        return tmpl.render(**dataset)
-    except:
-        log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
-        return None
 
 functions = {
     's|search': search,
@@ -254,14 +290,9 @@ functions = {
     'd|details': details,
     'tv|tvsearch': tv_search,
     'm|movie': movie_search,
+    'g|get': get_nzb,
 }
+
 """
-
-'g|get': get_data,
 'gn|getnfo': get_nfo,
-
-
-
-
-
 """

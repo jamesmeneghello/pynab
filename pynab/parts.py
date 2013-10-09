@@ -1,3 +1,5 @@
+import re
+
 import pymongo.errors
 
 from pynab.db import db
@@ -64,3 +66,14 @@ def save_all(parts):
     except pymongo.errors.PyMongoError as e:
         log.error('Could not write parts to db: {0}'.format(e))
         return False
+
+
+def is_blacklisted(subject, group_name):
+    log.debug('Checking {0} against active blacklists...'.format(subject))
+    blacklists = db.blacklists.find({'status': 1})
+    for blacklist in blacklists:
+        if re.search(blacklist['group_name'], group_name):
+            log.debug('Checking blacklist {0}...'.format(blacklist['regex']))
+            if re.search(blacklist['regex'], subject):
+                return True
+    return False

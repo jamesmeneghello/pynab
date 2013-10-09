@@ -8,6 +8,7 @@ import dateutil.parser
 import pytz
 
 from pynab import log
+import pynab.parts
 import config
 
 
@@ -105,10 +106,13 @@ class Server:
                     messages[subject]['available_segments'] += 1
                 else:
                     # dateutil will parse the date as whatever and convert to UTC
+                    # some subjects/posters have odd encoding, which will break pymongo
+                    # so we make sure it doesn't
                     message = {
-                        'subject': nntplib.decode_header(subject),
+                        'subject': nntplib.decode_header(subject).encode('utf-8', 'surrogateescape').decode('latin-1'),
                         'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': nntplib.decode_header(overview['from']),
+                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'surrogateescape').decode(
+                            'latin-1'),
                         'group_name': group_name,
                         'xref': overview['xref'],
                         'total_segments': int(total_segments),
@@ -121,9 +125,15 @@ class Server:
                 # :getout:
                 ignored += 1
 
+        # instead of checking every single individual segment, package them first
+        # so we typically only end up checking the blacklist for ~150 parts instead of thousands
+        blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name)]
+        blacklisted = len(blacklist)
+        for k in blacklist: del messages[k]
+
         log.info(
-            'Received {:d} articles of {:d} with {:d} ignored.'
-            .format(len(received), last - first + 1, ignored)
+            'Received {:d} articles of {:d} with {:d} ignored and {:d} blacklisted.'
+            .format(len(received), last - first + 1, ignored, blacklisted)
         )
 
         # TODO: implement re-checking of missed messages, or maybe not

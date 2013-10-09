@@ -32,6 +32,9 @@ class TestScripts(unittest.TestCase):
     def test_convert_regex(self):
         convert_from_newznab.convert_regex(self.mysql)
 
+    def test_convert_blacklist(self):
+        convert_from_newznab.convert_blacklist(self.mysql)
+
     def test_convert_users(self):
         convert_from_newznab.convert_users(self.mysql)
 
@@ -48,6 +51,7 @@ class TestScripts(unittest.TestCase):
         self.test_convert_groups()
         self.test_convert_categories()
         self.test_convert_regex()
+        self.test_convert_blacklist()
         self.test_convert_users()
         self.test_convert_tvdb()
         self.test_convert_tvrage()
