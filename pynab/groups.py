@@ -8,7 +8,7 @@ MESSAGE_LIMIT = config.site['message_scan_limit']
 
 
 def backfill(group_name, date=None):
-    log.info('Backfilling group {0}...'.format(group_name))
+    log.info('{}: Backfilling group...'.format(group_name))
 
     server = Server()
     if not server.connect():
@@ -25,22 +25,23 @@ def backfill(group_name, date=None):
     if group:
         # if the group hasn't been updated before, quit
         if not group['first']:
-            log.error('Need to run a normal update prior to backfilling group: {0}'.format(group_name))
+            log.error('{}: Need to run a normal update prior to backfilling group.'.format(group_name))
             return False
 
-        log.info('{0}: Server has {1:d} - {2:d} or ~{3:d} days.'
+        log.info('{}: Server has {1:d} - {2:d} or ~{3:d} days.'
         .format(group_name, first, last, server.days_old(server.post_date(group_name, first)))
         )
 
         # if the first article we have is lower than the target
         if target_article >= group['first']:
-            log.info('Nothing to do, we already have the target post.')
+            log.info('{}: Nothing to do, we already have the target post.'.format(group_name))
             return True
 
         # or if the target is below the server's first
         if target_article < first:
             log.warning(
-                'Backfill target is older than the server\'s retention. Setting target to the first possible article.')
+                '{}: Backfill target is older than the server\'s retention. Setting target to the first possible article.'.format(
+                    group_name))
             target_article = first
 
         total = group['first'] - target_article
@@ -52,7 +53,7 @@ def backfill(group_name, date=None):
         while True:
             messages = server.scan(group_name, start, end)
             if not messages:
-                log.error('Could not scan group.')
+                log.error('{}: Could not scan group.'.format(group_name))
                 return False
 
             if parts.save_all(messages):
@@ -66,7 +67,7 @@ def backfill(group_name, date=None):
                                  })
                 pass
             else:
-                log.error('Failed while saving parts.')
+                log.error('{}: Failed while saving parts.'.format(group_name))
                 return False
 
             if first == target_article:
@@ -78,12 +79,12 @@ def backfill(group_name, date=None):
                     start = target_article
 
     else:
-        log.error('Group {0} doesn\'t exist in db.'.format(group_name))
+        log.error('{}: Group doesn\'t exist in db.'.format(group_name))
         return False
 
 
 def update(group_name):
-    log.info('Updating group {0}...'.format(group_name))
+    log.info('{}: Updating group...'.format(group_name))
 
     server = Server()
     if not server.connect():
@@ -100,13 +101,14 @@ def update(group_name):
 
             # if our last article is newer than the server's, something's wrong
             if last < group['last']:
-                log.error('Server\'s last article {:d} is lower than the local {:d}'.format(last, group['last']))
+                log.error('{}: Server\'s last article {:d} is lower than the local {:d}'.format(group_name, last,
+                                                                                                group['last']))
                 return False
         else:
             # otherwise, start from x days old
             start = server.day_to_post(group_name, config.site['new_group_scan_days'])
             if not start:
-                log.error('Couldn\'t determine a start point for group: {0}'.format(group_name))
+                log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
                 return False
             else:
                 db.groups.update({
@@ -124,13 +126,13 @@ def update(group_name):
         # if total > 0, we have new parts
         total = end - start + 1
 
-        log.debug('Start: {:d} End: {:d} Total: {:d}'.format(start, end, total))
+        log.debug('{}: Start: {:d} End: {:d} Total: {:d}'.format(group_name, start, end, total))
         if total > 0:
             if not group['last']:
-                log.info('Starting new group with {:d} days and {:d} new parts.'
-                .format(config.site['new_group_scan_days'], total))
+                log.info('{}: Starting new group with {:d} days and {:d} new parts.'
+                .format(group_name, config.site['new_group_scan_days'], total))
             else:
-                log.info('Group {0} has {1:d} new parts.'.format(group_name, total))
+                log.info('{}: Group has {:d} new parts.'.format(group_name, total))
 
             # until we're finished, loop
             while True:
@@ -143,7 +145,7 @@ def update(group_name):
 
                 messages = server.scan(group_name, start, end)
                 if not messages:
-                    log.error('Could not scan group.')
+                    log.error('{}: Could not scan group.'.format(group_name))
                     return False
 
                 if parts.save_all(messages):
@@ -156,7 +158,7 @@ def update(group_name):
                                          }
                                      })
                 else:
-                    log.error('Failed while saving parts.')
+                    log.error('{0}: Failed while saving parts.'.format(group_name))
                     return False
 
                 if end == last:
@@ -165,8 +167,8 @@ def update(group_name):
                     end = start + MESSAGE_LIMIT
                     start = end + 1
         else:
-            log.info('No new records for {0}.'.format(group_name))
+            log.info('{}: No new records for group.'.format(group_name))
             return True
     else:
-        log.error('No such group {0} exists.'.format(group_name))
+        log.error('{}: No such group exists in the db.'.format(group_name))
         return False
