@@ -9,8 +9,8 @@ Tests for `scripts` module.
 """
 
 import unittest
+import convert_from_newznab
 
-from scripts import convert_from_newznab
 import config as project_config
 
 
