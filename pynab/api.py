@@ -42,7 +42,7 @@ def api_error(code):
     return '{0}\n<error code=\"{1:d}\" description=\"{2}\" />'.format(xml_header, code, error)
 
 
-def get_nzb():
+def get_nzb(dataset=None):
     if auth():
         guid = request.query.guid or None
         if guid:
@@ -69,12 +69,12 @@ def auth():
 
     user = db.users.find_one({'api_key': api_key})
     if user:
-        return True
+        return api_key
     else:
         return False
 
 
-def movie_search():
+def movie_search(dataset=None):
     if auth():
         query = dict()
         query['category.id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
@@ -91,12 +91,12 @@ def movie_search():
         except:
             return api_error(201)
 
-        return search(query)
+        return search(dataset, query)
     else:
         return api_error(100)
 
 
-def tv_search():
+def tv_search(dataset=None):
     if auth():
         query = dict()
         query['category._id'] = {'$in': [5030, 5040, 5050, 5060, 5070, 5080]}
@@ -122,20 +122,19 @@ def tv_search():
         except:
             return api_error(201)
 
-        return search(query)
+        return search(dataset, query)
     else:
         return api_error(100)
 
 
-def details():
+def details(dataset=None):
     if auth():
-        dataset = dict()
-
         if request.query.id:
             release = db.releases.find_one({'id': request.query.id})
             if release:
                 dataset['releases'] = [release]
                 dataset['detail'] = True
+                dataset['api_key'] = request.query.apikey
 
                 try:
                     tmpl = Template(
@@ -153,9 +152,7 @@ def details():
         return api_error(100)
 
 
-def caps():
-    dataset = dict()
-
+def caps(dataset=None):
     dataset['app_version'] = config.site['version']
     dataset['api_version'] = config.site['api_version']
     dataset['email'] = config.site['email'] or ''
@@ -180,7 +177,7 @@ def caps():
         return None
 
 
-def search(params=None):
+def search(dataset=None, params=None):
     if auth():
         # build the mongo query
         # add params if coming from a tv-search or something
@@ -267,11 +264,11 @@ def search(params=None):
             total = db.releases.find(query).count()
             results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.ASCENDING)
 
-        dataset = dict()
         dataset['releases'] = results
         dataset['offset'] = offset
         dataset['total'] = total
         dataset['search'] = True
+        dataset['api_key'] = request.query.apikey
 
         try:
             tmpl = Template(

@@ -1,6 +1,6 @@
 import re
 
-from bottle import get, run, request
+from bottle import get, run, request, default_app
 import xmltodict
 
 from pynab import log
@@ -18,9 +18,10 @@ def api():
         # reform s|search into ^s$|^search$
         # if we don't, 's' matches 'caps' (s)
         r = '|'.join(['^{0}$'.format(r) for r in r.split('|')])
-        print('{0}: {1}'.format(r, func))
         if re.search(r, function):
-            data = func()
+            dataset = dict()
+            dataset['get_link'] = get_link
+            data = func(dataset)
             output_format = request.query.o or 'xml'
             if output_format == 'xml':
                 # return as xml
@@ -32,4 +33,25 @@ def api():
                 return pynab.api.api_error(201)
 
 
-run(host='localhost', port=9090, debug=True)
+def get_link(route):
+    app = default_app()
+
+    url = request.environ['wsgi.url_scheme'] + '://'
+
+    if request.environ.get('HTTP_HOST'):
+        url += request.environ['HTTP_HOST']
+    else:
+        url += request.environ['SERVER_NAME']
+
+        if request.environ['wsgi.url_scheme'] == 'https':
+            if request.environ['SERVER_PORT'] != '443':
+                url += ':' + request.environ['SERVER_PORT']
+        else:
+            if request.environ['SERVER_PORT'] != '80':
+                url += ':' + request.environ['SERVER_PORT']
+
+    return url + app.get_url(route)
+
+
+if __name__ == '__main__':
+    run(host='localhost', port=9090, debug=True)
