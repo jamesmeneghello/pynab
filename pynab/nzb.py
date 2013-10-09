@@ -25,7 +25,7 @@ def create(gid, name, binary):
 
     xml = ''
     try:
-        tpl = Template(filename='D:/Dropbox/Code/pynab/templates/nzb.mako')
+        tpl = Template(filename='templates/nzb.mako')
         xml = tpl.render(version=pynab.__version__, name=name, category=category, binary=binary)
     except:
         log.error('Failed to create NZB: {0}'.format(exceptions.text_error_template().render()))

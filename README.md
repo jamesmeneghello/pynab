@@ -42,6 +42,24 @@ In development:
 - Some minor extra features
 - User authentication
 
+Instructions
+============
+
+Installation and execution is reasonably easy.
+
+Requirements
+------------
+
+- Python 3.2? or higher
+- A WSGI-capable webserver (or use CherryPy)
+
+Installation
+------------
+
+git clone https://github.com/Murodese/pynab.git
+cd pynab
+sudo pip3 install -r requirements.txt
+
 Newznab API
 ===========
 

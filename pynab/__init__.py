@@ -9,4 +9,4 @@ import logging
 import config
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level=config.site['logging_level'])
+logging.basicConfig(filename=config.site['logging_file'], level=config.site['logging_level'])
