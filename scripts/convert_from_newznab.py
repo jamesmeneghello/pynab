@@ -23,7 +23,6 @@ alter table tvrage engine innodb;
 # if you're using pycharm, don't install the bson package
 # it comes with pymongo
 import cymysql
-import bson
 from pynab.db import db
 
 
@@ -176,11 +175,8 @@ def convert_users(mysql):
     users = []
     for r in cursor.fetchall():
         user = {
-            'username': r[0],
             'email': r[1],
-            'password': r[2],
             'api_key': r[3],
-            'seed': r[4],
             'grabs': r[5]
         }
 
@@ -269,7 +265,8 @@ def convert_imdb(mysql):
 
     db.imdb.insert(imdbs)
 
-
+# don't use this - it won't import the nzbs themselves
+'''
 # the biggun'
 def convert_releases(mysql):
     """Converts Newznab releases table into Pynab format.
@@ -355,3 +352,4 @@ def convert_releases(mysql):
         releases.append(release)
 
     db.releases.insert(releases)
+'''
