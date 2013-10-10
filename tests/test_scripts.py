@@ -12,6 +12,7 @@ import unittest
 import convert_from_newznab
 
 import config as project_config
+import pynab.util
 
 
 class TestScripts(unittest.TestCase):
@@ -46,6 +47,12 @@ class TestScripts(unittest.TestCase):
 
     def test_convert_imdb(self):
         convert_from_newznab.convert_imdb(self.mysql)
+
+    def test_update_regex(self):
+        pynab.util.update_regex()
+
+    def test_update_blacklist(self):
+        pynab.util.update_blacklist()
 
     def test_convert_all(self):
         self.test_convert_groups()
