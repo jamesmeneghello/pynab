@@ -2,7 +2,7 @@ pynab
 =====
 
 Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
-consisting of (currently) ~2,400 SLoC, compared to Newznab's ~104,000 lines of
+consisting of (currently) ~3,000 SLoC, compared to Newznab's ~104,000 lines of
 php/template. Performance and reliability are significantly improved, as is
 maintainability and a noted reduction in the sheer terror I experienced upon
 looking at some of the NN code in an attempt to fix a few annoying bugs.
@@ -21,14 +21,17 @@ frontend. Again, if you'd like to add one, feel free - something like 99.9%
 of the usage of my old Newznab server was API-only for Sickbeard, Couchpotato,
 Headphones etc - so it's low-priority.
 
-It's also unfinished as yet, since I haven't even written the update scripts yet.
-They're mostly just tests.
+It's also unfinished as yet. Update scripts are written and working, but control
+of the indexer is tricky as yet until a command console is written. Post-processing
+is also not completed.
 
 Features
 --------
 
 - Group indexing
 - Mostly-accurate release generation (thanks to Newznab's regex collection)
+- Also mostly-accurate release categorisation (which is easily extensible)
+- Binary blacklisting (regex thanks to kevinlekiller)
 - High performance
 - Developed around pure API usage
 - Newznab-API compatible (mostly, see below)
@@ -36,11 +39,8 @@ Features
 In development:
 ---------------
 
-- Update scripts (heh)
 - Postprocessing (and thereby tv/m-search)
 - Console management (for users, etc - use mongo currently)
-- Some minor extra features
-- User authentication
 
 Instructions
 ============
@@ -57,8 +57,12 @@ Installation
 ------------
 
 git clone https://github.com/Murodese/pynab.git
+
 cd pynab
+
 sudo pip3 install -r requirements.txt
+
+
 
 Newznab API
 ===========
