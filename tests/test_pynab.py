@@ -58,12 +58,6 @@ class TestPynab(unittest.TestCase):
     def test_print_binaries(self):
         pprint.pprint([b for b in db.binaries.find()])
 
-    def test_category(self):
-        releases = db.releases.find()
-        for release in releases:
-            group_name = db.groups.find_one({'_id': release['group_id']})['name']
-            pynab.categories.determine_category(release['name'], group_name)
-
     def test_day_to_post(self):
         self.test_connect()
         self.server.day_to_post('alt.binaries.teevee', 5)

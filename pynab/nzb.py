@@ -88,6 +88,8 @@ def import_nzb(filepath, quick=True):
                 if parent_category and child_category:
                     release['category'] = child_category
                     release['category']['parent'] = parent_category
+                else:
+                    release['category'] = None
             else:
                 release['category'] = None
 
