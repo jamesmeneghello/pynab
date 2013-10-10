@@ -51,7 +51,7 @@ def update_regex():
         first_line = lines.pop(0)
         revision = re.search('\$Rev: (\d+) \$', first_line)
         if revision:
-            revision = revision.group(1)
+            revision = int(revision.group(1))
             log.info('Regex at revision: {:d}'.format(revision))
 
         # and parse the rest of the lines, since they're an sql dump

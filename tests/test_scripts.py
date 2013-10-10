@@ -9,10 +9,10 @@ Tests for `scripts` module.
 """
 
 import unittest
-import convert_from_newznab
 
 import config as project_config
 import pynab.util
+from scripts import convert_from_newznab
 
 
 class TestScripts(unittest.TestCase):

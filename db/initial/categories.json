@@ -1,51 +1,359 @@
-{ "_id" : 1000, "parent_id" : null, "min_size" : 0, "name" : "Console", "max_size" : 0 }
-{ "_id" : 1010, "parent_id" : 1000, "min_size" : 0, "name" : "NDS", "max_size" : 0 }
-{ "_id" : 1020, "parent_id" : 1000, "min_size" : 0, "name" : "PSP", "max_size" : 0 }
-{ "_id" : 1030, "parent_id" : 1000, "min_size" : 0, "name" : "Wii", "max_size" : 0 }
-{ "_id" : 1040, "parent_id" : 1000, "min_size" : 0, "name" : "Xbox", "max_size" : 0 }
-{ "_id" : 1050, "parent_id" : 1000, "min_size" : 0, "name" : "Xbox 360", "max_size" : 0 }
-{ "_id" : 1060, "parent_id" : 1000, "min_size" : 0, "name" : "WiiWare/VC", "max_size" : 0 }
-{ "_id" : 1070, "parent_id" : 1000, "min_size" : 0, "name" : "XBOX 360 DLC", "max_size" : 0 }
-{ "_id" : 1080, "parent_id" : 1000, "min_size" : 0, "name" : "PS3", "max_size" : 0 }
-{ "_id" : 2000, "parent_id" : null, "min_size" : 0, "name" : "Movies", "max_size" : 0 }
-{ "_id" : 2010, "parent_id" : 2000, "min_size" : 0, "name" : "Foreign", "max_size" : 0 }
-{ "_id" : 2020, "parent_id" : 2000, "min_size" : 0, "name" : "Other", "max_size" : 0 }
-{ "_id" : 2030, "parent_id" : 2000, "min_size" : 0, "name" : "SD", "max_size" : 0 }
-{ "_id" : 2040, "parent_id" : 2000, "min_size" : 0, "name" : "HD", "max_size" : 0 }
-{ "_id" : 2050, "parent_id" : 2000, "min_size" : 0, "name" : "BluRay", "max_size" : 0 }
-{ "_id" : 2060, "parent_id" : 2000, "min_size" : 0, "name" : "3D", "max_size" : 0 }
-{ "_id" : 3000, "parent_id" : null, "min_size" : 0, "name" : "Audio", "max_size" : 0 }
-{ "_id" : 3010, "parent_id" : 3000, "min_size" : 0, "name" : "MP3", "max_size" : 0 }
-{ "_id" : 3020, "parent_id" : 3000, "min_size" : 0, "name" : "Video", "max_size" : 0 }
-{ "_id" : 3030, "parent_id" : 3000, "min_size" : 0, "name" : "Audiobook", "max_size" : 0 }
-{ "_id" : 3040, "parent_id" : 3000, "min_size" : 0, "name" : "Lossless", "max_size" : 0 }
-{ "_id" : 4000, "parent_id" : null, "min_size" : 0, "name" : "PC", "max_size" : 0 }
-{ "_id" : 4010, "parent_id" : 4000, "min_size" : 0, "name" : "0day", "max_size" : 0 }
-{ "_id" : 4020, "parent_id" : 4000, "min_size" : 0, "name" : "ISO", "max_size" : 0 }
-{ "_id" : 4030, "parent_id" : 4000, "min_size" : 0, "name" : "Mac", "max_size" : 0 }
-{ "_id" : 4040, "parent_id" : 4000, "min_size" : 0, "name" : "Mobile-Other", "max_size" : 0 }
-{ "_id" : 4050, "parent_id" : 4000, "min_size" : 0, "name" : "Games", "max_size" : 0 }
-{ "_id" : 4060, "parent_id" : 4000, "min_size" : 0, "name" : "Mobile-iOS", "max_size" : 0 }
-{ "_id" : 4070, "parent_id" : 4000, "min_size" : 0, "name" : "Mobile-Android", "max_size" : 0 }
-{ "_id" : 5000, "parent_id" : null, "min_size" : 0, "name" : "TV", "max_size" : 0 }
-{ "_id" : 5020, "parent_id" : 5000, "min_size" : 0, "name" : "Foreign", "max_size" : 0 }
-{ "_id" : 5030, "parent_id" : 5000, "min_size" : 0, "name" : "SD", "max_size" : 0 }
-{ "_id" : 5040, "parent_id" : 5000, "min_size" : 0, "name" : "HD", "max_size" : 0 }
-{ "_id" : 5050, "parent_id" : 5000, "min_size" : 0, "name" : "Other", "max_size" : 0 }
-{ "_id" : 5060, "parent_id" : 5000, "min_size" : 0, "name" : "Sport", "max_size" : 0 }
-{ "_id" : 5070, "parent_id" : 5000, "min_size" : 0, "name" : "Anime", "max_size" : 0 }
-{ "_id" : 5080, "parent_id" : 5000, "min_size" : 0, "name" : "Documentary", "max_size" : 0 }
-{ "_id" : 6000, "parent_id" : null, "min_size" : 0, "name" : "XXX", "max_size" : 0 }
-{ "_id" : 6010, "parent_id" : 6000, "min_size" : 0, "name" : "DVD", "max_size" : 0 }
-{ "_id" : 6020, "parent_id" : 6000, "min_size" : 0, "name" : "WMV", "max_size" : 0 }
-{ "_id" : 6030, "parent_id" : 6000, "min_size" : 0, "name" : "XviD", "max_size" : 0 }
-{ "_id" : 6040, "parent_id" : 6000, "min_size" : 0, "name" : "x264", "max_size" : 0 }
-{ "_id" : 6050, "parent_id" : 6000, "min_size" : 0, "name" : "Pack", "max_size" : 0 }
-{ "_id" : 6060, "parent_id" : 6000, "min_size" : 0, "name" : "ImgSet", "max_size" : 0 }
-{ "_id" : 6070, "parent_id" : 6000, "min_size" : 0, "name" : "Other", "max_size" : 0 }
-{ "_id" : 7000, "parent_id" : null, "min_size" : 0, "name" : "Books", "max_size" : 0 }
-{ "_id" : 7010, "parent_id" : 7000, "min_size" : 0, "name" : "Mags", "max_size" : 0 }
-{ "_id" : 7020, "parent_id" : 7000, "min_size" : 0, "name" : "Ebook", "max_size" : 0 }
-{ "_id" : 7030, "parent_id" : 7000, "min_size" : 0, "name" : "Comics", "max_size" : 0 }
-{ "_id" : 8000, "parent_id" : null, "min_size" : 0, "name" : "Other", "max_size" : 0 }
-{ "_id" : 8010, "parent_id" : 8000, "min_size" : 0, "name" : "Misc", "max_size" : 0 }
+[
+    {
+        "_id": 1000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "Console",
+        "max_size": 0
+    },
+    {
+        "_id": 1010,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "NDS",
+        "max_size": 0
+    },
+    {
+        "_id": 1020,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "PSP",
+        "max_size": 0
+    },
+    {
+        "_id": 1030,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "Wii",
+        "max_size": 0
+    },
+    {
+        "_id": 1040,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "Xbox",
+        "max_size": 0
+    },
+    {
+        "_id": 1050,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "Xbox 360",
+        "max_size": 0
+    },
+    {
+        "_id": 1060,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "WiiWare/VC",
+        "max_size": 0
+    },
+    {
+        "_id": 1070,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "XBOX 360 DLC",
+        "max_size": 0
+    },
+    {
+        "_id": 1080,
+        "parent_id": 1000,
+        "min_size": 0,
+        "name": "PS3",
+        "max_size": 0
+    },
+    {
+        "_id": 2000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "Movies",
+        "max_size": 0
+    },
+    {
+        "_id": 2010,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "Foreign",
+        "max_size": 0
+    },
+    {
+        "_id": 2020,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "Other",
+        "max_size": 0
+    },
+    {
+        "_id": 2030,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "SD",
+        "max_size": 0
+    },
+    {
+        "_id": 2040,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "HD",
+        "max_size": 0
+    },
+    {
+        "_id": 2050,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "BluRay",
+        "max_size": 0
+    },
+    {
+        "_id": 2060,
+        "parent_id": 2000,
+        "min_size": 0,
+        "name": "3D",
+        "max_size": 0
+    },
+    {
+        "_id": 3000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "Audio",
+        "max_size": 0
+    },
+    {
+        "_id": 3010,
+        "parent_id": 3000,
+        "min_size": 0,
+        "name": "MP3",
+        "max_size": 0
+    },
+    {
+        "_id": 3020,
+        "parent_id": 3000,
+        "min_size": 0,
+        "name": "Video",
+        "max_size": 0
+    },
+    {
+        "_id": 3030,
+        "parent_id": 3000,
+        "min_size": 0,
+        "name": "Audiobook",
+        "max_size": 0
+    },
+    {
+        "_id": 3040,
+        "parent_id": 3000,
+        "min_size": 0,
+        "name": "Lossless",
+        "max_size": 0
+    },
+    {
+        "_id": 4000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "PC",
+        "max_size": 0
+    },
+    {
+        "_id": 4010,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "0day",
+        "max_size": 0
+    },
+    {
+        "_id": 4020,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "ISO",
+        "max_size": 0
+    },
+    {
+        "_id": 4030,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "Mac",
+        "max_size": 0
+    },
+    {
+        "_id": 4040,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "Mobile-Other",
+        "max_size": 0
+    },
+    {
+        "_id": 4050,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "Games",
+        "max_size": 0
+    },
+    {
+        "_id": 4060,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "Mobile-iOS",
+        "max_size": 0
+    },
+    {
+        "_id": 4070,
+        "parent_id": 4000,
+        "min_size": 0,
+        "name": "Mobile-Android",
+        "max_size": 0
+    },
+    {
+        "_id": 5000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "TV",
+        "max_size": 0
+    },
+    {
+        "_id": 5020,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "Foreign",
+        "max_size": 0
+    },
+    {
+        "_id": 5030,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "SD",
+        "max_size": 0
+    },
+    {
+        "_id": 5040,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "HD",
+        "max_size": 0
+    },
+    {
+        "_id": 5050,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "Other",
+        "max_size": 0
+    },
+    {
+        "_id": 5060,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "Sport",
+        "max_size": 0
+    },
+    {
+        "_id": 5070,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "Anime",
+        "max_size": 0
+    },
+    {
+        "_id": 5080,
+        "parent_id": 5000,
+        "min_size": 0,
+        "name": "Documentary",
+        "max_size": 0
+    },
+    {
+        "_id": 6000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "XXX",
+        "max_size": 0
+    },
+    {
+        "_id": 6010,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "DVD",
+        "max_size": 0
+    },
+    {
+        "_id": 6020,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "WMV",
+        "max_size": 0
+    },
+    {
+        "_id": 6030,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "XviD",
+        "max_size": 0
+    },
+    {
+        "_id": 6040,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "x264",
+        "max_size": 0
+    },
+    {
+        "_id": 6050,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "Pack",
+        "max_size": 0
+    },
+    {
+        "_id": 6060,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "ImgSet",
+        "max_size": 0
+    },
+    {
+        "_id": 6070,
+        "parent_id": 6000,
+        "min_size": 0,
+        "name": "Other",
+        "max_size": 0
+    },
+    {
+        "_id": 7000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "Books",
+        "max_size": 0
+    },
+    {
+        "_id": 7010,
+        "parent_id": 7000,
+        "min_size": 0,
+        "name": "Mags",
+        "max_size": 0
+    },
+    {
+        "_id": 7020,
+        "parent_id": 7000,
+        "min_size": 0,
+        "name": "Ebook",
+        "max_size": 0
+    },
+    {
+        "_id": 7030,
+        "parent_id": 7000,
+        "min_size": 0,
+        "name": "Comics",
+        "max_size": 0
+    },
+    {
+        "_id": 8000,
+        "parent_id": null,
+        "min_size": 0,
+        "name": "Other",
+        "max_size": 0
+    },
+    {
+        "_id": 8010,
+        "parent_id": 8000,
+        "min_size": 0,
+        "name": "Misc",
+        "max_size": 0
+    }
+]

@@ -241,7 +241,7 @@ def convert_tvrage(mysql):
 def convert_imdb(mysql):
     """Converts Newznab imdb table into Pynab format."""
     from_query = """
-        SELECT imdbID, title, year, language
+        SELECT imdbID, title, year, language, genre
         FROM movieinfo
         WHERE imdbID > 0
         ORDER BY imdbID
@@ -258,7 +258,8 @@ def convert_imdb(mysql):
             '_id': r[0],
             'name': r[1],
             'year': r[2],
-            'lang': r[3]
+            'lang': r[3],
+            'genre': [g.strip() for g in r[4].split(',')]
         }
 
         imdbs.append(imdb)
