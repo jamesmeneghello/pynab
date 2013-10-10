@@ -19,9 +19,6 @@ site = {
     # your administrator email (shows on rss feed)
     'email': '@gmail.com',
 
-    # site-wide random seed
-    'seed': '255b4c3fd3498f05c4a556f8e5815da7',
-
     # api settings
     # ------------
 
