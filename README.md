@@ -110,12 +110,19 @@ You also need to install Python 3.3, associated packages and pip3:
     > python3 install.py [follow instructions]
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
+
+Please note that in order to download updated regexes from the Newznab crew, you'll need a NN+ ID.
+You can get one by following the instructions on their website (generally a donation).
+You can also import a regex dump or create your own.
+
 At this point you should manually activate groups to index, and blacklists.
 To kick you off, they look something like this:
 
     > mongo -u <user> -p <pass>
     # use pynab [or db name specified in config.py]
     # db.groups.update({name:'alt.binaries.teevee'},{$set:{'active': 1}}) [this will activate a.b.teevee]
+
+You can also just use http://www.robomongo.org/, which makes managing it a lot easier.
 
 Once desired groups have been activated and new_group_scan_days and backfill_days have been
 set in config.py:
