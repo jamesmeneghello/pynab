@@ -44,4 +44,7 @@ docs/_build
 =======
 >>>>>>> c8832d265f1a0a95c4e45ede938a4d1cda54e204
 
+# pycharm
+.idea
+
 config.py
