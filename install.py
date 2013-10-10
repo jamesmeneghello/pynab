@@ -23,7 +23,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     print('Copying groups into Mongo...')
-    with open('db/initial/groups.json') as f:
+    with open('db/initial/groups.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
             db.groups.drop()
@@ -33,7 +33,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     print('Copying categories into Mongo...')
-    with open('db/initial/categories.json') as f:
+    with open('db/initial/categories.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
             db.categories.drop()
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     print('Copying tvrage into Mongo...')
-    with open('db/initial/tvrage.json') as f:
+    with open('db/initial/tvrage.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
             db.tvrage.drop()
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     print('Copying imdb into Mongo...')
-    with open('db/initial/imdb.json') as f:
+    with open('db/initial/imdb.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
             db.imdb.drop()
@@ -63,7 +63,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     print('Copying tvdb into Mongo...')
-    with open('db/initial/tvdb.json') as f:
+    with open('db/initial/tvdb.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
             db.tvdb.drop()

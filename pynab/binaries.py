@@ -114,7 +114,12 @@ def process():
             r = r[r.find('/') + 1:r.rfind('/')]
             regex_flags = re.I if 'i' in flags else 0
 
-            result = re.search(r, part['subject'], regex_flags)
+            try:
+                result = re.search(r, part['subject'], regex_flags)
+            except:
+                log.error('Broken regex detected. _id: {:d}'.format(regex['_id']))
+                break
+
             match = result.groupdict() if result else None
             if match:
                 # remove whitespace in dict values
