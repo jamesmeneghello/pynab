@@ -38,6 +38,10 @@ site = {
     # make sure there's no quotes around it
     'update_threads': 4,
 
+    # update_wait: amount of time to wait between update cycles
+    # in seconds
+    'update_wait': 300,
+
     # new_group_scan_days: how many days to scan for a new group
     # make sure there's no quotes around it
     'new_group_scan_days': 5,
