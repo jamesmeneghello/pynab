@@ -6,12 +6,18 @@ import hashlib
 import uuid
 import datetime
 import pytz
+import xmltodict
 
 from mako.template import Template
 from mako import exceptions
 from pynab.db import fs, db
 from pynab import log
 import pynab
+
+
+def get_nzb_dict(nzb_id):
+    """Returns a JSON-like Python dict of NZB contents."""
+    return xmltodict.parse(gzip.decompress(fs.get(nzb_id).read()))
 
 
 def create(gid, name, binary):
@@ -36,6 +42,7 @@ def create(gid, name, binary):
 
 
 def import_nzb(filepath, quick=True):
+    """Import an NZB and directly load it into releases."""
     file, ext = os.path.splitext(filepath)
 
     if ext == '.nzb.gz':
