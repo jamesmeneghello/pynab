@@ -18,6 +18,7 @@ if __name__ == '__main__':
         import config
         from pynab.db import db
         import pynab.util
+        import scripts.ensure_indexes
     except ImportError:
         print('Could not load config.py.')
         sys.exit(0)
@@ -86,6 +87,9 @@ if __name__ == '__main__':
     else:
         print(
             'Could not update blacklist. Try the URL in config.py manually - if it doesn\'t work, post an issue on Github.')
+
+    print('Creating indexes on collections...')
+    scripts.ensure_indexes.create_indexes()
 
     print('Install theoretically completed - the rest of the collections will be made as they\'re needed.')
     print('Now: activate some groups, activate desired blacklists, and run start.py with python3.')
