@@ -8,6 +8,7 @@ from pynab.db import db
 import pynab.groups
 import pynab.binaries
 import pynab.releases
+import pynab.tvrage
 import config
 
 
@@ -36,6 +37,13 @@ if __name__ == '__main__':
         # process releases
         # TODO: likewise
         pynab.releases.process()
+
+        # post-processing
+
+        # grab and append tvrage data to tv releases
+        # only do 100 at a time though, so we don't smash the tvrage api
+        # when your tvrage table has built up you'll rely on the api less
+        pynab.tvrage.process(100)
 
         # wait for the configured amount of time between cycles
         time.sleep(config.site['update_wait'])
