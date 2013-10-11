@@ -47,8 +47,8 @@ class DB:
         self.db().users.ensure_index('rsstoken', pymongo.ASCENDING)
 
         # tvrage
-        self.db().tvrage.ensure_index('_id', pymongo.ASCENDING)
-        self.db().tvrage.ensure_index('name', pymongo.ASCENDING)
+        self.db().tvrage.ensure_index('_id', pymongo.ASCENDING, background=True)
+        self.db().tvrage.ensure_index('name', pymongo.ASCENDING, background=True)
 
         # tvdb
         self.db().tvdb.ensure_index('_id', pymongo.ASCENDING)
@@ -62,13 +62,13 @@ class DB:
         self.db().imdb.ensure_index('name', pymongo.ASCENDING)
 
         # binaries
-        self.db().binaries.ensure_index('name', pymongo.ASCENDING)
-        self.db().binaries.ensure_index('group_name', pymongo.ASCENDING)
-        self.db().binaries.ensure_index('total_parts', pymongo.ASCENDING)
+        self.db().binaries.ensure_index('name', pymongo.ASCENDING, background=True)
+        self.db().binaries.ensure_index('group_name', pymongo.ASCENDING, background=True)
+        self.db().binaries.ensure_index('total_parts', pymongo.ASCENDING, background=True)
 
         # parts
-        self.db().parts.ensure_index('subject', pymongo.ASCENDING)
-        self.db().parts.ensure_index('group_name', pymongo.ASCENDING)
+        self.db().parts.ensure_index('subject', pymongo.ASCENDING, background=True)
+        self.db().parts.ensure_index('group_name', pymongo.ASCENDING, background=True)
 
         # releases
         self.db().releases.ensure_index('id', pymongo.ASCENDING)
@@ -76,10 +76,23 @@ class DB:
         self.db().releases.ensure_index([
             ('search_name', 'text')
         ])
-        self.db().releases.ensure_index('category._id', pymongo.ASCENDING)
-        self.db().releases.ensure_index('rage._id', pymongo.ASCENDING)
-        self.db().releases.ensure_index('imdb._id', pymongo.ASCENDING)
-        self.db().releases.ensure_index('tvdb._id', pymongo.ASCENDING)
+        self.db().releases.ensure_index('category._id', pymongo.ASCENDING, background=True)
+        self.db().releases.ensure_index('rage._id', pymongo.ASCENDING, background=True)
+        self.db().releases.ensure_index('imdb._id', pymongo.ASCENDING, background=True)
+        self.db().releases.ensure_index('tvdb._id', pymongo.ASCENDING, background=True)
+        self.db().releases.ensure_index([
+                                            ('tvrage._id', pymongo.ASCENDING),
+                                            ('category._id', pymongo.ASCENDING)
+                                        ], background=True)
+        self.db().releases.ensure_index([
+                                            ('posted', pymongo.ASCENDING),
+                                            ('category._id', pymongo.ASCENDING)
+                                        ], background=True)
+        self.db().releases.ensure_index([
+                                            ('posted', pymongo.ASCENDING),
+                                            ('tvrage._id', pymongo.ASCENDING),
+                                            ('category._id', pymongo.ASCENDING)
+                                        ], background=True)
 
     def close(self):
         """Close the MongoDB connection."""
