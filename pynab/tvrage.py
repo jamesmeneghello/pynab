@@ -30,7 +30,8 @@ def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
     week_ago = datetime.datetime.now(pytz.utc) - datetime.timedelta(7)
     for release in db.releases.find({'tvrage': None, 'category.parent_id': 5000,
-                                     '$or': [{'tvrage': None}, {'tvrage_attempted': {'$lte': week_ago}}]}).limit(limit):
+                                     '$or': [{'tvrage_attempted': None},
+                                             {'tvrage_attempted': {'$gte': week_ago}}]}).limit(limit):
         log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
         show = parse_show(release['search_name'])
         if show:
@@ -46,7 +47,7 @@ def process(limit=100, online=True):
 
             if not rage and online:
                 log.info('Show not found in local TvRage DB, searching online...')
-                rage_data = search_rage(show)
+                rage_data = search(show)
                 if rage_data:
                     db.tvrage.update(
                         {'_id': int(rage_data['showid'])},
@@ -78,7 +79,7 @@ def process(limit=100, online=True):
             log.warning('Could not parse name for TV data: {}.'.format(release['name']))
 
 
-def search_rage(show):
+def search(show):
     """Search TVRage online API for show data."""
     r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
     result = xmltodict.parse(r.content)
