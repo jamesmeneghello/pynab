@@ -99,7 +99,7 @@ def process():
     # to re-enable that feature in future, mongo supports reverse-regex through
     # where(), but it's slow as hell because it's processed by the JS engine
     relevant_groups = db.parts.distinct('group_name')
-    for regex in db.regexes.find({'group_name': {'$in': relevant_groups + ['*']}}):
+    for regex in db.regexes.find({'group_name': {'$in': relevant_groups + ['*']}}, timeout=False):
         log.debug('Matching to regex: ' + regex['regex'])
 
         for part in db.parts.find({'group_name': {'$in': relevant_groups}}, exhaust=True):

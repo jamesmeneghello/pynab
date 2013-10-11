@@ -19,6 +19,7 @@ import pynab.parts
 import pynab.categories
 import pynab.groups
 import pynab.nzb
+import pynab.tvrage
 
 
 class TestPynab(unittest.TestCase):
@@ -74,6 +75,9 @@ class TestPynab(unittest.TestCase):
     def test_nfo_scan(self):
         release = db.releases.find_one()
         #pynab.nfos.scan(release)
+
+    def test_tvrage_process(self):
+        pynab.tvrage.process(100)
 
     def tearDown(self):
         try:

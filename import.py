@@ -16,3 +16,5 @@ for root, dirs, files in os.walk(args.directory):
         print('Importing {0}...'.format(os.path.join(root, name)))
         if pynab.nzb.import_nzb(os.path.join(root, name)):
             os.remove(os.path.join(root, name))
+
+print('Import completed. Consider running scripts/process_uncategorised.py now to fix release categories.')
