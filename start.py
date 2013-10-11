@@ -46,4 +46,5 @@ if __name__ == '__main__':
         pynab.tvrage.process(100)
 
         # wait for the configured amount of time between cycles
+        log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))
         time.sleep(config.site['update_wait'])
