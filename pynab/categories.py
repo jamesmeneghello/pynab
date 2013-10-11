@@ -123,6 +123,9 @@ group_regex = {
     re.compile('alt\.binaries\.classic\.tv.*?', re.I): [
         CAT_PARENT_TV, CAT_TV_OTHER
     ],
+    re.compile('alt\.binaries\.multimedia', re.I): [
+        CAT_PARENT_MOVIE, CAT_PARENT_TV
+    ],
     re.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', re.I): [
         CAT_TV_ANIME
     ],
