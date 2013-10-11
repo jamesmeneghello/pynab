@@ -155,7 +155,7 @@ def update(group_name):
                                              }
                                          })
                     else:
-                        log.error('{0}: Failed while saving parts.'.format(group_name))
+                        log.error('{}: Failed while saving parts.'.format(group_name))
                         return False
 
                     if end == last:
@@ -163,6 +163,7 @@ def update(group_name):
                     else:
                         end = start + MESSAGE_LIMIT
                         start = end + 1
+                        log.info('{}: {:d} messages to go for this group.'.format(group_name, last - end))
             else:
                 log.info('{}: No new records for group.'.format(group_name))
                 return True

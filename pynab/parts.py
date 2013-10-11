@@ -73,7 +73,8 @@ def is_blacklisted(subject, group_name):
     blacklists = db.blacklists.find({'status': 1})
     for blacklist in blacklists:
         if re.search(blacklist['group_name'], group_name):
-            log.debug('{0}: Checking blacklist {1}...'.format(group_name, blacklist['regex']))
+            # too spammy
+            #log.debug('{0}: Checking blacklist {1}...'.format(group_name, blacklist['regex']))
             if re.search(blacklist['regex'], subject):
                 return True
     return False
