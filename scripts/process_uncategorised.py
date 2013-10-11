@@ -13,7 +13,8 @@ from pynab import log
 
 import pynab.categories
 
-if __name__ == '__main__':
+
+def fix_uncategorised():
     releases = db.releases.find({'$or': [{'category._id': {'$exists': False}}, {'category': None}]})
     total = releases.count()
 
@@ -36,4 +37,8 @@ if __name__ == '__main__':
             db.releases.update({'_id': release['_id']}, {'$set': {'category': category}})
             found += 1
 
-    log.info('Categorised {:d}/{:d} releases.'.format(found, total))
+    log.info('Categorised {:d}/{:d} uncategorised releases.'.format(found, total))
+
+
+if __name__ == '__main__':
+    fix_uncategorised()
