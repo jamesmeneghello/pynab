@@ -5,19 +5,60 @@ import xml.etree.cElementTree as cet
 import hashlib
 import uuid
 import datetime
+import re
+
 import pytz
 import xmltodict
-
 from mako.template import Template
 from mako import exceptions
+
 from pynab.db import fs, db
 from pynab import log
 import pynab
 
 
 def get_nzb_dict(nzb_id):
-    """Returns a JSON-like Python dict of NZB contents."""
-    return xmltodict.parse(gzip.decompress(fs.get(nzb_id).read()))
+    """Returns a JSON-like Python dict of NZB contents, including extra information
+    such as a list of any nfos/rars that the NZB references."""
+    data = xmltodict.parse(gzip.decompress(fs.get(nzb_id).read()))
+
+    nfo_regex = '[ "\(\[].*?\.(nfo|ofn)[ "\)\]]'
+    rar_regex = '.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]'
+    rar_part_regex = '\.(rar|r\d{2,3})(?!\.)'
+    metadata_regex = '\.(par2|vol\d+\+|sfv|nzb)'
+    par2_regex = '\.par2(?!\.)'
+    par_vol_regex = 'vol\d+\+'
+    zip_regex = '\.zip(?!\.)'
+
+    nfos = []
+    rars = []
+    pars = []
+    rar_count = 0
+    par_count = 0
+    zip_count = 0
+
+    for part in data['nzb']['file']:
+        if re.search(rar_part_regex, part['@subject'], re.I):
+            rar_count += 1
+        if re.search(nfo_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+            nfos.append(part)
+        if re.search(rar_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+            rars.append(part)
+        if re.search(par2_regex, part['@subject'], re.I):
+            par_count += 1
+            if not re.search(par_vol_regex, part['@subject'], re.I):
+                pars.append(part)
+        if re.search(zip_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+            zip_count += 1
+
+    data['nfos'] = nfos
+    data['rars'] = rars
+    data['pars'] = pars
+    data['rar_count'] = rar_count
+    data['par_count'] = par_count
+    data['zip_count'] = zip_count
+
+    return data
 
 
 def create(gid, name, binary):
