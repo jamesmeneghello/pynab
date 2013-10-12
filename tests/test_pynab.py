@@ -20,6 +20,7 @@ import pynab.categories
 import pynab.groups
 import pynab.nzb
 import pynab.tvrage
+import pynab.imdb
 
 
 class TestPynab(unittest.TestCase):
@@ -78,6 +79,16 @@ class TestPynab(unittest.TestCase):
 
     def test_tvrage_process(self):
         pynab.tvrage.process(100)
+
+    def test_omdb_search(self):
+        print(pynab.imdb.search('South Park Bigger Longer Uncut', '1999'))
+
+    def test_omdb_get_details(self):
+        print(pynab.imdb.get_details('tt1285016'))
+
+    def test_nzb_get(self):
+        release = db.releases.find_one()
+        pprint.pprint(pynab.nzb.get_nzb_dict(release['nzb']))
 
     def tearDown(self):
         try:
