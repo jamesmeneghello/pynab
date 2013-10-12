@@ -143,7 +143,7 @@ class Server:
 
         log.info(
             '{}: Received {:d} articles of {:d} with {:d} ignored and {:d} blacklisted.'
-            .format(group_name, len(received), last - first, ignored, blacklisted)
+            .format(group_name, len(received) - 1, last - first, ignored, blacklisted)
         )
 
         # TODO: implement re-checking of missed messages, or maybe not

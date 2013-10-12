@@ -161,7 +161,7 @@ def update(group_name):
                     if end == last:
                         return True
                     else:
-                        end = start + MESSAGE_LIMIT - 1
+                        end = start + MESSAGE_LIMIT
                         start = end + 1
                         log.info('{}: {:d} messages to go for this group.'.format(group_name, last - end))
             else:
