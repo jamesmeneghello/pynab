@@ -31,7 +31,8 @@ def process(limit=100, online=True):
     log.info('Processing TV episodes to add TVRage data...')
 
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
-    for release in db.releases.find({'tvrage._id': None, 'category.parent_id': 5000,
+    for release in db.releases.find({'tvrage._id': {'$exists': False},
+                                     'category.parent_id': 5000,
                                      'tvrage.possible': {'$exists': False},
                                      '$or': [{'tvrage.attempted': {'$exists': False}},
                                              {'tvrage.attempted': {'$lte': expiry}}]}).limit(limit):

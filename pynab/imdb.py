@@ -20,7 +20,8 @@ def process(limit=100, online=True):
     log.info('Processing movies to add IMDB data...')
 
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
-    for release in db.releases.find({'imdb._id': None, 'category.parent_id': 2000,
+    for release in db.releases.find({'imdb._id': {'$exists': False},
+                                     'category.parent_id': 2000,
                                      'imdb.possible': {'$exists': False},
                                      '$or': [{'imdb.attempted': {'$exists': False}},
                                              {'imdb.attempted': {'$lte': expiry}}]}).limit(limit):
