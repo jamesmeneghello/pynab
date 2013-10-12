@@ -10,7 +10,7 @@ import pytz
 
 from pynab.db import db
 from pynab import log
-
+import config
 
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
 
@@ -28,10 +28,13 @@ class ShowMatch(object):
 
 def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
-    week_ago = datetime.datetime.now(pytz.utc) - datetime.timedelta(7)
-    for release in db.releases.find({'tvrage': None, 'category.parent_id': 5000,
-                                     '$or': [{'tvrage_attempted': None},
-                                             {'tvrage_attempted': {'$gte': week_ago}}]}).limit(limit):
+    log.info('Processing TV episodes to add TVRage data...')
+
+    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
+    for release in db.releases.find({'tvrage._id': None, 'category.parent_id': 5000,
+                                     'tvrage.possible': {'$exists': False},
+                                     '$or': [{'tvrage.attempted': {'$exists': False}},
+                                             {'tvrage.attempted': {'$lte': expiry}}]}).limit(limit):
         log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
         show = parse_show(release['search_name'])
         if show:
@@ -68,21 +71,33 @@ def process(limit=100, online=True):
                     }
                 })
             else:
-                log.warning('Could not find TVRage data to associate with release {}.'.format(release['name']))
+                log.warning('Could not find TVRage data to associate with release {}.'.format(release['search_name']))
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
-                        'tvrage_attempted': datetime.datetime.now(pytz.utc)
+                        'tvrage': {
+                            'attempted': datetime.datetime.now(pytz.utc)
+                        },
                     }
                 })
-
         else:
-            log.warning('Could not parse name for TV data: {}.'.format(release['name']))
+            log.warning('Could not parse name for TV data: {}.'.format(release['search_name']))
+            db.releases.update({'_id': release['_id']}, {
+                '$set': {
+                    'tvrage': {
+                        'possible': False
+                    },
+                }
+            })
 
 
 def search(show):
     """Search TVRage online API for show data."""
-    r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
-    result = xmltodict.parse(r.content)
+    try:
+        r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
+        result = xmltodict.parse(r.content)
+    except:
+        log.error('Problem retrieving TVRage XML.')
+        return None
 
     # did the api return any shows?
     if 'show' in result['Results']:
