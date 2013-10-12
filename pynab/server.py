@@ -9,6 +9,7 @@ import pytz
 
 from pynab import log
 import pynab.parts
+import pynab.yenc
 import config
 
 
@@ -22,8 +23,6 @@ class Server:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.connection.quit()
-        return True
-
 
     def group(self, group_name):
         if not self.connection:
@@ -56,6 +55,30 @@ class Server:
 
         log.info('Connected!')
         return True
+
+    def get(self, group_name, messages=None):
+        """Get a set of messages from the server for the specified group."""
+        log.info('{}: Getting {:d} messages...'.format(group_name, len(messages)))
+        data = ''
+        if messages:
+            try:
+                _, total, first, last, _ = self.connection.group(group_name)
+                log.debug('{}: Total articles in group: {:d}'.format(group_name, total))
+                for message in messages:
+                    article = '<{}>'.format(message)
+
+                    log.debug('{}: Getting article: {}'.format(group_name, article))
+
+                    response, (number, message_id, lines) = self.connection.body(article)
+                    data += pynab.yenc.yenc_decode(lines)
+            except nntplib.NNTPError:
+                log.error('{}: Problem retrieving messages from server.'.format(group_name))
+                return None
+
+            return data
+        else:
+            log.error('{}: No messages were specified.'.format(group_name))
+            return None
 
     def scan(self, group_name, first, last):
         """Scan a group for segments and return a list."""
@@ -156,6 +179,7 @@ class Server:
         return messages
 
     def post_date(self, group_name, article):
+        """Retrieves the date of the specified post."""
         log.debug('{}: Retrieving date of article {:d}'.format(group_name, article))
         try:
             self.connection.group(group_name)
@@ -178,10 +202,8 @@ class Server:
         else:
             return None
 
-    def days_old(self, date):
-        return (datetime.datetime.now(pytz.utc) - date).days
-
     def day_to_post(self, group_name, days):
+        """Converts a datetime to approximate article number for the specified group."""
         log.debug('{}: Finding post {:d} days old...'.format(group_name, days))
 
         _, count, first, last, _ = self.connection.group(group_name)
@@ -241,6 +263,7 @@ class Server:
             log.error('{}: Could not get group information.'.format(group_name))
             return False
 
-
-
-
+    @staticmethod
+    def days_old(date):
+        """Returns the age of the given date, in days."""
+        return (datetime.datetime.now(pytz.utc) - date).days
