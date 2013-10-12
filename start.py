@@ -36,6 +36,8 @@ if __name__ == '__main__':
                                   maxtasksperchild=1) as pool:
             try:
                 result = pool.map(update, active_groups)
+                pool.terminate()
+                pool.join()
             except KeyboardInterrupt:
                 log.info('Caught ctrl-c, terminating workers.')
                 pool.terminate()
