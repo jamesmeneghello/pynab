@@ -38,18 +38,22 @@ def get_nzb_dict(nzb_id):
     zip_count = 0
 
     for part in data['nzb']['file']:
-        if re.search(rar_part_regex, part['@subject'], re.I):
-            rar_count += 1
-        if re.search(nfo_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
-            nfos.append(part)
-        if re.search(rar_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
-            rars.append(part)
-        if re.search(par2_regex, part['@subject'], re.I):
-            par_count += 1
-            if not re.search(par_vol_regex, part['@subject'], re.I):
-                pars.append(part)
-        if re.search(zip_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
-            zip_count += 1
+        try:
+            if re.search(rar_part_regex, part['@subject'], re.I):
+                rar_count += 1
+            if re.search(nfo_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+                nfos.append(part)
+            if re.search(rar_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+                rars.append(part)
+            if re.search(par2_regex, part['@subject'], re.I):
+                par_count += 1
+                if not re.search(par_vol_regex, part['@subject'], re.I):
+                    pars.append(part)
+            if re.search(zip_regex, part['@subject'], re.I) and not re.search(metadata_regex, part['@subject'], re.I):
+                zip_count += 1
+        except TypeError as te:
+            log.error('Problem while parsing nzb: {}'.format(te))
+            continue
 
     data['nfos'] = nfos
     data['rars'] = rars
