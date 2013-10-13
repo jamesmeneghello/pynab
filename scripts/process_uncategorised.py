@@ -7,6 +7,10 @@ If you get an error about releases without groups, try this in mongo:
 # db.releases.find({group:null}).count()
 There shouldn't be too many - if not, remove them.
 """
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab.db import db
 from pynab import log

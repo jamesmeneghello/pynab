@@ -22,7 +22,14 @@ alter table tvrage engine innodb;
 
 # if you're using pycharm, don't install the bson package
 # it comes with pymongo
+import os
+import sys
+
 import cymysql
+
+
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+
 from pynab.db import db
 import config
 
@@ -50,6 +57,8 @@ def convert_groups(mysql):
         FROM groups;
     """
 
+    print('Converting groups...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -75,6 +84,9 @@ def convert_categories(mysql):
         SELECT ID, title, parentID, minsizetoformrelease, maxsizetoformrelease
         FROM category;
     """
+
+    print('Converting categories...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -103,6 +115,9 @@ def convert_regex(mysql):
             LEFT JOIN category ON releaseregex.CategoryID = category.ID
         ORDER BY groupname;
         """
+
+    print('Converting regex...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -138,6 +153,9 @@ def convert_blacklist(mysql):
         FROM binaryblacklist
         ORDER BY id;
         """
+
+    print('Converting blacklist...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -167,6 +185,9 @@ def convert_users(mysql):
         FROM users
         ORDER BY id;
         """
+
+    print('Converting users...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -195,6 +216,9 @@ def convert_tvdb(mysql):
         WHERE tvdbID != 0 AND seriesname != ""
         ORDER BY seriesname;
         """
+
+    print('Converting tvdb...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -221,6 +245,9 @@ def convert_tvrage(mysql):
         WHERE rageID > 0
         ORDER BY rageID
         """
+
+    print('Converting tvrage...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 
@@ -247,6 +274,9 @@ def convert_imdb(mysql):
         WHERE imdbID > 0
         ORDER BY imdbID
         """
+
+    print('Converting imdb...')
+
     cursor = mysql.cursor()
     cursor.execute(from_query)
 

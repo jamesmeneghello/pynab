@@ -1,4 +1,11 @@
+import sys
+import os
+
 import pymongo
+
+
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+
 from pynab.db import db
 from pynab import log
 
