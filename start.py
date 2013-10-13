@@ -10,6 +10,7 @@ import pynab.groups
 import pynab.binaries
 import pynab.releases
 import pynab.tvrage
+import pynab.rars
 import config
 
 
@@ -19,6 +20,14 @@ def init_update():
 
 def update(group_name):
     return pynab.groups.update(group_name)
+
+
+def process_tvrage(limit):
+    pynab.tvrage.process(limit)
+
+
+def process_rars(limit):
+    pynab.rars.process(limit)
 
 
 if __name__ == '__main__':
@@ -56,7 +65,15 @@ if __name__ == '__main__':
         # grab and append tvrage data to tv releases
         # only do 50 at a time though, so we don't smash the tvrage api
         # when your tvrage table has built up you'll rely on the api less
-        pynab.tvrage.process(50)
+        tvrage_p = multiprocessing.Process(target=process_tvrage, args=(50,))
+        tvrage_p.start()
+
+        if config.site['check_passwords']:
+            rar_p = multiprocessing.Process(target=process_rars, args=(5,))
+            rar_p.start()
+            rar_p.join()
+
+        tvrage_p.join()
 
         # wait for the configured amount of time between cycles
         log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))
