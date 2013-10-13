@@ -2,7 +2,7 @@ pynab
 =====
 
 Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
-consisting of (currently) ~3,200 SLoC, compared to Newznab's ~104,000 lines of
+consisting of (currently) ~4,600 SLoC, compared to Newznab's ~104,000 lines of
 php/template. Performance and reliability are significantly improved, as is
 maintainability and a noted reduction in the sheer terror I experienced upon
 looking at some of the NN code in an attempt to fix a few annoying bugs.
@@ -21,9 +21,6 @@ frontend. Again, if you'd like to add one, feel free - something like 99.9%
 of the usage of my old Newznab server was API-only for Sickbeard, Couchpotato,
 Headphones etc - so it's low-priority.
 
-It's also unfinished as yet. Update scripts are written and working, but control
-of the indexer is tricky as yet until a command console is written (unless you
-use robomongo or similar). Post-processing is also not completed.
 
 Features
 --------
@@ -81,6 +78,8 @@ Requirements
 - MongoDB 2.4.x or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
+I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both should work.
+
 Installation
 ------------
 
@@ -117,6 +116,47 @@ Please note that in order to download updated regexes from the Newznab crew, you
 You can get one by following the instructions on their website (generally a donation).
 You can also import a regex dump or create your own.
 
+### Converting from Newznab ###
+
+Pynab can transfer some data across from Newznab - notably your groups (and settings),
+any regexes, blacklists, categories and TVRage/IMDB/TVDB data, as well as user details
+and current API keys. This means that your users should only experience downtime for a
+short period, and don't have to regenerate their API keys. Hate your users? No problem,
+they won't even notice the difference and you don't even have to tell them.
+
+To convert from a Newznab installation, you should first enter the details of your MySQL
+installation into config.py, and read the comment at the top of scripts/convert_from_newznab.py.
+You may need to delete duplicate data in certain tables before running a conversion.
+
+If you want to keep certain collections (maybe your Newznab TVRage table is much smaller than
+the one supplied by this repo?), you can comment the function calls out at the bottom of the
+script.
+
+To run the conversion, first follow the normal installation instructions. Then:
+
+    > python3 scripts/convert_from_newznab.py
+
+This will copy over relevant data from your Newznab installation. Because Pynab's method of
+storing NZBs and metadata is very different to Newznab, we can't do a direct releases table
+conversion - you need to import the NZBs en-masse. Luckily, this is no longer an incredibly
+lengthy process - it should only take a few hours to process several hundred thousand NZBs
+on a reasonable server. Importing 2.5 million releases from my old installation took 11 hours.
+
+To import said NZBs:
+
+    > python3 scripts/import.py /path/to/nzbs
+
+For most Newznab installations, it'll look like this:
+
+    > python3 scripts/import.py /var/www/newznab/nzbfiles
+
+Allow this to finish before starting normal operation.
+
+Operation
+=========
+
+### Start Indexing ###
+
 At this point you should manually activate groups to index, and blacklists.
 To kick you off, they look something like this:
 
@@ -133,6 +173,8 @@ set in config.py:
 
 start.py is your update script - it'll take care of indexing messages, collating binaries and
 creating releases.
+
+### Starting the API ###
 
 To activate the API:
 

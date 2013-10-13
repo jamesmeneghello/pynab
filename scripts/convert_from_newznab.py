@@ -24,6 +24,7 @@ alter table tvrage engine innodb;
 # it comes with pymongo
 import cymysql
 from pynab.db import db
+import config
 
 
 def mysql_connect(mysql_config):
@@ -266,91 +267,26 @@ def convert_imdb(mysql):
 
     db.imdb.insert(imdbs)
 
-# don't use this - it won't import the nzbs themselves
-'''
-# the biggun'
-def convert_releases(mysql):
-    """Converts Newznab releases table into Pynab format.
-    Probably a bad idea - import the NZBs instead."""
-    from_query = """
-        SELECT releases.gid, releases.name, releases.searchname,
-            releases.groupID, groups.name,
-            releases.totalpart, releases.size, releases.postdate, releases.guid,
-            releases.fromname, releases.completion,
-            releases.categoryID,
-            releases.rageID,
-            releases.tvdbID,
-            releases.imdbID,
-            releasenfo.nfo,
-            releases.seriesfull, releases.season, releases.episode, releases.tvtitle, releases.tvairdate,
-            releases.grabs, releases.passwordstatus, releases.rarinnerfilecount, releases.relstatus,
-            releases.adddate
-        FROM releases
-            LEFT JOIN groups ON groups.id = releases.groupID
-            LEFT JOIN category ON category.id = releases.categoryID
-            LEFT JOIN releaseregex ON releaseregex.id = releases.regexID
-            LEFT JOIN releasenfo ON releasenfo.id = releases.releasenfoID
-        ORDER BY releases.id
-        """
-    cursor = mysql.cursor()
-    cursor.execute(from_query)
 
-    if 'releases' in db.collection_names():
-        db.releases.drop()
+if __name__ == '__main__':
+    print('Convert Newznab to Pynab script.')
+    print('Please note that this script is destructive and will wipe the following Mongo collections:')
+    print('Groups, Categories, Regexes, Blacklists, Users, TVRage, IMDB, TVDB.')
+    print('If you don\'t want some of these to be replaced, edit this script and comment those lines out.')
+    print('Also ensure that you\'ve edited config.py to include the details of your MySQL server.')
+    input('To continue, press enter. To exit, press ctrl-c.')
 
-    releases = []
-    for r in cursor.fetchall():
-        # get the easy ones out of the way first
-        release = dict(id=r[0], name=r[1], search_name=r[2], total_parts=int(r[5]), size=int(r[6]), posted=r[7],
-                       spotnab_id=r[8],
-                       posted_by=r[9], completion=r[10], grabs=r[21], passworded=r[22], file_count=r[23], status=r[24],
-                       add_date=r[25])
+    mysql = mysql_connect(config.mysql)
 
-        # the tricker ones: group
-        release['group_id'] = db.groups.find_one({'name': r[4]})['_id']
+    # comment lines out if you don't want those collections replaced
+    convert_groups(mysql)
+    convert_categories(mysql)
+    convert_regex(mysql)
+    convert_blacklist(mysql)
+    convert_imdb(mysql)
+    convert_tvdb(mysql)
+    convert_tvrage(mysql)
+    convert_users(mysql)
 
-        # category
-        release['category_id'] = r[11]
-
-        # rageID
-        if r[12]:
-            release['tvrage'] = db.tvrage.find_one({'_id': r[12]})
-        else:
-            release['tvrage'] = None
-
-        # tvdbID
-        if r[13]:
-            release['tvdb'] = db.tvdb.find_one({'_id': r[13]})
-        else:
-            release['tvdb'] = None
-
-        # imdbID
-        if r[14]:
-            release['imdb'] = db.imdb.find_one({'_id': r[14]})
-        else:
-            release['imdb'] = None
-
-        # releaseNFO - store nfo as binary
-        if r[15]:
-            release['nfo'] = bson.Binary(r[15])
-        else:
-            release['nfo'] = None
-
-        # store tv data
-        if r[16]:
-            tv = {
-                'series_full': r[16],
-                'season': r[17],
-                'episode': r[18],
-                'title': r[19],
-                'air_date': r[20]
-            }
-
-            release['tv'] = tv
-        else:
-            release['tv'] = None
-
-        releases.append(release)
-
-    db.releases.insert(releases)
-'''
+    print('Completed transfer. You can think about shutting down / removing MySQL from your server now.')
+    print('Unless you\'re using it for something else, in which case that\'d be dumb.')
