@@ -32,6 +32,7 @@ Features
 - High performance
 - Developed around pure API usage
 - Newznab-API compatible (mostly, see below)
+- TVRage/IMDB/Password post-processing
 
 In development:
 ---------------
