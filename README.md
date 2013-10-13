@@ -193,9 +193,15 @@ please use a proper webserver.
 
 The API is built on bottle.py, who provide helpful details on deployment: http://bottlepy.org/docs/dev/deployment.html
 
-As an example, to run pynab on nginx/uwsgi, you need these packages:
+As an example, to run pynab on nginx/uwsgi, you need this package:
 
-    > sudo apt-get install uwsgi uwsgi-plugin-python3
+    > sudo apt-get install uwsgi
+
+However, Ubuntu/Debian repos have an incredibly old version of uWSGI available, so install the new one.
+Note that this must be pip3 and not pip, otherwise you'll install the uWSGI Python 2.7 module:
+
+    > sudo pip3 install uwsgi
+    > sudo ln -fs /usr/local/bin/uwsgi /usr/bin/uwsgi
 
 Your /etc/nginx/sites-enabled/pynab file should look like this:
 
@@ -223,12 +229,12 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     [uwsgi]
     socket = /var/run/uwsgi/app/pynab/socket
     master = true
-    plugins = python3
     chdir = /var/www/pynab
     wsgi-file = api.py
     uid = www-data
     gid = www-data
-    enable-threads = true
+    processes = 4 [or whatever number of cpu cores you have]
+    threads = 2
 
 
 Newznab API
