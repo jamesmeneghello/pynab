@@ -189,13 +189,18 @@ def search(dataset=None, params=None):
         try:
             # set limit to request or default
             # this will also match limit == 0, which would be infinite
-            limit = int(request.query.limit) or None
-            if not limit or limit > int(config.site['result_limit']):
+            limit = request.query.limit or None
+            if limit and int(limit) < int(config.site['result_limit']):
+                limit = int(limit)
+            else:
                 limit = int(config.site['result_default'])
+
 
             # offset is only available for rss searches and won't work with text
             offset = request.query.offset or None
-            if not offset or int(offset) < 0:
+            if offset and int(offset) > 0:
+                offset = int(offset)
+            else:
                 offset = 0
 
             # get categories
@@ -219,9 +224,9 @@ def search(dataset=None, params=None):
                 query['group._id'] = {'$in': groups}
 
             # max age
-            max_age = int(request.query.maxage) or None
+            max_age = request.query.maxage or None
             if max_age:
-                oldest = datetime.datetime.now() - datetime.timedelta(max_age)
+                oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
                 query['posted'] = {'$gte': oldest}
         except Exception as e:
             # normally a try block this long would make me shudder
