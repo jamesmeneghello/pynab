@@ -36,8 +36,7 @@ Features
 In development:
 ---------------
 
-- Postprocessing (and thereby tv/m-search)
-- Console management (for users, etc - robomongo?)
+- Pre-DB comparisons maybe?
 
 
 Technical Differences to Newznab
