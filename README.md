@@ -102,12 +102,14 @@ You also need to install Python 3.3, associated packages and pip3:
 
 ### Universal ###
 
-    > git clone https://github.com/Murodese/pynab.git
+    > cd /var/www/
+    > sudo git clone https://github.com/Murodese/pynab.git
     > cd pynab
-    > cp config.sample.py config.py
-    > vim config.py [fill in details as appropriate]
+    > sudo cp config.sample.py config.py
+    > sudo vim config.py [fill in details as appropriate]
     > sudo pip3 install -r requirements.txt
-    > python3 install.py [follow instructions]
+    > sudo python3 install.py [follow instructions]
+    > sudo chown -R www-data:www-data /var/www/pynab
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -143,6 +145,44 @@ If you plan on using the API for extended periods of time or have more than one 
 please use a proper webserver.
 
 The API is built on bottle.py, who provide helpful details on deployment: http://bottlepy.org/docs/dev/deployment.html
+
+As an example, to run pynab on nginx/uwsgi, you need these packages:
+
+    > sudo apt-get install uwsgi uwsgi-plugin-python3
+
+Your /etc/nginx/sites-enabled/pynab file should look like this:
+
+    upstream _pynab {
+        server unix:/var/run/uwsgi/app/pynab/socket;
+    }
+
+    server {
+        listen 80;
+        server_name some.domain.name.or.ip;
+        root /var/www/pynab;
+
+        location / {
+            try_files $uri @uwsgi;
+        }
+
+        location @uwsgi {
+            include uwsgi_params;
+            uwsgi_pass _pynab;
+        }
+    }
+
+While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
+
+    [uwsgi]
+    socket = /var/run/uwsgi/app/pynab/socket
+    master = true
+    plugins = python3
+    chdir = /var/www/pynab
+    wsgi-file = api.py
+    uid = www-data
+    gid = www-data
+    enable-threads = true
+
 
 Newznab API
 ===========
