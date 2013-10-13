@@ -72,6 +72,8 @@ def create_indexes():
                                  ('tvrage._id', pymongo.ASCENDING),
                                  ('category._id', pymongo.ASCENDING)
                              ], background=True)
+    db.releases.ensure_index('passworded', pymongo.ASCENDING, background=True)
+    #TODO: add sparse indexes related to postproc
 
 
 if __name__ == '__main__':

@@ -21,6 +21,7 @@ import pynab.groups
 import pynab.nzb
 import pynab.tvrage
 import pynab.imdb
+import pynab.rars
 
 
 class TestPynab(unittest.TestCase):
@@ -89,6 +90,9 @@ class TestPynab(unittest.TestCase):
     def test_nzb_get(self):
         release = db.releases.find_one()
         pprint.pprint(pynab.nzb.get_nzb_dict(release['nzb']))
+
+    def test_rar_process(self):
+        pynab.rars.process(5)
 
     def tearDown(self):
         try:
