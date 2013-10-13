@@ -59,6 +59,12 @@ Technical Differences to Newznab
   - Big IO savings
   - Generally quicker than off the HDD
   - You don't run into filesystem problems from having 2.5 million files in a few directories
+- No web interface
+  - The vast majority of access to my indexer was API-based (1-5 web hits per month vs 50,000+ api hits)
+  - I'll probably make a very simple query interface
+- Simplified authentication
+  - No more usernames, passwords, or anything, really.
+  - API key access required for everything - sure, it can be sniffed very easily, but it always could be. Worst that can happen: someone uses the API.
 - General optimisations
   - Several operations have been much-streamlined to prevent wasteful, un-necessary regex processing
   - No language wars, but Python is generally quicker than PHP (and will be moreso when PyPy supports 3.3)
