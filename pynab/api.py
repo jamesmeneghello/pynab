@@ -230,7 +230,7 @@ def search(dataset=None, params=None):
 
         log.debug('Query parameters: {0}'.format(query))
 
-        search_terms = request.query.query or None
+        search_terms = request.query.q or None
         if search_terms:
             # we're searching specifically for a show or something
 
