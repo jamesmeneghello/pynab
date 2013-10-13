@@ -1,10 +1,13 @@
 import re
 
-from bottle import get, run, request, default_app
+import bottle
+from bottle import get, request
 import xmltodict
 
 from pynab import log
 import pynab.api
+
+app = application = bottle.Bottle()
 
 
 @get('/api')
@@ -34,8 +37,6 @@ def api():
 
 
 def get_link(route):
-    app = default_app()
-
     url = request.environ['wsgi.url_scheme'] + '://'
 
     if request.environ.get('HTTP_HOST'):
@@ -54,4 +55,4 @@ def get_link(route):
 
 
 if __name__ == '__main__':
-    run(host='localhost', port=9090, debug=True)
+    bottle.run(app=app, server='python_server', host='0.0.0.0', port=8080)
