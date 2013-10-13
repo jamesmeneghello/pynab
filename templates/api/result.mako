@@ -2,9 +2,8 @@
     <%!
         import config
     %>
-<rss version="2.0">
-
-    <channel>
+<rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
+<channel>
         <title>${config.site['title']}</title>
         <description>${config.site['description']}</description>
 

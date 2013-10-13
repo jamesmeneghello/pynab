@@ -1,7 +1,7 @@
 import re
 
 import bottle
-from bottle import request
+from bottle import request, response
 import xmltodict
 
 from pynab import log
@@ -28,6 +28,7 @@ def api():
             output_format = request.query.o or 'xml'
             if output_format == 'xml':
                 # return as xml
+                response.set_header('Content-type', 'application/rss+xml')
                 return data
             elif output_format == 'json':
                 # bottle auto-converts into json
