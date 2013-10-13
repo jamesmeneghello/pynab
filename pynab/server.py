@@ -49,8 +49,10 @@ class Server:
                 self.connection = nntplib.NNTP_SSL(**config.news)
             else:
                 self.connection = nntplib.NNTP(**config.news)
-        except nntplib.NNTPError as e:
-            log.error('Could not connect to news server: ' + e.response)
+        # nttplib sometimes throws EOFErrors instead
+        #except nntplib.NNTPError as e:
+        except Exception as e:
+            log.error('Could not connect to news server: ' + str(e))
             return False
 
         log.info('Connected!')
