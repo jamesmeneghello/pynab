@@ -17,7 +17,10 @@ site = {
     'api_version': '0.1',
 
     # your administrator email (shows on rss feed)
-    'email': '@gmail.com',
+    'email': '',
+
+    # site-wide random seed
+    'seed': '',
 
     # api settings
     # ------------
@@ -54,6 +57,25 @@ site = {
     # make sure there's no quotes around it
     'backfill_days': 10,
 
+    # postprocessing settings
+    # -----------------------
+
+    # check_passworded: whether to check for passworded releases
+    # this uses extra bandwidth, since it needs to download at least one archive
+    # for something like a bluray release, this is quite large
+    'check_passwords': True,
+
+    # delete_passworded: delete releases that are passworded
+    'delete_passworded': True,
+
+    # delete_potentially_passworded: delete releases that are probably passworded
+    'delete_potentially_passworded': True,
+
+    # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
+    # so if we can't find a match for some movie, wait 7 days before trying that movie again
+    # there's really no benefit to setting this low - anywhere from a week to several months is fine
+    'fetch_blacklist_duration': 7,
+
     # logging settings
     # ----------------
     # logging_file: a filepath or None to go to stdout
@@ -82,7 +104,7 @@ site = {
 # mongodb config
 db = {
     # hostname: usually 'localhost'
-    'host': 'localhost',
+    'host': '',
 
     # port: default is 27017
     # make sure there's no quotes around it
@@ -121,9 +143,9 @@ news = {
 # only used for convert_from_newznab.py
 # you can probably leave this blank unless you know what you're doing
 mysql = {
-    'host': 'localhost',
+    'host': '',
     'port': 3306,
-    'user': 'remote',
+    'user': '',
     'passwd': '',
     'db': 'newznab',
 }
