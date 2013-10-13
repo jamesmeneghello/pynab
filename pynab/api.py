@@ -77,12 +77,12 @@ def auth():
 def movie_search(dataset=None):
     if auth():
         query = dict()
-        query['category.id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
+        query['category._id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
 
         try:
             imdb_id = request.query.imdbid or None
             if imdb_id:
-                query['imdb.id'] = int(imdb_id)
+                query['imdb._id'] = int(imdb_id)
 
             genres = request.query.genre or None
             if genres:
@@ -104,7 +104,7 @@ def tv_search(dataset=None):
         try:
             tvrage_id = request.query.rid or None
             if tvrage_id:
-                query['tvrage.id'] = int(tvrage_id)
+                query['tvrage._id'] = int(tvrage_id)
 
             season = request.query.season or None
             if season:
@@ -189,7 +189,7 @@ def search(dataset=None, params=None):
         try:
             # set limit to request or default
             # this will also match limit == 0, which would be infinite
-            limit = request.query.limit or None
+            limit = int(request.query.limit) or None
             if not limit or limit > int(config.site['result_limit']):
                 limit = int(config.site['result_default'])
 
@@ -203,29 +203,30 @@ def search(dataset=None, params=None):
             if cat_ids:
                 cat_ids = [int(c) for c in cat_ids.split(',')]
                 categories = []
-                for category in db.categories.find({'id': {'$in': cat_ids}}):
+                for category in db.categories.find({'_id': {'$in': cat_ids}}):
                     if 'parent_id' not in category:
                         for child in db.categories.find({'parent_id': category['_id']}):
                             categories.append(child['_id'])
                     else:
                         categories.append(category['_id'])
-                query['category.id'].update({'$in': categories})
+                query['category._id'].update({'$in': categories})
 
             # group names
             grp_names = request.query.group or []
             if grp_names:
                 grp_names = grp_names.split(',')
                 groups = [g['_id'] for g in db.groups.find({'name': {'$in': grp_names}})]
-                query['group_id'] = {'$in': groups}
+                query['group._id'] = {'$in': groups}
 
             # max age
-            max_age = request.query.maxage or None
+            max_age = int(request.query.maxage) or None
             if max_age:
-                oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
+                oldest = datetime.datetime.now() - datetime.timedelta(max_age)
                 query['posted'] = {'$gte': oldest}
-        except:
+        except Exception as e:
             # normally a try block this long would make me shudder
             # but we don't distinguish between errors, so it's fine
+            print(e)
             return api_error(201)
 
         log.debug('Query parameters: {0}'.format(query))
