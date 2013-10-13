@@ -3,6 +3,8 @@ works in Python 3"""
 
 import re
 
+from pynab import log
+
 YDEC_TRANS = ''.join([chr((i + 256 - 42) % 256) for i in range(256)])
 
 
@@ -23,6 +25,10 @@ def yenc_decode(lines):
                 j = '=%c' % (i + 64)
                 data = data.replace(j, chr(i))
             return data.translate(YDEC_TRANS)
+        else:
+            log.debug('File wasn\'t yenc.')
+    else:
+        log.debug('Problem parsing lines.')
 
     return None
 
