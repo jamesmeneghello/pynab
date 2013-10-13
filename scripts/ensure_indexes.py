@@ -64,7 +64,8 @@ def create_indexes():
     db.releases.ensure_index('imdb._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('tvdb._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index([
-                                 ('search_name', 'text')
+                                 ('search_name', 'text'),
+                                 ('posted', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([
                                  ('tvrage._id', pymongo.ASCENDING),
