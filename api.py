@@ -1,7 +1,7 @@
 import re
 
 import bottle
-from bottle import get, request
+from bottle import request
 import xmltodict
 
 from pynab import log
@@ -10,7 +10,7 @@ import pynab.api
 app = application = bottle.Bottle()
 
 
-@get('/api')
+@app.get('/api')
 def api():
     log.debug('Handling request for {0}.'.format(request.fullpath))
 
@@ -55,4 +55,4 @@ def get_link(route):
 
 
 if __name__ == '__main__':
-    bottle.run(app=app, server='python_server', host='0.0.0.0', port=8080)
+    bottle.run(app=app, host='0.0.0.0', port=8080)
