@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
     <%!
         import config
+        from email import utils
     %>
 <rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
 <channel>
         <title>${config.site['title']}</title>
         <description>${config.site['description']}</description>
+    <link>${get_link('')}</link>
 
-        % if search:
+    % if search:
             <!-- this pynab tracker does not support the offset argument for direct searches -->
             <!-- works fine for rss feeds, though -->
             <newznab:response offset="${offset}" total="${total}"/>
@@ -18,7 +20,7 @@
                 <title>${release['search_name']}</title>
                 <guid isPermaLink="true">${get_link('/api')}?t=d&amp;id=${release['id']}&amp;apikey=${api_key}</guid>
                 <link>${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}</link>
-                <pubDate>${release['added']}</pubDate>
+                <pubDate>${utils.formatdate(release['added'].timestamp())}</pubDate>
                 % if 'parent_id' in release['category']:
                     <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>
                 % else:

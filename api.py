@@ -37,7 +37,8 @@ def api():
                 return pynab.api.api_error(201)
 
 
-def get_link(route):
+def get_link(route=''):
+    """Gets a link (including domain/subdirs) to a route."""
     url = request.environ['wsgi.url_scheme'] + '://'
 
     if request.environ.get('HTTP_HOST'):
@@ -52,7 +53,10 @@ def get_link(route):
             if request.environ['SERVER_PORT'] != '80':
                 url += ':' + request.environ['SERVER_PORT']
 
-    return url + app.get_url(route)
+    if route:
+        url += app.get_url(route)
+
+    return url
 
 
 if __name__ == '__main__':
