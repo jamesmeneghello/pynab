@@ -2,7 +2,7 @@ import re
 import unicodedata
 import difflib
 import datetime
-
+import time
 import roman
 import requests
 import xmltodict
@@ -64,6 +64,9 @@ def process(limit=100, online=True):
                     )
                     rage = db.tvrage.find_one({'_id': int(rage_data['showid'])})
 
+                # wait slightly so we don't smash the api
+                time.sleep(1)
+
             if rage:
                 log.info('TVRage match found, appending TVRage ID to release.')
                 db.releases.update({'_id': release['_id']}, {
@@ -97,7 +100,7 @@ def search(show):
         r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
         result = xmltodict.parse(r.content)
     except:
-        log.error('Problem retrieving TVRage XML.')
+        log.error('Problem retrieving TVRage XML. The API is probably down.')
         return None
 
     # did the api return any shows?

@@ -54,9 +54,9 @@ if __name__ == '__main__':
         # post-processing
 
         # grab and append tvrage data to tv releases
-        # only do 100 at a time though, so we don't smash the tvrage api
+        # only do 50 at a time though, so we don't smash the tvrage api
         # when your tvrage table has built up you'll rely on the api less
-        pynab.tvrage.process(100)
+        pynab.tvrage.process(50)
 
         # wait for the configured amount of time between cycles
         log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))
