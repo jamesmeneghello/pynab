@@ -57,6 +57,13 @@ site = {
     # make sure there's no quotes around it
     'backfill_days': 10,
 
+    # release processing settings
+    # ---------------------------
+
+    # min_archives: the minimum number of archives in a binary to form a release
+    # setting this to 1 will cut out releases that only contain an nzb, etc.
+    'min_archives': 1,
+
     # postprocessing settings
     # -----------------------
 

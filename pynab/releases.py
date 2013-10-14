@@ -2,13 +2,14 @@ import datetime
 import time
 import hashlib
 import uuid
-import pytz
+import re
 
+import pytz
 from bson.code import Code
 
 from pynab import log
 from pynab.db import db
-
+import config
 import pynab.nzbs
 import pynab.categories
 
@@ -57,6 +58,38 @@ def process():
     for result in db.binaries.inline_map_reduce(mapper, reducer):
         if result['value']:
             binary = db.binaries.find_one({'_id': result['_id']})
+
+            # check to make sure we have over the configured minimum files
+            nfos = []
+            rars = []
+            pars = []
+            rar_count = 0
+            par_count = 0
+            zip_count = 0
+
+            for number, part in binary['parts'].items():
+                if re.search(pynab.nzbs.rar_part_regex, part['subject'], re.I):
+                    rar_count += 1
+                if re.search(pynab.nzbs.nfo_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], re.I):
+                    nfos.append(part)
+                if re.search(pynab.nzbs.rar_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], re.I):
+                    rars.append(part)
+                if re.search(pynab.nzbs.par2_regex, part['subject'], re.I):
+                    par_count += 1
+                    if not re.search(pynab.nzbs.par_vol_regex, part['subject'], re.I):
+                        pars.append(part)
+                if re.search(pynab.nzbs.zip_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], re.I):
+                    zip_count += 1
+
+            log.debug('Binary {} has {} rars and {} rar_parts.'.format(binary['name'], len(rars), rar_count))
+
+            if rar_count + zip_count < config.site['minimum_rars']:
+                log.debug('Binary does not have the minimum required archives.')
+                db.binaries.remove({'_id': binary['_id']})
+                continue
 
             # generate a gid, not useful since we're storing in GridFS
             gid = hashlib.md5(uuid.uuid1().bytes).hexdigest()
