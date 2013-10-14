@@ -99,6 +99,11 @@ site = {
     # these don't take long, so get quite a few
     'nfo_limit': 100,
 
+    # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
+    # so if we can't find a match for some movie, wait 7 days before trying that movie again
+    # there's really no benefit to setting this low - anywhere from a week to several months is fine
+    'fetch_blacklist_duration': 7,
+
     # logging settings
     # ----------------
     # logging_file: a filepath or None to go to stdout
