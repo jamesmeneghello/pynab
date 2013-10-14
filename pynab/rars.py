@@ -10,7 +10,6 @@ import pynab.releases
 from pynab.server import Server
 import config
 
-
 MAYBE_PASSWORDED_REGEX = re.compile('\.(ace|cab|tar|gz|url)$', re.I)
 PASSWORDED_REGEX = re.compile('password\.url', re.I)
 
@@ -20,7 +19,9 @@ def check_release_files(server, group_name, nzb):
 
     rar_files = []
     for rar in nzb['rars']:
-        messages = [s['#text'] for s in rar['segments']['segment']]
+        if not isinstance(rar['segments'], list):
+            rar['segments'] = [rar['segments']['segment'], ]
+        messages = [s['#text'] for s in rar['segments']]
 
         data = server.get(group_name, messages)
 
