@@ -5,7 +5,7 @@ import re
 import lib.rar
 from pynab import log
 from pynab.db import db
-import pynab.nzb
+import pynab.nzbs
 import pynab.releases
 from pynab.server import Server
 import config
@@ -52,7 +52,7 @@ def process(limit=20):
 
     with Server() as server:
         for release in db.releases.find({'passworded': None}).limit(limit):
-            nzb = pynab.nzb.get_nzb_dict(release['nzb'])
+            nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
             (passworded, file_count, size), rar_files = check_release_files(server, release['group']['name'], nzb)
             if not passworded:

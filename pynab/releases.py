@@ -9,7 +9,7 @@ from bson.code import Code
 from pynab import log
 from pynab.db import db
 
-import pynab.nzb
+import pynab.nzbs
 import pynab.categories
 
 
@@ -79,7 +79,7 @@ def process():
                 category['parent'] = db.categories.find_one({'_id': category['parent_id']})
 
             # create the nzb, store it in GridFS and link it here
-            nzb, nzb_size = pynab.nzb.create(gid, clean_name, binary)
+            nzb, nzb_size = pynab.nzbs.create(gid, clean_name, binary)
             if nzb:
                 log.debug('Adding release: {0}'.format(clean_name))
 
