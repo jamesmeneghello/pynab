@@ -86,7 +86,7 @@ def process():
 
             log.debug('Binary {} has {} rars and {} rar_parts.'.format(binary['name'], len(rars), rar_count))
 
-            if rar_count + zip_count < config.site['minimum_rars']:
+            if rar_count + zip_count < config.site['min_archives']:
                 log.debug('Binary does not have the minimum required archives.')
                 db.binaries.remove({'_id': binary['_id']})
                 continue
