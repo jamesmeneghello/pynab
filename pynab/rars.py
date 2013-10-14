@@ -20,8 +20,11 @@ def check_release_files(server, group_name, nzb):
     rar_files = []
     for rar in nzb['rars']:
         if not isinstance(rar['segments'], list):
-            rar['segments'] = [rar['segments']['segment'], ]
-        messages = [s['#text'] for s in rar['segments']]
+            rar['segments']['segment'] = [rar['segments']['segment'], ]
+        messages = []
+        for s in rar['segments']['segment']:
+            for p in s:
+                messages.append(p['#text'])
 
         data = server.get(group_name, messages)
 
