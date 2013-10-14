@@ -43,7 +43,7 @@ def process(limit=5):
                                     'nfo': nfo_file
                                 }
                             })
-                            log.debug('Grabbed and saved NFO for: {}'.format(release['name']))
+                            log.info('Grabbed and saved NFO for: {}'.format(release['name']))
                             break
                     else:
                         log.debug('Error retrieving NFO.')
