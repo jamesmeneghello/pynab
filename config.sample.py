@@ -60,10 +60,15 @@ site = {
     # postprocessing settings
     # -----------------------
 
-    # check_passworded: whether to check for passworded releases
+    # process_rars: whether to check for passworded releases, get file size and count
     # this uses extra bandwidth, since it needs to download at least one archive
     # for something like a bluray release, this is quite large
-    'check_passwords': True,
+    'process_rars': True,
+
+    # rar_limit: number of rar checks to do per start.py cycle
+    # set this to a low number - you have to pull a whole part of the release
+    # so it takes a while
+    'rar_limit': 10,
 
     # delete_passworded: delete releases that are passworded
     'delete_passworded': True,
@@ -71,10 +76,21 @@ site = {
     # delete_potentially_passworded: delete releases that are probably passworded
     'delete_potentially_passworded': True,
 
-    # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
-    # so if we can't find a match for some movie, wait 7 days before trying that movie again
-    # there's really no benefit to setting this low - anywhere from a week to several months is fine
-    'fetch_blacklist_duration': 7,
+    # process_tvrage: match TV releases against TVRage
+    # sickbeard sometimes depends on this data for API usage, definitely recommended
+    'process_tvrage': True,
+
+    # tvrage_limit: number of releases to match to TVRage per start.py cycle
+    # medium-ish number for this one - you don't want to smash their api
+    'tvrage_limit': 40,
+
+    # process_nfos: grab NFOs for releases for other use
+    # this can be used to clean release names, etc
+    'process_nfos': True,
+
+    # nfo_limit: number of releases to fetch NFOs for per start.py cycle
+    # these don't take long, so get quite a few
+    'nfo_limit': 100,
 
     # logging settings
     # ----------------

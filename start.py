@@ -68,21 +68,31 @@ if __name__ == '__main__':
         # post-processing
 
         # grab and append tvrage data to tv releases
-        # only do 50 at a time though, so we don't smash the tvrage api
-        # when your tvrage table has built up you'll rely on the api less
-        tvrage_p = multiprocessing.Process(target=process_tvrage, args=(50,))
-        tvrage_p.start()
+        tvrage_p = None
+        if config.site['process_tvrage']:
+            tvrage_p = multiprocessing.Process(target=process_tvrage, args=(config.site['tvrage_limit'],))
+            tvrage_p.start()
 
-        nfo_p = multiprocessing.Process(target=process_nfos, args=(50,))
-        nfo_p.start()
+        # grab and append nfo data to all releases
+        nfo_p = None
+        if config.site['process_nfos']:
+            nfo_p = multiprocessing.Process(target=process_nfos, args=(config.site['nfo_limit'],))
+            nfo_p.start()
 
-        if config.site['check_passwords']:
-            rar_p = multiprocessing.Process(target=process_rars, args=(5,))
+        # check for passwords, file count and size
+        rar_p = None
+        if config.site['process_rars']:
+            rar_p = multiprocessing.Process(target=process_rars, args=(config.site['rar_limit'],))
             rar_p.start()
+
+        if rar_p:
             rar_p.join()
 
-        tvrage_p.join()
-        nfo_p.join()
+        if tvrage_p:
+            tvrage_p.join()
+
+        if nfo_p:
+            nfo_p.join()
 
         # wait for the configured amount of time between cycles
         log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))
