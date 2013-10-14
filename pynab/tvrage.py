@@ -153,7 +153,6 @@ def search(show):
             return matches[100]
         else:
             for ratio, match in sorted(matches.items(), reverse=True):
-                print('{}: {}'.format(ratio, match['name']))
                 if ratio >= 80:
                     log.debug('Found {:d}% match: {}'.format(ratio, match['name']))
                     return match
