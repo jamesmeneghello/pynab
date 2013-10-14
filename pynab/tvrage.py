@@ -152,12 +152,19 @@ def search(show):
             log.debug('Found 100% match: {}'.format(matches[100]['name']))
             return matches[100]
         else:
-            for ratio, match in matches.items():
-                if ratio > 60:
+            for ratio, match in sorted(matches.items(), reverse=True):
+                print('{}: {}'.format(ratio, match['name']))
+                if ratio >= 80:
+                    log.debug('Found {:d}% match: {}'.format(ratio, match['name']))
+                    return match
+                elif 80 > ratio > 60:
                     if 'country' in show and show['country'] and match['country']:
                         if str.lower(show['country']) == str.lower(match['country']):
                             log.debug('Found {:d}% match: {}'.format(ratio, match['name']))
                             return match
+
+            ratio, highest = sorted(matches.items(), reverse=True)[0]
+            log.debug('Highest match was {}% with {}.'.format(ratio, highest['name']))
 
     log.error('Could not find TVRage match online.')
     return None
