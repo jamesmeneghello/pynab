@@ -11,6 +11,7 @@ import pynab.binaries
 import pynab.releases
 import pynab.tvrage
 import pynab.rars
+import pynab.nfos
 import config
 
 
@@ -24,6 +25,10 @@ def update(group_name):
 
 def process_tvrage(limit):
     pynab.tvrage.process(limit)
+
+
+def process_nfos(limit):
+    pynab.nfos.process(limit)
 
 
 def process_rars(limit):
@@ -68,12 +73,16 @@ if __name__ == '__main__':
         tvrage_p = multiprocessing.Process(target=process_tvrage, args=(50,))
         tvrage_p.start()
 
+        nfo_p = multiprocessing.Process(target=process_nfos, args=(50,))
+        nfo_p.start()
+
         if config.site['check_passwords']:
             rar_p = multiprocessing.Process(target=process_rars, args=(5,))
             rar_p.start()
             rar_p.join()
 
         tvrage_p.join()
+        nfo_p.join()
 
         # wait for the configured amount of time between cycles
         log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))

@@ -18,10 +18,11 @@ import pynab.releases
 import pynab.parts
 import pynab.categories
 import pynab.groups
-import pynab.nzb
+import pynab.nzbs
 import pynab.tvrage
 import pynab.imdb
 import pynab.rars
+import pynab.nfos
 
 
 class TestPynab(unittest.TestCase):
@@ -72,7 +73,7 @@ class TestPynab(unittest.TestCase):
         pynab.groups.backfill('alt.binaries.teevee')
 
     def test_nzb_import(self):
-        pynab.nzb.import_nzb('c:\\temp\\nzbs\\The.Legend.of.Korra.S02E05.720p.WEB-DL.DD5.1.H.264-BS.nzb')
+        pynab.nzbs.import_nzb('c:\\temp\\nzbs\\The.Legend.of.Korra.S02E05.720p.WEB-DL.DD5.1.H.264-BS.nzb')
 
     def test_nfo_scan(self):
         release = db.releases.find_one()
@@ -89,10 +90,13 @@ class TestPynab(unittest.TestCase):
 
     def test_nzb_get(self):
         release = db.releases.find_one()
-        pprint.pprint(pynab.nzb.get_nzb_dict(release['nzb']))
+        pprint.pprint(pynab.nzbs.get_nzb_dict(release['nzb']))
 
     def test_rar_process(self):
         pynab.rars.process(5)
+
+    def test_nfo_process(self):
+        pynab.nfos.process(5)
 
     def tearDown(self):
         try:
