@@ -27,3 +27,5 @@ if __name__ == '__main__':
     input('To continue, press enter. To exit, press ctrl-c.')
 
     process_minarchives()
+
+    print('Completed.')
