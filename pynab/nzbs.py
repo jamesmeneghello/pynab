@@ -16,19 +16,19 @@ from pynab.db import fs, db
 from pynab import log
 import pynab
 
+nfo_regex = '[ "\(\[].*?\.(nfo|ofn)[ "\)\]]'
+rar_regex = '.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]'
+rar_part_regex = '\.(rar|r\d{2,3})(?!\.)'
+metadata_regex = '\.(par2|vol\d+\+|sfv|nzb)'
+par2_regex = '\.par2(?!\.)'
+par_vol_regex = 'vol\d+\+'
+zip_regex = '\.zip(?!\.)'
+
 
 def get_nzb_dict(nzb_id):
     """Returns a JSON-like Python dict of NZB contents, including extra information
     such as a list of any nfos/rars that the NZB references."""
     data = xmltodict.parse(gzip.decompress(fs.get(nzb_id).read()))
-
-    nfo_regex = '[ "\(\[].*?\.(nfo|ofn)[ "\)\]]'
-    rar_regex = '.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]'
-    rar_part_regex = '\.(rar|r\d{2,3})(?!\.)'
-    metadata_regex = '\.(par2|vol\d+\+|sfv|nzb)'
-    par2_regex = '\.par2(?!\.)'
-    par_vol_regex = 'vol\d+\+'
-    zip_regex = '\.zip(?!\.)'
 
     nfos = []
     rars = []
