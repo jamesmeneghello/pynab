@@ -26,13 +26,16 @@ def process(limit=5):
             nfos = []
             if nzb['nfos']:
                 for nfo in nzb['nfos']:
-                    if int(nfo['segments']['segment']['@bytes']) > NFO_MAX_FILESIZE:
-                        continue
-                    nfos.append(nfo)
+                    if not isinstance(nfo['segments']['segment'], list):
+                        nfo['segments']['segment'] = [nfo['segments']['segment'], ]
+                    for part in nfo['segments']['segment']:
+                        if int(part['@bytes']) > NFO_MAX_FILESIZE:
+                            continue
+                        nfos.append(part)
 
             if nfos:
                 for nfo in nfos:
-                    article = server.get(release['group']['name'], [nfo['segments']['segment']['#text'], ])
+                    article = server.get(release['group']['name'], [nfo['#text'], ])
                     if article:
                         data = gzip.compress(article.encode('utf-8'))
                         nfo_file = fs.put(data, filename='.'.join([release['name'], 'nfo', 'gz']))
