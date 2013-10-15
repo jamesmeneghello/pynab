@@ -73,8 +73,8 @@ class Server:
 
                     response, (number, message_id, lines) = self.connection.body(article)
                     data += pynab.yenc.yenc_decode(lines)
-            except nntplib.NNTPError:
-                log.error('{}: Problem retrieving messages from server.'.format(group_name))
+            except nntplib.NNTPError as nntpe:
+                log.error('{}: Problem retrieving messages from server: {}.'.format(group_name, nntpe))
                 return None
 
             return data
