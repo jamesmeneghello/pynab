@@ -10,77 +10,74 @@ MESSAGE_LIMIT = config.site['message_scan_limit']
 def backfill(group_name, date=None):
     log.info('{}: Backfilling group...'.format(group_name))
 
-    server = Server()
-    if not server.connect():
-        return False
+    with Server() as server:
+        _, count, first, last, _ = server.group(group_name)
 
-    _, count, first, last, _ = server.group(group_name)
+        if date:
+            target_article = server.day_to_post(group_name, server.days_old(date))
+        else:
+            target_article = server.day_to_post(group_name, config.site['backfill_days'])
 
-    if date:
-        target_article = server.day_to_post(group_name, server.days_old(date))
-    else:
-        target_article = server.day_to_post(group_name, config.site['backfill_days'])
-
-    group = db.groups.find_one({'name': group_name})
-    if group:
-        # if the group hasn't been updated before, quit
-        if not group['first']:
-            log.error('{}: Need to run a normal update prior to backfilling group.'.format(group_name))
-            return False
-
-        log.info('{}: Server has {1:d} - {2:d} or ~{3:d} days.'
-        .format(group_name, first, last, server.days_old(server.post_date(group_name, first)))
-        )
-
-        # if the first article we have is lower than the target
-        if target_article >= group['first']:
-            log.info('{}: Nothing to do, we already have the target post.'.format(group_name))
-            return True
-
-        # or if the target is below the server's first
-        if target_article < first:
-            log.warning(
-                '{}: Backfill target is older than the server\'s retention. Setting target to the first possible article.'.format(
-                    group_name))
-            target_article = first
-
-        total = group['first'] - target_article
-        end = group['first'] - 1
-        start = end - MESSAGE_LIMIT + 1
-        if target_article > start:
-            start = target_article
-
-        while True:
-            messages = server.scan(group_name, start, end)
-            if not messages:
-                log.error('{}: Could not scan group.'.format(group_name))
+        group = db.groups.find_one({'name': group_name})
+        if group:
+            # if the group hasn't been updated before, quit
+            if not group['first']:
+                log.error('{}: Need to run a normal update prior to backfilling group.'.format(group_name))
                 return False
 
-            if parts.save_all(messages):
-                db.groups.update({
-                                     '_id': group['_id']
-                                 },
-                                 {
-                                     '$set': {
-                                         'first': start
-                                     }
-                                 })
-                pass
-            else:
-                log.error('{}: Failed while saving parts.'.format(group_name))
-                return False
+            log.info('{}: Server has {1:d} - {2:d} or ~{3:d} days.'
+            .format(group_name, first, last, server.days_old(server.post_date(group_name, first)))
+            )
 
-            if first == target_article:
+            # if the first article we have is lower than the target
+            if target_article >= group['first']:
+                log.info('{}: Nothing to do, we already have the target post.'.format(group_name))
                 return True
-            else:
-                end = start - 1
-                start = end - MESSAGE_LIMIT + 1
-                if target_article > start:
-                    start = target_article
 
-    else:
-        log.error('{}: Group doesn\'t exist in db.'.format(group_name))
-        return False
+            # or if the target is below the server's first
+            if target_article < first:
+                log.warning(
+                    '{}: Backfill target is older than the server\'s retention. Setting target to the first possible article.'.format(
+                        group_name))
+                target_article = first
+
+            total = group['first'] - target_article
+            end = group['first'] - 1
+            start = end - MESSAGE_LIMIT + 1
+            if target_article > start:
+                start = target_article
+
+            while True:
+                messages = server.scan(group_name, start, end)
+                if not messages:
+                    log.error('{}: Could not scan group.'.format(group_name))
+                    return False
+
+                if parts.save_all(messages):
+                    db.groups.update({
+                                         '_id': group['_id']
+                                     },
+                                     {
+                                         '$set': {
+                                             'first': start
+                                         }
+                                     })
+                    pass
+                else:
+                    log.error('{}: Failed while saving parts.'.format(group_name))
+                    return False
+
+                if first == target_article:
+                    return True
+                else:
+                    end = start - 1
+                    start = end - MESSAGE_LIMIT + 1
+                    if target_article > start:
+                        start = target_article
+
+        else:
+            log.error('{}: Group doesn\'t exist in db.'.format(group_name))
+            return False
 
 
 def update(group_name):
