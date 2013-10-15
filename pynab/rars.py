@@ -1,6 +1,7 @@
 import tempfile
 import os
 import re
+import pprint
 
 import lib.rar
 from pynab import log
@@ -19,6 +20,8 @@ def check_release_files(server, group_name, nzb):
 
     rar_files = []
     for rar in nzb['rars']:
+        log.debug(pprint.pformat(rar))
+
         if not isinstance(rar['segments'], list):
             rar['segments']['segment'] = [rar['segments']['segment'], ]
         messages = []
