@@ -1,5 +1,6 @@
 import gzip
 import pprint
+import pymongo
 
 import pynab.nzbs
 
@@ -20,7 +21,7 @@ def process(limit=5):
     log.info('Checking for NFO segments...')
 
     with Server() as server:
-        for release in db.releases.find({'nfo': None}).limit(limit):
+        for release in db.releases.find({'nfo': None}).limit(limit).sort('posted', pymongo.ASCENDING):
             log.debug('Checking for NFO in {}...'.format(release['search_name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
