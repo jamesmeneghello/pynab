@@ -1,4 +1,5 @@
 import gzip
+import pprint
 
 import pynab.nzbs
 
@@ -26,6 +27,7 @@ def process(limit=5):
             nfos = []
             if nzb['nfos']:
                 for nfo in nzb['nfos']:
+                    log.debug(pprint.pformat(nfo))
                     if not isinstance(nfo['segments']['segment'], list):
                         nfo['segments']['segment'] = [nfo['segments']['segment'], ]
                     for part in nfo['segments']['segment']:

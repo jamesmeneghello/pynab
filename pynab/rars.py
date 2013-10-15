@@ -20,7 +20,7 @@ def check_release_files(server, group_name, nzb):
 
     rar_files = []
     for rar in nzb['rars']:
-        pprint.pprint(rar)
+        log.debug(pprint.pformat(rar))
         messages = []
         if not isinstance(rar['segments']['segment'], list):
             rar['segments']['segment'] = [rar['segments']['segment'], ]
