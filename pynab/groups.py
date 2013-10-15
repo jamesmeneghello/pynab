@@ -25,7 +25,7 @@ def backfill(group_name, date=None):
                 log.error('{}: Need to run a normal update prior to backfilling group.'.format(group_name))
                 return False
 
-            log.info('{}: Server has {1:d} - {2:d} or ~{3:d} days.'
+            log.info('{0}: Server has {1:d} - {2:d} or ~{3:d} days.'
             .format(group_name, first, last, server.days_old(server.post_date(group_name, first)))
             )
 
