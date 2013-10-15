@@ -23,6 +23,16 @@ if __name__ == '__main__':
         print('Could not load config.py.')
         sys.exit(0)
 
+    print('Copying users into Mongo...')
+    with open('db/initial/users.json', encoding='utf-8', errors='ignore') as f:
+        data = json.load(f)
+        try:
+            db.users.drop()
+            db.users.insert(data)
+        except:
+            print('Problem inserting data into MongoDB.')
+            sys.exit(0)
+
     print('Copying groups into Mongo...')
     with open('db/initial/groups.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
