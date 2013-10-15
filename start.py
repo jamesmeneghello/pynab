@@ -12,6 +12,7 @@ import pynab.releases
 import pynab.tvrage
 import pynab.rars
 import pynab.nfos
+import pynab.imdb
 import config
 
 
@@ -33,6 +34,10 @@ def process_nfos(limit):
 
 def process_rars(limit):
     pynab.rars.process(limit)
+
+
+def process_imdb(limit):
+    pynab.imdb.process(limit)
 
 
 if __name__ == '__main__':
@@ -72,6 +77,11 @@ if __name__ == '__main__':
         if config.site['process_tvrage']:
             tvrage_p = multiprocessing.Process(target=process_tvrage, args=(config.site['tvrage_limit'],))
             tvrage_p.start()
+
+        imdb_p = None
+        if config.site['process_imdb']:
+            imdb_p = multiprocessing.Process(target=process_imdb, args=(config.site['imdb_limit'],))
+            imdb_p.start()
 
         # grab and append nfo data to all releases
         nfo_p = None

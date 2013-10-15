@@ -83,6 +83,14 @@ site = {
     # delete_potentially_passworded: delete releases that are probably passworded
     'delete_potentially_passworded': True,
 
+    # process_imdb: match movie releases against IMDB
+    # sickbeard sometimes depends on this data for API usage, definitely recommended
+    'process_imdb': True,
+
+    # imdb_limit: number of releases to match to IMDB per start.py cycle
+    # medium-ish number for this one - you don't want to smash their api
+    'imdb_limit': 40,
+
     # process_tvrage: match TV releases against TVRage
     # sickbeard sometimes depends on this data for API usage, definitely recommended
     'process_tvrage': True,
