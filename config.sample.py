@@ -84,7 +84,7 @@ site = {
     'delete_potentially_passworded': True,
 
     # process_imdb: match movie releases against IMDB
-    # sickbeard sometimes depends on this data for API usage, definitely recommended
+    # couchpotato sometimes depends on this data for API usage, definitely recommended
     'process_imdb': True,
 
     # imdb_limit: number of releases to match to IMDB per start.py cycle
