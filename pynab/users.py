@@ -9,7 +9,7 @@ def create(email):
     """Creates a user by email with a random API key."""
     log.info('Creating user {}...'.format(email))
 
-    api_key = hashlib.md5(uuid.uuid4().bytes)
+    api_key = hashlib.md5(uuid.uuid4().bytes).hexdigest()
 
     user = {
         'email': email,
