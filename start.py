@@ -98,6 +98,9 @@ if __name__ == '__main__':
         if rar_p:
             rar_p.join()
 
+        if imdb_p:
+            imdb_p.join()
+
         if tvrage_p:
             tvrage_p.join()
 
