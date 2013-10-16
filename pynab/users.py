@@ -17,6 +17,6 @@ def create(email):
         'grabs': 0
     }
 
-    db.update({'email': email}, user, upsert=True)
+    db.users.update({'email': email}, user, upsert=True)
 
     return api_key
