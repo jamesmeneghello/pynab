@@ -91,8 +91,9 @@ class Server:
         try:
             # grab the headers we're after
             self.connection.group(group_name)
-            count, overviews = self.connection.over((first, last))
-        except nntplib.NNTPError:
+            status, overviews = self.connection.over((first, last))
+        except nntplib.NNTPError as nntpe:
+            log.debug('NNTP Error: {}'.format(nntpe))
             return None
 
         messages = {}
@@ -162,13 +163,14 @@ class Server:
         # instead of checking every single individual segment, package them first
         # so we typically only end up checking the blacklist for ~150 parts instead of thousands
         blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name)]
-        blacklisted = len(blacklist)
+        blacklisted_parts = len(blacklist)
+        total_parts = len(messages)
         for k in blacklist:
             del messages[k]
 
         log.info(
-            '{}: Received {:d} articles of {:d} with {:d} ignored and {:d} blacklisted.'
-            .format(group_name, len(received), last - first + 1, ignored, blacklisted)
+            '{}: Received {:d} articles of {:d}, forming {:d} parts with {:d} ignored and {:d} blacklisted.'
+            .format(group_name, len(received), last - first + 1, total_parts, ignored, blacklisted_parts)
         )
 
         # TODO: implement re-checking of missed messages, or maybe not

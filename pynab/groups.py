@@ -49,32 +49,29 @@ def backfill(group_name, date=None):
 
             while True:
                 messages = server.scan(group_name, start, end)
-                if not messages:
-                    log.error('{}: Could not scan group.'.format(group_name))
-                    return False
 
-                if parts.save_all(messages):
-                    db.groups.update({
-                                         '_id': group['_id']
-                                     },
-                                     {
-                                         '$set': {
-                                             'first': start
-                                         }
-                                     })
-                    pass
-                else:
-                    log.error('{}: Failed while saving parts.'.format(group_name))
-                    return False
+                if messages:
+                    if parts.save_all(messages):
+                        db.groups.update({
+                                             '_id': group['_id']
+                                         },
+                                         {
+                                             '$set': {
+                                                 'first': start
+                                             }
+                                         })
+                        pass
+                    else:
+                        log.error('{}: Failed while saving parts.'.format(group_name))
+                        return False
 
-                if first == target_article:
+                if start == target_article:
                     return True
                 else:
                     end = start - 1
                     start = end - MESSAGE_LIMIT + 1
                     if target_article > start:
                         start = target_article
-
         else:
             log.error('{}: Group doesn\'t exist in db.'.format(group_name))
             return False
@@ -138,22 +135,19 @@ def update(group_name):
                             end = start + MESSAGE_LIMIT
 
                     messages = server.scan(group_name, start, end)
-                    if not messages:
-                        log.error('{}: Could not scan group.'.format(group_name))
-                        return False
-
-                    if parts.save_all(messages):
-                        db.groups.update({
-                                             '_id': group['_id']
-                                         },
-                                         {
-                                             '$set': {
-                                                 'last': end
-                                             }
-                                         })
-                    else:
-                        log.error('{}: Failed while saving parts.'.format(group_name))
-                        return False
+                    if messages:
+                        if parts.save_all(messages):
+                            db.groups.update({
+                                                 '_id': group['_id']
+                                             },
+                                             {
+                                                 '$set': {
+                                                     'last': end
+                                                 }
+                                             })
+                        else:
+                            log.error('{}: Failed while saving parts.'.format(group_name))
+                            return False
 
                     if end == last:
                         return True
