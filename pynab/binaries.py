@@ -160,11 +160,6 @@ def process():
                         match['parts'] = match['parts'].replace('-', '/') \
                             .replace('~', '/').replace(' of ', '/')
 
-                    # check for reposts and tag it as such
-                    repost = re.search('(repost|re\-?up)', match['name'], flags=re.I)
-                    if repost:
-                        match['name'] += ' ' + result.group(0)
-
                     current, total = match['parts'].split('/')
 
                     # if the binary is already in our chunk,
