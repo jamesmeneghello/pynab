@@ -251,6 +251,12 @@ with noted exceptions:
 - COMMENTS-ADD (...)
 - USER (not yet implemented, since API access is currently unlimited)
 
+Known Problems
+==============
+
+- Running the processing scripts on a server remote to the MongoDB server will cause problems, especially if the processor is Windows-based.
+
+
 Acknowledgements
 ================
 
