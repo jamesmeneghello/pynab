@@ -1,7 +1,6 @@
 import re
 import time
 import datetime
-
 import pytz
 
 from pynab.db import db
@@ -11,53 +10,55 @@ from pynab import log
 CHUNK_SIZE = 500
 
 
+def merge(a, b, path=None):
+    """Merge multi-level dictionaries.
+    Kudos: http://stackoverflow.com/questions/7204805/python-dictionaries-of-dictionaries-merge/
+    """
+    if path is None:
+        path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass  # same leaf value
+            else:
+                a[key] = b[key]
+                #raise Exception('Conflict at {}: {} {}'.format('.'.join(path + [str(key)]), a[key], b[key]))
+        else:
+            a[key] = b[key]
+    return a
+
+
 def save(binary):
     """Save a single binary to the DB, including all
-    segments/parts (which takes the longest)."""
+    segments/parts (which takes the longest).
+    --
+    Note: Much quicker. Hooray!
+    """
     log.debug('Saving to binary: ' + binary['name'])
 
-    # because for some reason we can't do a batch find_and_modify
-    # upsert into nested embedded dicts
-    # i'm probably doing it wrong
-    db.binaries.update(
-        {
-            'name': binary['name']
-        },
-        {
+    existing_binary = db.binaries.find_one({'name': binary['name']})
+    if existing_binary:
+        merge(existing_binary['parts'], binary['parts'])
+        db.binaries.update({'_id': existing_binary['_id']}, {
             '$set': {
-                'name': binary['name'],
-                'group_name': binary['group_name'],
-                'posted': binary['posted'],
-                'posted_by': binary['posted_by'],
-                'category_id': binary['category_id'],
-                'regex_id': binary['regex_id'],
-                'req_id': binary['req_id'],
-                'xref': binary['xref'],
-                'total_parts': binary['total_parts']
+                'parts': existing_binary['parts']
             }
-        },
-        upsert=True
-    )
-
-    # this is going to be slow, probably. unavoidable.
-    for pkey, part in binary['parts'].items():
-        for skey, segment in part['segments'].items():
-            db.binaries.update(
-                {
-                    'name': binary['name']
-                },
-                {
-                    '$set': {
-                        'parts.' + pkey + '.subject': part['subject'],
-                        'parts.' + pkey + '.group_name': part['group_name'],
-                        'parts.' + pkey + '.posted': part['posted'],
-                        'parts.' + pkey + '.posted_by': part['posted_by'],
-                        'parts.' + pkey + '.xref': part['xref'],
-                        'parts.' + pkey + '.total_segments': part['total_segments'],
-                        'parts.' + pkey + '.segments.' + skey: segment
-                    }
-                }
-            )
+        })
+    else:
+        db.binaries.insert({
+            'name': binary['name'],
+            'group_name': binary['group_name'],
+            'posted': binary['posted'],
+            'posted_by': binary['posted_by'],
+            'category_id': binary['category_id'],
+            'regex_id': binary['regex_id'],
+            'req_id': binary['req_id'],
+            'xref': binary['xref'],
+            'total_parts': binary['total_parts'],
+            'parts': binary['parts']
+        })
 
 
 def save_and_clear(binaries=None, parts=None):
