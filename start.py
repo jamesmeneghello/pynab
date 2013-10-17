@@ -22,6 +22,7 @@ def init_update():
 
 def update(group_name):
     pynab.groups.update(group_name)
+    return True
 
 
 def process_tvrage(limit):
