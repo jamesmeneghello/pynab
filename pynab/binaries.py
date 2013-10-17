@@ -142,6 +142,14 @@ def process():
                 timediff = pytz.utc.localize(datetime.datetime.now()) \
                            - pytz.utc.localize(part['posted'])
 
+                # if regex are shitty, look for parts manually
+                # segment numbers have been stripped by this point, so don't worry
+                # about accidentally hitting those instead
+                if not match.get('parts'):
+                    result = re.search('(\d{1,3}\/\d{1,3})', part['subject'])
+                    if result:
+                        match['parts'] = result.group(1)
+
                 # probably an nzb
                 if not match.get('parts') and timediff.seconds / 60 / 60 > 3:
                     orphan_binaries.append(match['name'])
