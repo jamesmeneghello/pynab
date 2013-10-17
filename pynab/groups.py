@@ -1,3 +1,5 @@
+import time
+
 from pynab import log
 from pynab.db import db
 from pynab.server import Server
@@ -132,7 +134,7 @@ def update(group_name):
                         if start + MESSAGE_LIMIT > last:
                             end = last
                         else:
-                            end = start + MESSAGE_LIMIT
+                            end = start + MESSAGE_LIMIT - 1
 
                     messages = server.scan(group_name, start, end)
                     if messages:
@@ -148,11 +150,14 @@ def update(group_name):
                         else:
                             log.error('{}: Failed while saving parts.'.format(group_name))
                             return False
+                    else:
+                        log.error('Problem updating group - trying again in 5 seconds...')
+                        time.sleep(5)
+                        continue
 
                     if end == last:
                         return True
                     else:
-                        end = start + MESSAGE_LIMIT - 1
                         start = end + 1
                         log.info('{}: {:d} messages to go for this group.'.format(group_name, last - end))
             else:
