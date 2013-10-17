@@ -9,40 +9,33 @@ from pynab import log
 def save(part):
     """Save a single part and segment set to the DB.
     Probably really slow. Some Mongo updates would help
-    a lot with this."""
+    a lot with this.
+    ---
+    Note: no longer as slow.
+    """
     # because for some reason we can't do a batch find_and_modify
     # upsert into nested embedded dicts
     # i'm probably doing it wrong
     try:
-        db.parts.update(
-            {
-                'subject': part['subject']
-            },
-            {
+        existing_part = db.parts.find_one({'subject': part['subject']})
+        if existing_part:
+            existing_part['segments'].update(part['segments'])
+            db.parts.update({'_id': existing_part['_id']}, {
                 '$set': {
-                    'subject': part['subject'],
-                    'group_name': part['group_name'],
-                    'posted': part['posted'],
-                    'posted_by': part['posted_by'],
-                    'xref': part['xref'],
-                    'total_segments': part['total_segments']
-                },
-            },
-            upsert=True
-        )
-
-        # this is going to be slow, probably. unavoidable.
-        for skey, segment in part['segments'].items():
-            db.parts.update(
-                {
-                    'subject': part['subject']
-                },
-                {
-                    '$set': {
-                        'segments.' + skey: segment
-                    }
+                    'segments': existing_part['segments']
                 }
-            )
+            })
+        else:
+            db.parts.insert({
+                'subject': part['subject'],
+                'group_name': part['group_name'],
+                'posted': part['posted'],
+                'posted_by': part['posted_by'],
+                'xref': part['xref'],
+                'total_segments': part['total_segments'],
+                'segments': part['segments']
+            })
+
     except pymongo.errors.PyMongoError as e:
         raise e
 
