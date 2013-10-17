@@ -39,26 +39,29 @@ def save(binary):
     log.debug('Saving to binary: ' + binary['name'])
 
     existing_binary = db.binaries.find_one({'name': binary['name']})
-    if existing_binary:
-        merge(existing_binary['parts'], binary['parts'])
-        db.binaries.update({'_id': existing_binary['_id']}, {
-            '$set': {
-                'parts': existing_binary['parts']
-            }
-        })
-    else:
-        db.binaries.insert({
-            'name': binary['name'],
-            'group_name': binary['group_name'],
-            'posted': binary['posted'],
-            'posted_by': binary['posted_by'],
-            'category_id': binary['category_id'],
-            'regex_id': binary['regex_id'],
-            'req_id': binary['req_id'],
-            'xref': binary['xref'],
-            'total_parts': binary['total_parts'],
-            'parts': binary['parts']
-        })
+    try:
+        if existing_binary:
+            merge(existing_binary['parts'], binary['parts'])
+            db.binaries.update({'_id': existing_binary['_id']}, {
+                '$set': {
+                    'parts': existing_binary['parts']
+                }
+            })
+        else:
+            db.binaries.insert({
+                'name': binary['name'],
+                'group_name': binary['group_name'],
+                'posted': binary['posted'],
+                'posted_by': binary['posted_by'],
+                'category_id': binary['category_id'],
+                'regex_id': binary['regex_id'],
+                'req_id': binary['req_id'],
+                'xref': binary['xref'],
+                'total_parts': binary['total_parts'],
+                'parts': binary['parts']
+            })
+    except:
+        log.error('Binary was too large to fit in DB!')
 
 
 def save_and_clear(binaries=None, parts=None):
@@ -101,7 +104,7 @@ def process():
     # where(), but it's slow as hell because it's processed by the JS engine
     relevant_groups = db.parts.distinct('group_name')
     for part in db.parts.find({'group_name': {'$in': relevant_groups}}, exhaust=True):
-        for regex in db.regexes.find({'group_name': {'$in': [part['group_name'], '*']}}, timeout=False):
+        for regex in db.regexes.find({'group_name': {'$in': [part['group_name'], '*']}}).sort('ordinal', 1):
             # convert php-style regex to python
             # ie. /(\w+)/i -> (\w+), re.I
             # no need to handle s, as it doesn't exist in python
@@ -139,9 +142,10 @@ def process():
                 timediff = pytz.utc.localize(datetime.datetime.now()) \
                            - pytz.utc.localize(part['posted'])
 
+                # probably an nzb
                 if not match.get('parts') and timediff.seconds / 60 / 60 > 3:
                     orphan_binaries.append(match['name'])
-                    match['parts'] = '01/01'
+                    match['parts'] = '00/00'
 
                 if match.get('name') and match.get('parts'):
                     if match['parts'].find('/') == -1:
@@ -174,6 +178,7 @@ def process():
                         }
 
                         binaries[match['name']] = b
+                    break
 
         # add the part to a list so we can delete it later
         processed_parts.append(part['_id'])
