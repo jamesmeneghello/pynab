@@ -79,18 +79,19 @@ def search(name, year):
     # if we managed to parse the year from the name
     # include it, since it'll narrow results
     if year:
-        year_query = '&y={}'.format(year)
+        year_query = '&y={}'.format(year.replace('(', '').replace(')', ''))
     else:
         year_query = ''
 
     r = requests.get(OMDB_SEARCH_URL + name + year_query)
     data = r.json()
-    for movie in data['Search']:
-        # doublecheck, but the api should've searched properly
-        ratio = difflib.SequenceMatcher(None, clean_name(name), clean_name(movie['Title'])).ratio()
-        if ratio > 0.8 and year == movie['Year'] and movie['Type'] == 'movie':
-            log.info('OMDB movie match found: {}'.format(movie['Title']))
-            return movie
+    if 'Search' in data:
+        for movie in data['Search']:
+            # doublecheck, but the api should've searched properly
+            ratio = difflib.SequenceMatcher(None, clean_name(name), clean_name(movie['Title'])).ratio()
+            if ratio > 0.8 and year == movie['Year'] and movie['Type'] == 'movie':
+                log.info('OMDB movie match found: {}'.format(movie['Title']))
+                return movie
 
 
 def get_details(id):
@@ -130,7 +131,7 @@ def parse_movie(search_name):
                 year = ''
             return name, year
 
-    return False
+    return None, None
 
 
 def clean_name(name):
