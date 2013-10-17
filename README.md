@@ -1,3 +1,13 @@
+A Friendly Note
+---------------
+
+If you run into problems, read the FAQ first.
+
+When posting crashes and issues, please include a logfile - you can generate one by
+setting "logging_file" to something and "logging_level" to "logging.DEBUG".
+
+
+
 pynab
 =====
 
@@ -237,6 +247,30 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     processes = 4 [or whatever number of cpu cores you have]
     threads = 2
 
+F.A.Q.
+======
+
+- Everything keeps breaking! AAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+There's heavy development going on currently. This means that, since there's no stable release yet,
+everything is in a constant state of flux. Typically, it means I'm introducing and fixing bugs
+(which in turn means I'm creating new ones). Once everything's hammered out and a stable copy is
+completed, I'll be branching off into development and all your shit should stop breaking.
+
+That day is not today, however. (within the next few days, hopefully)
+
+- I keep getting errors related to "config.<something>" and start.py stops.
+
+This means that your config.py is out of date. Re-copy config.sample.py and re-enter your details.
+Generally speaking this should become less of a problem as time goes on - only new features require new
+config options, and the project is mostly in bugfix mode at the moment.
+
+- Start.py keeps failing with some kind of EOFError or just some random error.
+
+Python's Multiprocessing Pool is such that any error will tend to flip it out and kill all the workers,
+so combined with NNTP implementations' rather.. "free" usage of error messages and standards, this'll
+happen for a while until I catch all the weird bugs. Found a new, weird crash? Post an issue!
+
 
 Newznab API
 ===========
@@ -254,7 +288,7 @@ with noted exceptions:
 Known Problems
 ==============
 
-- Running the processing scripts on a server remote to the MongoDB server will cause problems, especially if the processor is Windows-based.
+- ~~Running the processing scripts on a server remote to the MongoDB server will cause problems, especially if the processor is Windows-based.~~ No longer relevant, performance improvements have obsoleted this.
 
 
 Acknowledgements
