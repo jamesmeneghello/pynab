@@ -99,10 +99,8 @@ def process():
     # to re-enable that feature in future, mongo supports reverse-regex through
     # where(), but it's slow as hell because it's processed by the JS engine
     relevant_groups = db.parts.distinct('group_name')
-    for regex in db.regexes.find({'group_name': {'$in': relevant_groups + ['*']}}, timeout=False):
-        log.debug('Matching to regex: ' + regex['regex'])
-
-        for part in db.parts.find({'group_name': {'$in': relevant_groups}}, exhaust=True):
+    for part in db.parts.find({'group_name': {'$in': relevant_groups}}, exhaust=True):
+        for regex in db.regexes.find({'group_name': {'$in': [part['group_name'], '*']}}, timeout=False):
             # convert php-style regex to python
             # ie. /(\w+)/i -> (\w+), re.I
             # no need to handle s, as it doesn't exist in python
@@ -117,11 +115,13 @@ def process():
             try:
                 result = re.search(r, part['subject'], regex_flags)
             except:
-                log.error('Broken regex detected. _id: {:d}'.format(regex['_id']))
-                break
+                log.error('Broken regex detected. _id: {:d}, removing...'.format(regex['_id']))
+                db.regexes.remove({'_id': regex['_id']})
+                continue
 
             match = result.groupdict() if result else None
             if match:
+                log.debug('Matched part {} to {}.'.format(part['subject'], regex['regex']))
                 # remove whitespace in dict values
                 match = {k: v.strip() for k, v in match.items()}
 
@@ -174,18 +174,18 @@ def process():
 
                         binaries[match['name']] = b
 
-            # add the part to a list so we can delete it later
-            processed_parts.append(part['_id'])
+        # add the part to a list so we can delete it later
+        processed_parts.append(part['_id'])
 
-            # save and delete stuff in chunks
-            if len(processed_parts) >= CHUNK_SIZE:
-                log.info('Processing chunk {0:d} of approx {1:.1f} with {2:d} parts...'
-                .format(chunk_count, approx_chunks, CHUNK_SIZE)
-                )
-                chunk_count += 1
-                save_and_clear(binaries, processed_parts)
-                processed_parts = []
-                binaries = {}
+        # save and delete stuff in chunks
+        if len(processed_parts) >= CHUNK_SIZE:
+            log.info('Processing chunk {0:d} of approx {1:.1f} with {2:d} parts...'
+            .format(chunk_count, approx_chunks, CHUNK_SIZE)
+            )
+            chunk_count += 1
+            save_and_clear(binaries, processed_parts)
+            processed_parts = []
+            binaries = {}
 
     # clear off whatever's left
     save_and_clear(binaries, processed_parts)

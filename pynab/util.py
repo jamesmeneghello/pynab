@@ -73,7 +73,7 @@ def update_regex():
                     regexes.append({
                         '_id': int(regex.group(1)),
                         'group_name': regex.group(2),
-                        'regex': regex.group(3),
+                        'regex': regex.group(3).replace('\\\\', '\\'),
                         'ordinal': int(regex.group(4)),
                         'status': int(regex.group(5)),
                         'description': description,
