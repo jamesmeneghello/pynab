@@ -202,7 +202,7 @@ class Server:
             return self.post_date(group_name, article + int(article * 0.001))
 
         if art_num and overview:
-            return dateutil.parser.parse(overview['date'])
+            return dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
         else:
             return None
 
