@@ -1,7 +1,6 @@
 import tempfile
 import os
 import re
-import pprint
 import shutil
 import subprocess
 
@@ -101,7 +100,6 @@ def get_rar_info(server, group_name, messages):
 
                 if inner_files:
                     inner_passwords += [r.is_encrypted for r in inner_files]
-                    pprint.pprint(inner_passwords)
                 else:
                     passworded = True
                     break
