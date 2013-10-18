@@ -134,11 +134,14 @@ def import_nzb(filepath, quick=True):
                 parent, child = release['category'].split(' > ')
 
                 parent_category = db.categories.find_one({'name': parent})
-                child_category = db.categories.find_one({'name': child, 'parent_id': parent_category['_id']})
+                if parent_category:
+                    child_category = db.categories.find_one({'name': child, 'parent_id': parent_category['_id']})
 
-                if parent_category and child_category:
-                    release['category'] = child_category
-                    release['category']['parent'] = parent_category
+                    if child_category:
+                        release['category'] = child_category
+                        release['category']['parent'] = parent_category
+                    else:
+                        release['category'] = None
                 else:
                     release['category'] = None
             else:
