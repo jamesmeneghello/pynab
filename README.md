@@ -126,6 +126,11 @@ You also need to install Python 3.3, associated packages and pip3:
     > sudo python3 install.py [follow instructions]
     > sudo chown -R www-data:www-data /var/www/pynab
 
+If you receive an error message related to an old version of distribute while running pip3, you can
+install the new version by typing:
+
+    sudo easy_install -U distribute
+
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
 Please note that in order to download updated regexes from the Newznab crew, you'll need a NN+ ID.
