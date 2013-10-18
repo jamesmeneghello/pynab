@@ -42,6 +42,26 @@ def api_error(code):
     return '{0}\n<error code=\"{1:d}\" description=\"{2}\" />'.format(xml_header, code, error)
 
 
+def get_nfo(dataset=None):
+    if auth():
+        guid = request.query.guid or None
+        if guid:
+            release = db.releases.find_one({'id': guid})
+            if release:
+                data = fs.get(release['nfo']).read()
+                response.set_header('Content-type', 'application/x-nfo')
+                response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                .format(release['search_name'].replace(' ', '_') + '.nfo')
+                )
+                return gzip.decompress(data)
+            else:
+                return api_error(300)
+        else:
+            return api_error(200)
+    else:
+        return api_error(100)
+
+
 def get_nzb(dataset=None):
     if auth():
         guid = request.query.guid or None
@@ -294,8 +314,5 @@ functions = {
     'tv|tvsearch': tv_search,
     'm|movie': movie_search,
     'g|get': get_nzb,
+    'gn|getnfo': get_nfo,
 }
-
-"""
-'gn|getnfo': get_nfo,
-"""

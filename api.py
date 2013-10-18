@@ -36,6 +36,9 @@ def api():
             else:
                 return pynab.api.api_error(201)
 
+    # didn't match any functions
+    return pynab.api.api_error(202)
+
 
 def get_link(route=''):
     """Gets a link (including domain/subdirs) to a route."""
