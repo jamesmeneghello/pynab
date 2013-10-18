@@ -29,7 +29,7 @@
                 <%
                     uskey = '{:d}'.format(int(skey))
                 %>
-                    <segment bytes="${segment['size']}" number="${uskey}">${segment['message_id']}</segment>
+                    <segment bytes="${segment['size']}" number="${uskey}">${segment['message_id'] | x}</segment>
                 % endfor
             </segments>
         </file>
