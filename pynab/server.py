@@ -72,7 +72,11 @@ class Server:
                     log.debug('{}: Getting article: {}'.format(group_name, article))
 
                     response, (number, message_id, lines) = self.connection.body(article)
-                    data += pynab.yenc.yenc_decode(lines)
+                    res = pynab.yenc.yenc_decode(lines)
+                    if res:
+                        data += res
+                    else:
+                        return None
             except nntplib.NNTPError as nntpe:
                 log.error('{}: Problem retrieving messages from server: {}.'.format(group_name, nntpe))
                 return None

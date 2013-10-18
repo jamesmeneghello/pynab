@@ -27,6 +27,7 @@ def yenc_decode(lines):
             return data.translate(YDEC_TRANS)
         else:
             log.debug('File wasn\'t yenc.')
+            log.debug(data)
     else:
         log.debug('Problem parsing lines.')
 
