@@ -72,6 +72,13 @@ site = {
     # for something like a bluray release, this is quite large
     'process_rars': True,
 
+    # unrar_path: path to unrar binary
+    # for windows, this'll be wherever you installed it to
+    # for linux, probably just /usr/bin/unrar
+    # if windows, make sure to escape slashes, ie.
+    # 'C:\\Program Files (x86)\\Unrar\\Unrar.exe'
+    'unrar_path': '',
+
     # rar_limit: number of rar checks to do per start.py cycle
     # set this to a low number - you have to pull a whole part of the release
     # so it takes a while
