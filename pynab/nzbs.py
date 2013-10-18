@@ -90,7 +90,7 @@ def import_nzb(filepath, quick=True):
     file, ext = os.path.splitext(filepath)
 
     if ext == '.gz':
-        f = gzip.open(filepath, 'r')
+        f = gzip.open(filepath, 'rt', encoding='utf-8', errors='ignore')
     else:
         f = open(filepath, 'r', encoding='utf-8', errors='ignore')
 
