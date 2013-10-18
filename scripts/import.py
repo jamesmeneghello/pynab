@@ -8,11 +8,16 @@ from pynab import log
 import pynab.nzbs
 import scripts.process_uncategorised
 
-parser = argparse.ArgumentParser(description='Recursively import NZBs into Pynab.')
+parser = argparse.ArgumentParser(
+    description='Recursively import NZBs into Pynab. NOTE: DESTRUCTIVE. Will delete NZB upon successful import. Don\'t run it on a directory you may need to use again.')
 parser.add_argument('directory')
 
 if __name__ == '__main__':
     args = parser.parse_args()
+
+    print(
+        'NOTE: DESTRUCTIVE. Will delete NZB upon successful import. Don\'t run it on a directory you may need to use again.')
+    input('To continue, press enter. To exit, press ctrl-c.')
 
     for root, dirs, files in os.walk(args.directory):
         for name in files:
