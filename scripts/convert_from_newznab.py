@@ -309,13 +309,13 @@ if __name__ == '__main__':
     mysql = mysql_connect(config.mysql)
 
     # comment lines out if you don't want those collections replaced
-    #convert_groups(mysql)
-    #convert_categories(mysql)
-    #convert_regex(mysql)
-    #convert_blacklist(mysql)
-    #convert_imdb(mysql)
-    #convert_tvdb(mysql)
-    #convert_tvrage(mysql)
+    convert_groups(mysql)
+    convert_categories(mysql)
+    convert_regex(mysql)
+    convert_blacklist(mysql)
+    convert_imdb(mysql)
+    convert_tvdb(mysql)
+    convert_tvrage(mysql)
     convert_users(mysql)
 
     print('Completed transfer. You can think about shutting down / removing MySQL from your server now.')
