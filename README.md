@@ -7,6 +7,13 @@ When posting crashes and issues, please include a logfile - you can generate one
 setting "logging_file" to something and "logging_level" to "logging.DEBUG".
 
 
+###Warning###
+
+This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
+make sure you make a copy of them first. Only the import script will actively delete
+things, newznab conversion will just copy - but better to be safe.
+
+
 
 pynab
 =====
