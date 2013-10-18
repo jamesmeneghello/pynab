@@ -89,8 +89,8 @@ def import_nzb(filepath, quick=True):
     """Import an NZB and directly load it into releases."""
     file, ext = os.path.splitext(filepath)
 
-    if ext == '.nzb.gz':
-        f = gzip.open(filepath, 'r', encoding='utf-8', errors='ignore')
+    if ext == '.gz':
+        f = gzip.open(filepath, 'r')
     else:
         f = open(filepath, 'r', encoding='utf-8', errors='ignore')
 
