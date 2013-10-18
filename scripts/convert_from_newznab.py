@@ -4,20 +4,6 @@ Functions to convert a Newznab installation to Pynab.
 NOTE: DESTRUCTIVE. DO NOT RUN ON ACTIVE PYNAB INSTALL.
 (unless you know what you're doing)
 
-Note 2:
-If there are duplicate rageID/tvdbID/imdbID's in their
-respective tables, you'll need to trim duplicates first
-or these scripts will fail. You can do so with:
-
-alter ignore table tvrage add unique key (rageid);
-
-If they're running InnoDB you can't always do this, so
-you'll need to do:
-
-alter table tvrage engine myisam;
-alter ignore table tvrage add unique key (rageid);
-alter table tvrage engine innodb;
-
 """
 
 # if you're using pycharm, don't install the bson package
@@ -26,12 +12,32 @@ import os
 import sys
 
 import cymysql
+import pymongo.errors
 
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab.db import db
 import config
+
+
+def dupe_notice():
+    error_text = '''
+        If there are duplicate rageID/tvdbID/imdbID's in their
+        respective tables, you'll need to trim duplicates first
+        or these scripts will fail. You can do so with:
+
+        alter ignore table tvrage add unique key (rageid);
+
+        If they're running InnoDB you can't always do this, so
+        you'll need to do:
+
+        alter table tvrage engine myisam;
+        alter ignore table tvrage add unique key (rageid);
+        alter table tvrage engine innodb;
+    '''
+
+    print(error_text)
 
 
 def mysql_connect(mysql_config):
@@ -133,7 +139,7 @@ def convert_regex(mysql):
 
         regex = {
             'group_name': r[0],
-            'regex': r[1].replace('\\\\', '\\'),
+            'regex': r[1],
             'ordinal': r[2],
             'status': r[3],
             'description': r[5],
@@ -234,7 +240,13 @@ def convert_tvdb(mysql):
 
         tvdbs.append(tvdb)
 
-    db.tvdb.insert(tvdbs)
+    try:
+        db.tvdb.insert(tvdbs)
+    except pymongo.errors.DuplicateKeyError:
+        print('Error: Duplicate keys in TVDB MySQL table.')
+        dupe_notice()
+        print('Stopping script...')
+        sys.exit(1)
 
 
 def convert_tvrage(mysql):
@@ -263,7 +275,13 @@ def convert_tvrage(mysql):
 
         tvrages.append(tvrage)
 
-    db.tvrage.insert(tvrages)
+    try:
+        db.tvrage.insert(tvrages)
+    except pymongo.errors.DuplicateKeyError:
+        print('Error: Duplicate keys in TVRage MySQL table.')
+        dupe_notice()
+        print('Stopping script...')
+        sys.exit(1)
 
 
 def convert_imdb(mysql):
@@ -295,7 +313,13 @@ def convert_imdb(mysql):
 
         imdbs.append(imdb)
 
-    db.imdb.insert(imdbs)
+    try:
+        db.imdb.insert(imdbs)
+    except pymongo.errors.DuplicateKeyError:
+        print('Error: Duplicate keys in IMDB MySQL table.')
+        dupe_notice()
+        print('Stopping script...')
+        sys.exit(1)
 
 
 if __name__ == '__main__':
