@@ -1,4 +1,4 @@
-import nntplib
+import lib.nntplib as nntplib
 import re
 import time
 import datetime
@@ -36,21 +36,18 @@ class Server:
 
         return response, count, first, last, name
 
-    def connect(self):
+    def connect(self, compression=True):
         """Creates a connection to a news server."""
         log.info('Attempting to connect to news server...')
 
         # i do this because i'm lazy
         ssl = config.news.pop('ssl', False)
 
-        # TODO: work out how to enable compression (no library support?)
         try:
             if ssl:
-                self.connection = nntplib.NNTP_SSL(**config.news)
+                self.connection = nntplib.NNTP_SSL(compression=compression, **config.news)
             else:
-                self.connection = nntplib.NNTP(**config.news)
-        # nttplib sometimes throws EOFErrors instead
-        #except nntplib.NNTPError as e:
+                self.connection = nntplib.NNTP(compression=compression, **config.news)
         except Exception as e:
             log.error('Could not connect to news server: ' + str(e))
             return False
@@ -189,12 +186,15 @@ class Server:
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""
         log.debug('{}: Retrieving date of article {:d}'.format(group_name, article))
+
+        articles = []
+
         try:
             self.connection.group(group_name)
             _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
         except nntplib.NNTPError as e:
-            log.warning('Error with news server: {}'.format(e))
-            return None
+            # leave this alone - we don't expect any data back
+            pass
 
         try:
             art_num, overview = articles[0]
