@@ -516,58 +516,54 @@ class _NNTPBase:
                 raise NNTPReplyError(resp)
 
             lines = b''
-            if file is not None:
-                while 1:
-                    line = self._getline(False)
-                    if line[-3:] == b'.\r\n':
-                        break
-                    else:
-                        file.write(line)
-                        lines += line
-            else:
-                terminator = False
-                termline = b''
-                while 1:
-                    # Check if we found a possible terminator (.\r\n)
-                    if terminator:
-                        # The socket is non blocking, so it throws an
-                        # exception if the server sends back nothing.
-                        try:
-                            # The server sent back something.
-                            line = self._getline(False)
-                            # So set back the socket to blocking.
-                            self.sock.settimeout(120)
-                            # And reset the terminator check.
-                            terminator = False
-                        # The socket buffer was empty.
-                        except Exception as e:
-                            # This was the final line, so remove the
-                            # terminator and append it.
-                            lines += line[:-3]
-                            # Set the socket back to blocking.
-                            self.sock.settimeout(120)
-                            # And break out of the loop.
-                            break
-                        # The buffer was not empty, so write the last line.
-                        lines += termline
-                        # Reset this for next time.
-                        termline = b''
-                        # And write the current line.
-                        lines += line
-                    # We didn't find a terminator, so fetch the next line.
-                    else:
+            terminator = False
+            while 1:
+                # Check if we found a possible terminator (.\r\n)
+                if terminator:
+                    # The socket is non blocking, so it throws an
+                    # exception if the server sends back nothing.
+                    try:
+                        # The server sent back something.
                         line = self._getline(False)
-                        # We found a terminator.
-                        if line[-3:] == b'.\r\n':
-                            # So add the line to a temp line for later.
-                            termline = line
-                            # And set the socket to non blocking.
-                            self.sock.settimeout(0)
-                            # And mark that we found a terminator.
-                            terminator = True
+                        # So set back the socket to blocking.
+                        self.sock.settimeout(120)
+                        # And reset the terminator check.
+                        terminator = False
+                    # The socket buffer was empty.
+                    except Exception as e:
+                        # This was the final line, so remove the
+                        # terminator and append it.
+                        lines += termline[:-3]
+                        if file is not None:
+                            file.write(termline[:-3])
+                        # Set the socket back to blocking.
+                        self.sock.settimeout(120)
+                        # And break out of the loop.
+                        break
+                    # The buffer was not empty, so write the last line.
+                    lines += termline
+                    if file is not None:
+                        file.write(termline)
+                    # And write the current line.
+                    if file is not None:
+                        file.write(line)
+                    lines += line
+                else:
+                    # We didn't find a terminator, so fetch the next line.
+                    line = self._getline(False)
+                    # We found a terminator.
+                    if line[-3:] == b'.\r\n':
+                        # So add the line to a temp line for later.
+                        termline = line
+                        # And set the socket to non blocking.
+                        self.sock.settimeout(0)
+                        # And mark that we found a terminator.
+                        terminator = True
+                    else:
                         # Add the current line to the final buffer.
-                        else:
-                            lines += line
+                        lines += line
+                        if file is not None:
+                            file.write(line)
 
         finally:
             # If this method created the file, then it must close it
@@ -578,7 +574,10 @@ class _NNTPBase:
             # Try to decompress.
             decomp = zlib.decompress(lines)
             # Remove the last crlf and split the line into a list @crlf's
-            decomp = decomp[:-2].split(b'\r\n')
+            if decomp[-2:] == b'\r\n':
+                decomp = decomp[:-2].split(b'\r\n')
+            else:
+                decomp = decomp.split(b'\r\n')
         except Exception as e:
             raise NNTPDataError('Data from NNTP could not be decompressed.')
 
@@ -904,7 +903,7 @@ class _NNTPBase:
         - resp: server response if successful
         - list: list of dicts containing the response fields
         """
-        if self.compression_status == True:
+        if self.compressionstatus:
             resp, lines = self._compressedcmd('XOVER {0}-{1}'.format(start, end), file)
         else:
             resp, lines = self._longcmdstring('XOVER {0}-{1}'.format(start, end), file)
@@ -934,7 +933,7 @@ class _NNTPBase:
             cmd += ' {0}-{1}'.format(start, end or '')
         elif message_spec is not None:
             cmd = cmd + ' ' + message_spec
-        if self.compression_status:
+        if self.compressionstatus:
             resp, lines = self._compressedcmd(cmd, file)
         else:
             resp, lines = self._longcmdstring(cmd, file)
@@ -1158,9 +1157,9 @@ class NNTP(_NNTPBase):
             self.login(user, password, usenetrc)
 
         if compression:
-            self.compression_status = self.compression()
+            self.compressionstatus = self.compression()
         else:
-            self.compression_status = False
+            self.compressionstatus = False
 
     def _close(self):
         try:
@@ -1188,9 +1187,9 @@ if _have_ssl:
                 self.login(user, password, usenetrc)
 
             if compression:
-                self.compression_status = self.compression()
+                self.compressionstatus = self.compression()
             else:
-                self.compression_status = False
+                self.compressionstatus = False
 
         def _close(self):
             try:
