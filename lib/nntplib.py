@@ -69,7 +69,6 @@ import collections
 import datetime
 import warnings
 import zlib
-import sys
 
 try:
     import ssl
@@ -462,7 +461,6 @@ class _NNTPBase:
         If `file` is a file-like object, it must be open in binary mode.
         """
 
-        #size = 0
         openedFile = None
         try:
             # If a string was passed then open a file with that name
@@ -488,13 +486,11 @@ class _NNTPBase:
                 terminator = b'.'
                 while 1:
                     line = self._getline()
-                    #size += sys.getsizeof(line, 0)
                     if line == terminator:
                         break
                     if line.startswith(b'..'):
                         line = line[1:]
                     lines.append(line)
-            #print('Uncompressed: {:d} bytes'.format(size))
         finally:
             # If this method created the file, then it must close it
             if openedFile:
@@ -509,8 +505,6 @@ class _NNTPBase:
         Note: The file variable has not been tested.
         """
 
-
-        #size = 0
         openedFile = None
         try:
             # If a string was passed then open a file with that name
@@ -523,36 +517,72 @@ class _NNTPBase:
 
             lines = b''
             if file is not None:
-                # XXX lines = None instead?
-                terminators = (b'.' + _CRLF, b'.\n')
                 while 1:
                     line = self._getline(False)
                     if line[-3:] == b'.\r\n':
-                        break
-                    if line.startswith(b'..'):
-                        line = line[1:]
-                    file.write(line)
-            else:
-                while 1:
-                    line = self._getline(False)
-                    #size += sys.getsizeof(line, 0)
-                    if line[-3:] == b'.\r\n':
-                        lines += line[:-3]
                         break
                     else:
+                        file.write(line)
                         lines += line
-            #print('Compressed: {:d} bytes'.format(size))
+            else:
+                terminator = False
+                termline = b''
+                while 1:
+                    # Check if we found a possible terminator (.\r\n)
+                    if terminator:
+                        # The socket is non blocking, so it throws an
+                        # exception if the server sends back nothing.
+                        try:
+                            # The server sent back something.
+                            line = self._getline(False)
+                            # So set back the socket to blocking.
+                            self.sock.settimeout(120)
+                            # And reset the terminator check.
+                            terminator = False
+                        # The socket buffer was empty.
+                        except Exception as e:
+                            # This was the final line, so remove the
+                            # terminator and append it.
+                            lines += line[:-3]
+                            # Set the socket back to blocking.
+                            self.sock.settimeout(120)
+                            # And break out of the loop.
+                            break
+                        # The buffer was not empty, so write the last line.
+                        lines += termline
+                        # Reset this for next time.
+                        termline = b''
+                        # And write the current line.
+                        lines += line
+                    # We didn't find a terminator, so fetch the next line.
+                    else:
+                        line = self._getline(False)
+                        # We found a terminator.
+                        if line[-3:] == b'.\r\n':
+                            # So add the line to a temp line for later.
+                            termline = line
+                            # And set the socket to non blocking.
+                            self.sock.settimeout(0)
+                            # And mark that we found a terminator.
+                            terminator = True
+                        # Add the current line to the final buffer.
+                        else:
+                            lines += line
+
         finally:
             # If this method created the file, then it must close it
             if openedFile:
                 openedFile.close()
 
         try:
+            # Try to decompress.
             decomp = zlib.decompress(lines)
+            # Remove the last crlf and split the line into a list @crlf's
             decomp = decomp[:-2].split(b'\r\n')
         except Exception as e:
             raise NNTPDataError('Data from NNTP could not be decompressed.')
 
+        # Check if the decompressed string is not empty.
         if decomp[0] == b'':
             raise NNTPDataError('Data from NNTP is empty gzip string.')
         else:
@@ -874,7 +904,7 @@ class _NNTPBase:
         - resp: server response if successful
         - list: list of dicts containing the response fields
         """
-        if self.compression_status:
+        if self.compression_status == True:
             resp, lines = self._compressedcmd('XOVER {0}-{1}'.format(start, end), file)
         else:
             resp, lines = self._longcmdstring('XOVER {0}-{1}'.format(start, end), file)
@@ -904,7 +934,6 @@ class _NNTPBase:
             cmd += ' {0}-{1}'.format(start, end or '')
         elif message_spec is not None:
             cmd = cmd + ' ' + message_spec
-
         if self.compression_status:
             resp, lines = self._compressedcmd(cmd, file)
         else:
