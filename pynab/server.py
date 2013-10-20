@@ -22,7 +22,8 @@ class Server:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.connection.quit()
+        if self.connection:
+            self.connection.quit()
 
     def group(self, group_name):
         if not self.connection:
