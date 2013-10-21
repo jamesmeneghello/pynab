@@ -52,7 +52,7 @@ def process(limit=100, online=True):
                         'imdb': imdb
                     }
                 })
-            else:
+            elif not imdb and online:
                 log.warning('Could not find IMDB data to associate with release {}.'.format(release['search_name']))
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
@@ -61,6 +61,8 @@ def process(limit=100, online=True):
                         }
                     }
                 })
+            else:
+                log.warning('Could not find local IMDB data to associate with release {}.'.format(release['search_name']))
         else:
             log.warning('Could not parse name for movie data: {}.'.format(release['search_name']))
             db.releases.update({'_id': release['_id']}, {
