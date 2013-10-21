@@ -505,70 +505,53 @@ class _NNTPBase:
         Note: The file variable has not been tested.
         """
 
-        openedFile = None
-        try:
-            # If a string was passed then open a file with that name
-            if isinstance(file, (str, bytes)):
-                openedFile = file = open(file, "wb")
+        # Get the response.
+        resp = self._getresp()
+        # Check the response.
+        if resp[:3] != '224':
+            raise NNTPReplyError(resp)
 
-            resp = self._getresp()
-            if resp[:3] not in _LONGRESP:
-                raise NNTPReplyError(resp)
-
-            lines = b''
-            terminator = False
-            while 1:
-                # Check if we found a possible terminator (.\r\n)
-                if terminator:
-                    # The socket is non blocking, so it throws an
-                    # exception if the server sends back nothing.
-                    try:
-                        # The server sent back something.
-                        line = self._getline(False)
-                        # So set back the socket to blocking.
-                        self.sock.settimeout(120)
-                        # And reset the terminator check.
-                        terminator = False
-                    # The socket buffer was empty.
-                    except Exception as e:
-                        # This was the final line, so remove the
-                        # terminator and append it.
-                        lines += termline[:-3]
-                        if file is not None:
-                            file.write(termline[:-3])
-                        # Set the socket back to blocking.
-                        self.sock.settimeout(120)
-                        # And break out of the loop.
-                        break
-                    # The buffer was not empty, so write the last line.
-                    lines += termline
-                    if file is not None:
-                        file.write(termline)
-                    # And write the current line.
-                    if file is not None:
-                        file.write(line)
-                    lines += line
-                else:
-                    # We didn't find a terminator, so fetch the next line.
+        lines = b''
+        terminator = False
+        while 1:
+            # Check if we found a possible terminator (.\r\n)
+            if terminator:
+                # The socket is non blocking, so it throws an
+                # exception if the server sends back nothing.
+                try:
+                    # The server sent back something.
                     line = self._getline(False)
-                    # We found a terminator.
-                    if line[-3:] == b'.\r\n':
-                        # So add the line to a temp line for later.
-                        termline = line
-                        # And set the socket to non blocking.
-                        self.sock.settimeout(0)
-                        # And mark that we found a terminator.
-                        terminator = True
-                    else:
-                        # Add the current line to the final buffer.
-                        lines += line
-                        if file is not None:
-                            file.write(line)
-
-        finally:
-            # If this method created the file, then it must close it
-            if openedFile:
-                openedFile.close()
+                    # So set back the socket to blocking.
+                    self.sock.settimeout(120)
+                    # And reset the terminator check.
+                    terminator = False
+                # The socket buffer was empty.
+                except Exception as e:
+                    # This was the final line, so remove the
+                    # terminator and append it.
+                    lines += termline[:-3]
+                    # Set the socket back to blocking.
+                    self.sock.settimeout(120)
+                    # And break out of the loop.
+                    break
+                # The buffer was not empty, so write the last line.
+                lines += termline
+                # And write the current line.
+                lines += line
+            else:
+                # We didn't find a terminator, so fetch the next line.
+                line = self._getline(False)
+                # We found a terminator.
+                if line[-3:] == b'.\r\n':
+                    # So add the line to a temp line for later.
+                    termline = line
+                    # And set the socket to non blocking.
+                    self.sock.settimeout(0)
+                    # And mark that we found a terminator.
+                    terminator = True
+                else:
+                    # Add the current line to the final buffer.
+                    lines += line
 
         try:
             # Try to decompress.
@@ -584,8 +567,24 @@ class _NNTPBase:
         # Check if the decompressed string is not empty.
         if decomp[0] == b'':
             raise NNTPDataError('Data from NNTP is empty gzip string.')
-        else:
-            return resp, decomp
+
+        openedFile = None
+        try:
+            # If a string was passed then open a file with that name
+            if isinstance(file, (str, bytes)):
+                openedFile = file = open(file, "wb")
+
+            # Write the lines to the file.
+            if file is not None:
+                for header in decomp:
+                    file.write("%s\n" % header)
+
+        finally:
+            # If this method created the file, then it must close it
+            if openedFile:
+                openedFile.close()
+
+        return resp, decomp
 
     def _shortcmd(self, line):
         """Internal: send a command and get the response.
