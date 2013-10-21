@@ -37,9 +37,6 @@ def get_nzb_dict(nzb_id):
     par_count = 0
     zip_count = 0
 
-    import pprint
-    pprint.pprint(data)
-
     if 'file' not in data['nzb']:
         return None
 
