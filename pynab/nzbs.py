@@ -37,6 +37,9 @@ def get_nzb_dict(nzb_id):
     par_count = 0
     zip_count = 0
 
+    if 'file' not in data['nzb']:
+        return None
+
     if not isinstance(data['nzb']['file'], list):
         data['nzb']['file'] = [data['nzb']['file'], ]
 
