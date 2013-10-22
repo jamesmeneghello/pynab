@@ -72,7 +72,7 @@ def create_indexes():
                                  ('category._id', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([
-                                 ('posted', pymongo.ASCENDING),
+                                 ('posted', pymongo.DESCENDING),
                                  ('category._id', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([

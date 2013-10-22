@@ -62,7 +62,7 @@ def save_all(parts):
 
 
 def is_blacklisted(subject, group_name):
-    log.debug('{0}: Checking {1} against active blacklists...'.format(group_name, subject))
+    #log.debug('{0}: Checking {1} against active blacklists...'.format(group_name, subject))
     blacklists = db.blacklists.find({'status': 1})
     for blacklist in blacklists:
         if re.search(blacklist['group_name'], group_name):

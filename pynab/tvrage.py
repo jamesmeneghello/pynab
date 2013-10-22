@@ -74,7 +74,7 @@ def process(limit=100, online=True):
                         'tvrage': rage
                     }
                 })
-            else:
+            elif not rage and online:
                 log.warning('Could not find TVRage data to associate with release {}.'.format(release['search_name']))
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
@@ -83,6 +83,8 @@ def process(limit=100, online=True):
                         },
                     }
                 })
+            else:
+                log.warning('Could not find local TVRage data to associate with release {}.'.format(release['search_name']))
         else:
             log.warning('Could not parse name for TV data: {}.'.format(release['search_name']))
             db.releases.update({'_id': release['_id']}, {

@@ -26,8 +26,7 @@ class Server:
             self.connection.quit()
 
     def group(self, group_name):
-        if not self.connection:
-            self.connect()
+        self.connect()
 
         try:
             response, count, first, last, name = self.connection.group(group_name)
@@ -39,22 +38,27 @@ class Server:
 
     def connect(self, compression=True):
         """Creates a connection to a news server."""
-        log.info('Attempting to connect to news server...')
+        if not self.connection:
+            log.info('Attempting to connect to news server...')
 
-        # i do this because i'm lazy
-        ssl = config.news.pop('ssl', False)
+            news_config = config.news.copy()
 
-        try:
-            if ssl:
-                self.connection = nntplib.NNTP_SSL(compression=compression, **config.news)
-            else:
-                self.connection = nntplib.NNTP(compression=compression, **config.news)
-        except Exception as e:
-            log.error('Could not connect to news server: ' + str(e))
-            return False
+            # i do this because i'm lazy
+            ssl = news_config.pop('ssl', False)
 
-        log.info('Connected!')
-        return True
+            try:
+                if ssl:
+                    self.connection = nntplib.NNTP_SSL(compression=compression, **news_config)
+                else:
+                    self.connection = nntplib.NNTP(compression=compression, **news_config)
+            except Exception as e:
+                log.error('Could not connect to news server: {}'.format(e))
+                return False
+
+            log.info('Connected!')
+            return True
+        else:
+            return True
 
     def get(self, group_name, messages=None):
         """Get a set of messages from the server for the specified group."""
@@ -194,6 +198,7 @@ class Server:
             self.connection.group(group_name)
             _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
         except nntplib.NNTPError as e:
+            log.debug(e)
             # leave this alone - we don't expect any data back
             pass
 

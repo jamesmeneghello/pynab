@@ -288,7 +288,7 @@ def search(dataset=None, params=None):
             # we're looking for an rss feed
             # return results and sort by postdate ascending
             total = db.releases.find(query).count()
-            results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.ASCENDING)
+            results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.DESCENDING)
 
         dataset['releases'] = results
         dataset['offset'] = offset
