@@ -198,6 +198,7 @@ class Server:
             self.connection.group(group_name)
             _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
         except nntplib.NNTPError as e:
+            log.debug(e)
             # leave this alone - we don't expect any data back
             pass
 
