@@ -887,10 +887,13 @@ class _NNTPBase:
         Returns:
         - bool: Did the server understand the command?
         """
-        resp = self._shortcmd('XFEATURE COMPRESS GZIP')
-        if resp[:3] == '290':
-            return True
-        else:
+        try:
+            resp = self._shortcmd('XFEATURE COMPRESS GZIP')
+            if resp[:3] == '290':
+                return True
+            else:
+                return False
+        except Exception as e:
             return False
 
     def xover(self, start, end, *, file=None):
@@ -1250,3 +1253,4 @@ if __name__ == '__main__':
               )
 
     s.quit()
+    

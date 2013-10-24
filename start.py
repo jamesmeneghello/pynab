@@ -51,16 +51,16 @@ if __name__ == '__main__':
         if active_groups:
             # if maxtasksperchild is more than 1, everything breaks
             # they're long processes usually, so no problem having one task per child
-            with multiprocessing.Pool(processes=config.site['update_threads'], initializer=init_update,
-                                      maxtasksperchild=1) as pool:
-                try:
-                    result = pool.map(update, active_groups)
-                    pool.terminate()
-                    pool.join()
-                except KeyboardInterrupt:
-                    log.info('Caught ctrl-c, terminating workers.')
-                    pool.terminate()
-                    pool.join()
+            pool = multiprocessing.Pool(processes=config.site['update_threads'], initializer=init_update,
+                                        maxtasksperchild=1)
+            try:
+                result = pool.map(update, active_groups)
+                pool.terminate()
+                pool.join()
+            except KeyboardInterrupt:
+                log.info('Caught ctrl-c, terminating workers.')
+                pool.terminate()
+                pool.join()
 
             # process binaries
             # TODO: benchmark threading for this - i suspect it won't do much (mongo table lock)
