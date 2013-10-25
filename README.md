@@ -1,25 +1,8 @@
-A Friendly Note
----------------
-
-If you run into problems, read the FAQ first.
-
-When posting crashes and issues, please include a logfile - you can generate one by
-setting "logging_file" to something and "logging_level" to "logging.DEBUG".
-
-
-###Warning###
-
-This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
-make sure you make a copy of them first. Only the import script will actively delete
-things, newznab conversion will just copy - but better to be safe.
-
-
-
 pynab
 =====
 
 Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
-consisting of (currently) ~4,600 SLoC, compared to Newznab's ~104,000 lines of
+consisting of (currently) ~4,000 SLoC, compared to Newznab's ~104,000 lines of
 php/template. Performance and reliability are significantly improved, as is
 maintainability and a noted reduction in the sheer terror I experienced upon
 looking at some of the NN code in an attempt to fix a few annoying bugs.
@@ -54,6 +37,7 @@ Features
 In development:
 ---------------
 
+- Release renaming for obfuscated releases
 - Pre-DB comparisons maybe?
 
 
@@ -97,7 +81,7 @@ Installation and execution is reasonably easy.
 Requirements
 ------------
 
-- Python 3.3 or higher
+- Python 3.3 or higher (might work on 3.2)
 - MongoDB 2.4.x or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
@@ -145,6 +129,12 @@ You can get one by following the instructions on their website (generally a dona
 You can also import a regex dump or create your own.
 
 ### Converting from Newznab ###
+
+	WARNING:
+
+	This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
+	make sure you make a copy of them first. The import script will actively delete
+	things, newznab conversion will just copy - but better to be safe.
 
 Pynab can transfer some data across from Newznab - notably your groups (and settings),
 any regexes, blacklists, categories and TVRage/IMDB/TVDB data, as well as user details
@@ -201,6 +191,36 @@ set in config.py:
 
 start.py is your update script - it'll take care of indexing messages, collating binaries and
 creating releases.
+
+### Backfilling Groups ###
+
+Pynab has a backfill mechanism very similar to Newznab. This can be run sequentially to start.py,
+so that you effectively fill releases in both directions. Because binary and release processing
+is atomic, there are no issues running multiple scripts at the same time - you are effectively
+only limited by the number of available NNTP connections, your bandwidth and your available 
+processing power.
+
+You can use the backfill scripts as so:
+
+	> python3 scripts/backfill.py -g <group> -d <date>
+
+You can optionally specify a group - omitting the group argument will operate a backfill over all
+groups. You can also optionally specify a particular date to backfill to - omitting a date will fall
+back onto your config.py's backfill_days parameter.
+
+Note that you can combine the backfill script with Screen to backfill multiple groups at once, like so:
+
+	> screen /bin/bash
+	> python3 scripts/backfill.py -g alt.binaries.somegroup
+	> (press ctrl-a then d)
+	> screen /bin/bash
+	> python3 scripts/backfill.py -g alt.binaries.someothergroup
+	> (press ctrl-a then d)
+	> python3 start.py
+
+By running start.py at the same time as the backfill scripts, start.py will automatically take care of 
+processing parts created by the backfill scripts at regular intervals, preventing the parts table from
+becoming extremely large.
 
 ### Starting the API ###
 
@@ -259,17 +279,32 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     processes = 4 [or whatever number of cpu cores you have]
     threads = 2
 
+### Using the miscellaneous scripts ###
+
+To create a user (will return a generated API key):
+
+	> python3 scripts/create_user.py <email>
+
+To update indexes (generally only run if a commit message tells you to):
+
+	> python3 scripts/ensure_indexes.py 
+
+Update regex (run it every now and then, but it doesn't update that often):
+
+	> python3 scripts/update_regex.py
+
+Quickly match releases to local post-processing databases (run this pretty often, 
+it'll probably be incorporated into start.py at some point):
+
+	> python3 scripts/quick_postprocess.py
+
+Categorise all uncategorised releases - this runs automatically after import.
+
+	> python3 scripts/process_uncategorised.py
+
+
 F.A.Q.
 ======
-
-- Everything keeps breaking! AAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-There's heavy development going on currently. This means that, since there's no stable release yet,
-everything is in a constant state of flux. Typically, it means I'm introducing and fixing bugs
-(which in turn means I'm creating new ones). Once everything's hammered out and a stable copy is
-completed, I'll be branching off into development and all your shit should stop breaking.
-
-That day is not today, however. (within the next few days, hopefully)
 
 - I keep getting errors related to "config.<something>" and start.py stops.
 
@@ -283,6 +318,16 @@ Python's Multiprocessing Pool is such that any error will tend to flip it out an
 so combined with NNTP implementations' rather.. "free" usage of error messages and standards, this'll
 happen for a while until I catch all the weird bugs. Found a new, weird crash? Post an issue!
 
+- I'm getting some random error while trying to fill groups
+
+Go into config.py and set logging_level to logging.DEBUG and logging_file to something appropriate,
+then upload the log somewhere and attach it to an issue.
+
+- How do I enable header compression?
+
+You don't - it's automatically enabled if your provider supports it. The benefits of using it are so 
+large time-wise that there's no real reason to include a config option to turn it off. If you can think
+of a reason to include it, post an issue and let me know.
 
 Newznab API
 ===========
@@ -296,11 +341,6 @@ with noted exceptions:
 - COMMENTS (no comments)
 - COMMENTS-ADD (...)
 - USER (not yet implemented, since API access is currently unlimited)
-
-Known Problems
-==============
-
-- ~~Running the processing scripts on a server remote to the MongoDB server will cause problems, especially if the processor is Windows-based.~~ No longer relevant, performance improvements have obsoleted this.
 
 
 Acknowledgements
