@@ -14,8 +14,8 @@ Fetch and parse parts and messages for active groups.
 Updating a specific group will force an update regardless of whether the group is active.
 Updating all groups will only update active groups.
 ''')
-parser.add_argument('group', nargs='?', help='Group to backfill (leave blank for all)')
-parser.add_argument('date', nargs='?', help='Date to backfill to (leave blank to use default backfill_days)')
+parser.add_argument('-g', '--group', nargs='?', help='Group to backfill (leave blank for all)')
+parser.add_argument('-d', '--date', nargs='?', help='Date to backfill to (leave blank to use default backfill_days)')
 
 args = parser.parse_args()
 
