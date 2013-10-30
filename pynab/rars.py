@@ -154,13 +154,16 @@ def check_release_files(server, group_name, nzb):
     return None
 
 
-def process(limit=20):
+def process(limit=20, category=0):
     """Processes release rarfiles to check for passwords and filecounts. Optionally
     deletes passworded releases."""
     log.info('Checking for passworded releases and deleting them if appropriate...')
 
     with Server() as server:
-        for release in db.releases.find({'passworded': None}).limit(limit):
+        query = {'passworded': None}
+        if category:
+            query['category._id'] = category
+        for release in db.releases.find(query).limit(limit):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 

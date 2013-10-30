@@ -12,15 +12,22 @@ NFO_MAX_FILESIZE = 50000
 
 def get(nfo_id):
     """Retrieves and un-gzips an NFO from GridFS."""
-    return gzip.decompress(fs.get(nfo_id).read())
+    if nfo_id:
+        return gzip.decompress(fs.get(nfo_id).read())
+    else:
+        return None
 
 
-def process(limit=5):
+def process(limit=5, category=0):
     """Process releases for NFO parts and download them."""
     log.info('Checking for NFO segments...')
 
     with Server() as server:
-        for release in db.releases.find({'nfo': None}).limit(limit).sort('posted', pymongo.ASCENDING):
+        query = {'nfo': None}
+        if category:
+            query['category._id'] = category
+
+        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING):
             log.debug('Checking for NFO in {}...'.format(release['search_name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
