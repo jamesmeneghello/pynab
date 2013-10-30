@@ -10,20 +10,10 @@ import pytz
 
 from pynab.db import db
 from pynab import log
+import pynab.util
 import config
 
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
-
-
-class ShowMatch(object):
-    """Holds a regex match result so we can use it in chained if statements."""
-
-    def __init__(self):
-        self.match_obj = None
-
-    def match(self, *args, **kwds):
-        self.match_obj = re.match(*args, **kwds)
-        return self.match_obj is not None
 
 
 def process(limit=100, online=True):
@@ -198,7 +188,7 @@ def parse_show(search_name):
     # named capturing groups in a list and semi-intelligent processing?
 
     show = {}
-    match = ShowMatch()
+    match = pynab.util.Match()
     if match.match('^(.*?)[\. \-]s(\d{1,2})\.?e(\d{1,3})(?:\-e?|\-?e)(\d{1,3})\.', search_name, re.I):
         show = {
             'name': match.match_obj.group(1),

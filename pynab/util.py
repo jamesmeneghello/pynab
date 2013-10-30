@@ -7,6 +7,17 @@ from pynab import log
 import config
 
 
+class Match(object):
+    """Holds a regex match result so we can use it in chained if statements."""
+
+    def __init__(self):
+        self.match_obj = None
+
+    def match(self, *args, **kwds):
+        self.match_obj = re.match(*args, **kwds)
+        return self.match_obj is not None
+
+
 def update_blacklist():
     """Check for Blacklist update and load them into Mongo."""
     if 'blacklist_url' in config.site:
