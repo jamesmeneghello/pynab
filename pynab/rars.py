@@ -162,7 +162,7 @@ def process(limit=20, category=0):
     with Server() as server:
         query = {'passworded': None}
         if category:
-            query['category._id'] = category
+            query['category._id'] = int(category)
         for release in db.releases.find(query).limit(limit):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])

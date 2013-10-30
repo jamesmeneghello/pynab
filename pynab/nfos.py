@@ -25,7 +25,7 @@ def process(limit=5, category=0):
     with Server() as server:
         query = {'nfo': None}
         if category:
-            query['category._id'] = category
+            query['category._id'] = int(category)
 
         for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING):
             log.debug('Checking for NFO in {}...'.format(release['search_name']))
