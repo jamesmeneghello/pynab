@@ -619,7 +619,3 @@ def check_single_category(name, category):
             if regex.search(name):
                 return True
     return False
-
-
-def process_uncategorised():
-    """Process releases with no category."""
