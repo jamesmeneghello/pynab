@@ -9,11 +9,55 @@ from pynab import log
 from pynab.db import db
 import pynab.nzbs
 import pynab.releases
+import pynab.util
 from pynab.server import Server
 import config
 
 MAYBE_PASSWORDED_REGEX = re.compile('\.(ace|cab|tar|gz|url)$', re.I)
 PASSWORDED_REGEX = re.compile('password\.url', re.I)
+
+
+def attempt_parse(file):
+    name = ''
+    match = pynab.util.Match()
+
+    # Directory\Title.Year.Format.Group.mkv
+    if match.match('(?<=\\\).*?BLURAY.(1080|720)P.*?KNORLOADING(?=\.MKV)', file, re.I):
+        name = match.match_obj.group(0)
+    # Title.Format.ReleaseGroup.mkv
+    elif match.match('.*?(1080|720)(|P).(SON)', file, re.I):
+        name = match.match_obj.group(0).replace('_', '.')
+    # EBook
+    elif match.match('.*\.(epub|mobi|azw3|pdf|prc)', file, re.I):
+        name = match.match_obj.group(0)\
+            .replace('.epub', '')\
+            .replace('.mobi', '')\
+            .replace('.azw3', '')\
+            .replace('.pdf', '')\
+            .replace('.prc', '')
+    # scene format generic
+    elif match.match('([a-z0-9\'\-\.\_\(\)\+\ ]+\-[a-z0-9\'\-\.\_\(\)\ ]+)(.*?\\\\.*?|)\.(?:\w{3,4})$', file, re.I):
+        gen_s = match.match_obj.group(0)
+        # scene format no folder
+        if match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', gen_s, re.I):
+            if len(match.match_obj.group(1)) > 15:
+                name = match.match_obj.group(1)
+        # check if file is in a folder, and use folder if so
+        elif match.match('^(.*?\\\\)(.*?\\\\|)(.*?)$', gen_s, re.I):
+            folder_name = match.match_obj.group(1)
+            folder_2_name = match.match_obj.group(2)
+            if match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_name, re.I):
+                name = match.match_obj.group(1)
+            elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', folder_name, re.I):
+                name = match.match_obj.group(1)
+            elif match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_2_name, re.I):
+                name = match.match_obj.group(1)
+            elif match.match('^([a-z0-9\.\_\- ]+\-(?:.+)\(html\))\\\\', folder_name, re.I):
+                name = match.match_obj.group(1)
+        elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', gen_s, re.I):
+            name = match.match_obj.group(1)
+
+    return name
 
 
 def check_rar(filename):

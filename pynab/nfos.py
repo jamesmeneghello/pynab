@@ -1,13 +1,31 @@
 import gzip
 import pymongo
+import re
 
 import pynab.nzbs
+import pynab.util
 
 from pynab import log
 from pynab.db import db, fs
 from pynab.server import Server
 
 NFO_MAX_FILESIZE = 50000
+
+NFO_REGEX = [
+    re.compile('((?:\w+[.\-_])+(?:\w+-\d*[a-zA-Z][a-zA-Z0-9]*))', re.I),
+
+]
+
+
+def attempt_parse(nfo):
+    potential_names = []
+
+    for regex in NFO_REGEX:
+        result = regex.search(nfo)
+        if result:
+            potential_names.append(result.group(0))
+
+    return potential_names
 
 
 def get(nfo_id):
