@@ -14,7 +14,7 @@ class Match(object):
         self.match_obj = None
 
     def match(self, *args, **kwds):
-        self.match_obj = re.match(*args, **kwds)
+        self.match_obj = re.search(*args, **kwds)
         return self.match_obj is not None
 
 
