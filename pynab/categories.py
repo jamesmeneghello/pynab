@@ -527,13 +527,15 @@ category_regex = {
         re.compile('Lossless|FLAC', re.I)
     ],
     CAT_BOOK_COMICS: [
-        re.compile('comic', re.I)
+        re.compile('cbr|cbz', re.I)
     ],
     CAT_BOOK_MAGS: [
         re.compile('Mag(s|azin|azine|azines)', re.I)
     ],
     CAT_BOOK_EBOOK: [
-        re.compile('Ebook|E?\-book|\) WW|\[Springer\]| epub|ISBN', re.I)
+        re.compile('^(.* - (?:\[.*\] - )?.* \(\w{3,4}\))$', re.I),
+        re.compile('Ebook|E?\-book|\) WW|\[Springer\]| epub|ISBN', re.I),
+        re.compile('[\(\[].*[html|epub|pdf|mobi|azw|doc].*[\)\]]', re.I)
     ]
 }
 
@@ -562,7 +564,7 @@ def determine_category(name, group_name=''):
 
 def is_hashed(name):
     """Check if the release name is a hash."""
-    return not re.match('( |\.|\-)', name, re.I) and re.match('^[a-z0-9]+$', name, re.I)
+    return not re.match('( |\.|\-)', name, re.I) and re.match('^[a-f0-9]{16,}$', name, re.I)
 
 
 def check_group_category(name, group_name):
