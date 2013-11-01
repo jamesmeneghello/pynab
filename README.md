@@ -92,7 +92,7 @@ Installation
 
 ### Ubuntu 12.04 and earlier ###
 
-Follow the instructions by broknbottle in [Issue #13](https://github.com/Murodese/pynab/issues/15) to install Python 3.3.x, then follow the 13.04 instructions.
+Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodese/pynab/issues/15) to install Python 3.3.x, then follow the 13.04 instructions.
 
 ### Ubuntu 13.04/13.10 ###
 
