@@ -533,9 +533,9 @@ category_regex = {
         re.compile('Mag(s|azin|azine|azines)', re.I)
     ],
     CAT_BOOK_EBOOK: [
-        re.compile('^(.* - (?:\[.*\] - )?.* \(\w{3,4}\))$', re.I),
+        re.compile('^(.* - (?:\[.*\] -)? .* (?:\[.*\])? \(\w{3,4}\))', re.I),
         re.compile('Ebook|E?\-book|\) WW|\[Springer\]| epub|ISBN', re.I),
-        re.compile('[\(\[].*[html|epub|pdf|mobi|azw|doc].*[\)\]]', re.I)
+        re.compile('[\(\[](?:(?:html|epub|pdf|mobi|azw|doc).?)+[\)\]]', re.I)
     ]
 }
 
