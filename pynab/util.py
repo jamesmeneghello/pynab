@@ -1,4 +1,4 @@
-import re
+import regex
 
 import requests
 
@@ -14,7 +14,7 @@ class Match(object):
         self.match_obj = None
 
     def match(self, *args, **kwds):
-        self.match_obj = re.search(*args, **kwds)
+        self.match_obj = regex.search(*args, **kwds)
         return self.match_obj is not None
 
 
@@ -60,7 +60,7 @@ def update_regex():
 
         # get the revision by itself
         first_line = lines.pop(0)
-        revision = re.search('\$Rev: (\d+) \$', first_line)
+        revision = regex.search('\$Rev: (\d+) \$', first_line)
         if revision:
             revision = int(revision.group(1))
             log.info('Regex at revision: {:d}'.format(revision))
@@ -68,25 +68,25 @@ def update_regex():
         # and parse the rest of the lines, since they're an sql dump
         regexes = []
         for line in lines:
-            regex = re.search('\((\d+), \'(.*)\', \'(.*)\', (\d+), (\d+), (.*), (.*)\);$', line)
-            if regex:
+            reg = regex.search('\((\d+), \'(.*)\', \'(.*)\', (\d+), (\d+), (.*), (.*)\);$', line)
+            if reg:
                 try:
-                    if regex.group(6) == 'NULL':
+                    if reg.group(6) == 'NULL':
                         description = ''
                     else:
-                        description = regex.group(6).replace('\'', '')
+                        description = reg.group(6).replace('\'', '')
 
-                    if regex.group(7) == 'NULL':
+                    if reg.group(7) == 'NULL':
                         category_id = None
                     else:
-                        category_id = int(regex.group(7))
+                        category_id = int(reg.group(7))
 
                     regexes.append({
-                        '_id': int(regex.group(1)),
-                        'group_name': regex.group(2),
-                        'regex': regex.group(3).replace('\\\\', '\\'),
-                        'ordinal': int(regex.group(4)),
-                        'status': int(regex.group(5)),
+                        '_id': int(reg.group(1)),
+                        'group_name': reg.group(2),
+                        'regex': reg.group(3).replace('\\\\', '\\'),
+                        'ordinal': int(reg.group(4)),
+                        'status': int(reg.group(5)),
                         'description': description,
                         'category_id': category_id
                     })

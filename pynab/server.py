@@ -1,5 +1,5 @@
 import lib.nntplib as nntplib
-import re
+import regex
 import time
 import datetime
 import math
@@ -111,7 +111,7 @@ class Server:
             received.append(id)
 
             # get the current segment number
-            results = re.findall('\((\d+)[\/](\d+)\)', overview['subject'])
+            results = regex.findall('\((\d+)[\/](\d+)\)', overview['subject'])
 
             # it might match twice, so just get the last one
             # the first is generally the part number

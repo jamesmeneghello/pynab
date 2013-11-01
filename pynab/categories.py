@@ -1,4 +1,4 @@
-import re
+import regex
 import collections
 from pynab import log
 
@@ -80,167 +80,167 @@ the algorithm will fall through to attempting every single subcat (or failing).
 A release is only categorised here on no-match if the array ends on a subcategory.
 """
 group_regex = {
-    re.compile('alt\.binaries\.0day', re.I): [
+    regex.compile('alt\.binaries\.0day', regex.I): [
         CAT_PARENT_PC, CAT_PC_0DAY
     ],
-    re.compile('alt\.binaries\.ath', re.I): [
+    regex.compile('alt\.binaries\.ath', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_MUSIC,
         CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.b4e', re.I): [
+    regex.compile('alt\.binaries\.b4e', regex.I): [
         CAT_PARENT_PC, CAT_PARENT_BOOK
     ],
-    re.compile('alt\.binaries\..*?audiobook.*?', re.I): [
+    regex.compile('alt\.binaries\..*?audiobook.*?', regex.I): [
         CAT_MUSIC_AUDIOBOOK
     ],
-    re.compile('lossless|flac', re.I): [
+    regex.compile('lossless|flac', regex.I): [
         CAT_MUSIC_LOSSLESS
     ],
-    re.compile('alt\.binaries\.sounds.*?|alt\.binaries\.mp3.*?|alt\.binaries.*?\.mp3', re.I): [
+    regex.compile('alt\.binaries\.sounds.*?|alt\.binaries\.mp3.*?|alt\.binaries.*?\.mp3', regex.I): [
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.console.ps3', re.I): [
+    regex.compile('alt\.binaries\.console.ps3', regex.I): [
         CAT_PARENT_GAME, CAT_GAME_PS3
     ],
-    re.compile('alt\.binaries\.games\.xbox*', re.I): [
+    regex.compile('alt\.binaries\.games\.xbox*', regex.I): [
         CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.games$', re.I): [
+    regex.compile('alt\.binaries\.games$', regex.I): [
         CAT_PARENT_GAME, CAT_PC_GAMES
     ],
-    re.compile('alt\.binaries\.games\.wii', re.I): [
+    regex.compile('alt\.binaries\.games\.wii', regex.I): [
         CAT_PARENT_GAME
     ],
-    re.compile('alt\.binaries\.dvd.*?', re.I): [
+    regex.compile('alt\.binaries\.dvd.*?', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.hdtv*|alt\.binaries\.x264|alt\.binaries\.tv$', re.I): [
+    regex.compile('alt\.binaries\.hdtv*|alt\.binaries\.x264|alt\.binaries\.tv$', regex.I): [
         CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.nospam\.cheerleaders', re.I): [
+    regex.compile('alt\.binaries\.nospam\.cheerleaders', regex.I): [
         CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.classic\.tv.*?', re.I): [
+    regex.compile('alt\.binaries\.classic\.tv.*?', regex.I): [
         CAT_PARENT_TV, CAT_TV_OTHER
     ],
-    re.compile('alt\.binaries\.multimedia', re.I): [
+    regex.compile('alt\.binaries\.multimedia', regex.I): [
         CAT_PARENT_MOVIE, CAT_PARENT_TV
     ],
-    re.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', re.I): [
+    regex.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', regex.I): [
         CAT_TV_ANIME
     ],
-    re.compile('alt\.binaries\.anime', re.I): [
+    regex.compile('alt\.binaries\.anime', regex.I): [
         CAT_TV_ANIME
     ],
-    re.compile('alt\.binaries\.e(-|)book*?', re.I): [
+    regex.compile('alt\.binaries\.e(-|)book*?', regex.I): [
         CAT_PARENT_BOOK, CAT_BOOK_EBOOK
     ],
-    re.compile('alt\.binaries\.comics.*?', re.I): [
+    regex.compile('alt\.binaries\.comics.*?', regex.I): [
         CAT_BOOK_COMICS
     ],
-    re.compile('alt\.binaries\.cores.*?', re.I): [
+    regex.compile('alt\.binaries\.cores.*?', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_TV,
         CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.lou', re.I): [
+    regex.compile('alt\.binaries\.lou', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE,
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.cd.image|alt\.binaries\.audio\.warez', re.I): [
+    regex.compile('alt\.binaries\.cd.image|alt\.binaries\.audio\.warez', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PC_0DAY
     ],
-    re.compile('alt\.binaries\.pro\-wrestling', re.I): [
+    regex.compile('alt\.binaries\.pro\-wrestling', regex.I): [
         CAT_TV_SPORT
     ],
-    re.compile('alt\.binaries\.sony\.psp', re.I): [
+    regex.compile('alt\.binaries\.sony\.psp', regex.I): [
         CAT_GAME_PSP
     ],
-    re.compile('alt\.binaries\.nintendo\.ds|alt\.binaries\.games\.nintendods', re.I): [
+    regex.compile('alt\.binaries\.nintendo\.ds|alt\.binaries\.games\.nintendods', regex.I): [
         CAT_GAME_NDS
     ],
-    re.compile('alt\.binaries\.mpeg\.video\.music', re.I): [
+    regex.compile('alt\.binaries\.mpeg\.video\.music', regex.I): [
         CAT_MUSIC_VIDEO
     ],
-    re.compile('alt\.binaries\.mac', re.I): [
+    regex.compile('alt\.binaries\.mac', regex.I): [
         CAT_PC_MAC
     ],
-    re.compile('linux', re.I): [
+    regex.compile('linux', regex.I): [
         CAT_PC_ISO
     ],
-    re.compile('alt\.binaries\.illuminaten', re.I): [
+    regex.compile('alt\.binaries\.illuminaten', regex.I): [
         CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV, CAT_PARENT_MOVIE,
         CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.ipod\.videos\.tvshows', re.I): [
+    regex.compile('alt\.binaries\.ipod\.videos\.tvshows', regex.I): [
         CAT_TV_OTHER
     ],
-    re.compile('alt\.binaries\.documentaries', re.I): [
+    regex.compile('alt\.binaries\.documentaries', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.drummers', re.I): [
+    regex.compile('alt\.binaries\.drummers', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.tv\.swedish', re.I): [
+    regex.compile('alt\.binaries\.tv\.swedish', regex.I): [
         CAT_TV_FOREIGN
     ],
-    re.compile('alt\.binaries\.tv\.deutsch', re.I): [
+    regex.compile('alt\.binaries\.tv\.deutsch', regex.I): [
         CAT_TV_FOREIGN
     ],
-    re.compile('alt\.binaries\.erotica\.divx', re.I): [
+    regex.compile('alt\.binaries\.erotica\.divx', regex.I): [
         CAT_PARENT_XXX, CAT_XXX_OTHER
     ],
-    re.compile('alt\.binaries\.ghosts', re.I): [
+    regex.compile('alt\.binaries\.ghosts', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
         CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.mom', re.I): [
+    regex.compile('alt\.binaries\.mom', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
         CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports.*?', re.I): [
+    regex.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports.*?', regex.I): [
         CAT_TV_SPORT
     ],
-    re.compile('alt\.binaries\.b4e$', re.I): [
+    regex.compile('alt\.binaries\.b4e$', regex.I): [
         CAT_PARENT_PC
     ],
-    re.compile('alt\.binaries\.warez\.smartphone', re.I): [
+    regex.compile('alt\.binaries\.warez\.smartphone', regex.I): [
         CAT_PARENT_PC
     ],
-    re.compile('alt\.binaries\.warez\.ibm\-pc\.0\-day|alt\.binaries\.warez', re.I): [
+    regex.compile('alt\.binaries\.warez\.ibm\-pc\.0\-day|alt\.binaries\.warez', regex.I): [
         CAT_PARENT_GAME, CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_MUSIC, CAT_PARENT_PC, CAT_PARENT_TV,
         CAT_PARENT_MOVIE, CAT_PC_0DAY
     ],
-    re.compile('erotica|ijsklontje|kleverig', re.I): [
+    regex.compile('erotica|ijsklontje|kleverig', regex.I): [
         CAT_PARENT_XXX, CAT_XXX_OTHER
     ],
-    re.compile('french', re.I): [
+    regex.compile('french', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_TV, CAT_MOVIE_FOREIGN
     ],
-    re.compile('alt\.binaries\.movies\.xvid|alt\.binaries\.movies\.divx|alt\.binaries\.movies', re.I): [
+    regex.compile('alt\.binaries\.movies\.xvid|alt\.binaries\.movies\.divx|alt\.binaries\.movies', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_PC, CAT_MISC_OTHER
     ],
-    re.compile('wmvhd', re.I): [
+    regex.compile('wmvhd', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    re.compile('inner\-sanctum', re.I): [
+    regex.compile('inner\-sanctum', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_BOOK, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.worms', re.I): [
+    regex.compile('alt\.binaries\.worms', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MUSIC, CAT_PARENT_MOVIE
     ],
-    re.compile('alt\.binaries\.x264', re.I): [
+    regex.compile('alt\.binaries\.x264', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MOVIE_OTHER
     ],
-    re.compile('dk\.binaer\.ebooks', re.I): [
+    regex.compile('dk\.binaer\.ebooks', regex.I): [
         CAT_PARENT_BOOK, CAT_BOOK_EBOOK
     ],
-    re.compile('dk\.binaer\.film', re.I): [
+    regex.compile('dk\.binaer\.film', regex.I): [
         CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
-    re.compile('dk\.binaer\.musik', re.I): [
+    regex.compile('dk\.binaer\.musik', regex.I): [
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
-    re.compile('alt\.binaries\.(teevee|multimedia|tv|tvseries).*?', re.I): [
+    regex.compile('alt\.binaries\.(teevee|multimedia|tv|tvseries).*?', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
         CAT_MISC_OTHER
     ],
@@ -266,55 +266,55 @@ it'll be returned to whatever called it for further processing.
 """
 parent_category_regex = {
     CAT_PARENT_TV: collections.OrderedDict([
-        (re.compile('(S?(\d{1,2})\.?(E|X|D)(\d{1,2})[\. _-]+)|(dsr|pdtv|hdtv)[\.\-_]', re.I), [
+        (regex.compile('(S?(\d{1,2})\.?(E|X|D)(\d{1,2})[\. _-]+)|(dsr|pdtv|hdtv)[\.\-_]', regex.I), [
             CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_OTHER
         ]),
-        (re.compile(
+        (regex.compile(
             '( S\d{1,2} |\.S\d{2}\.|\.S\d{2}|s\d{1,2}e\d{1,2}|(\.| |\b|\-)EP\d{1,2}\.|\.E\d{1,2}\.|special.*?HDTV|HDTV.*?special|PDTV|\.\d{3}\.DVDrip|History( |\.|\-)Channel|trollhd|trollsd|HDTV.*?BTL|C4TV|WEB DL|web\.dl|WWE|season \d{1,2}|(?!collectors).*?series|\.TV\.|\.dtv\.|UFC|TNA|staffel|episode|special\.\d{4})',
-            re.I), [
+            regex.I), [
              CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_OTHER
          ]),
-        (re.compile('seizoen', re.I), [
+        (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
         ])
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
-        (re.compile('', re.I), [
+        (regex.compile('', regex.I), [
             CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_HD, CAT_MOVIE_BLURAY
         ]),
-        (re.compile('xvid', re.I), [
+        (regex.compile('xvid', regex.I), [
             CAT_MOVIE_OTHER
         ])
     ]),
     CAT_PARENT_PC: collections.OrderedDict([
-        (re.compile('', re.I), [
+        (regex.compile('', regex.I), [
             CAT_PC_MOBILEANDROID, CAT_PC_MOBILEIOS, CAT_PC_MOBILEOTHER, CAT_PC_ISO, CAT_PC_MAC, CAT_PC_GAMES,
             CAT_PC_0DAY
         ])
     ]),
     CAT_PARENT_XXX: collections.OrderedDict([
-        (re.compile(
+        (regex.compile(
             '(\.JAV\.| JAV |\.Jav\.|Girls.*?Gone.*?Wild|\-MotTto|-Nukleotide|XXX|PORNOLATiON|SWE6RUS|swe6|SWE6|NYMPHO|DETOXATiON|DivXfacTory|TESORO|STARLETS|xxx|XxX|PORNORIP|PornoRip)',
-            re.I), [
+            regex.I), [
              CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID, CAT_XXX_OTHER
          ]),
-        (re.compile('^Penthouse', re.I), [
+        (regex.compile('^Penthouse', regex.I), [
             CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID, CAT_XXX_OTHER
         ])
     ]),
     CAT_PARENT_GAME: collections.OrderedDict([
-        (re.compile('', re.I), [
+        (regex.compile('', regex.I), [
             CAT_GAME_NDS, CAT_GAME_PS3, CAT_GAME_PSP, CAT_GAME_WIIWARE, CAT_GAME_WIIWARE, CAT_GAME_XBOX360DLC,
             CAT_GAME_XBOX360, CAT_GAME_XBOX
         ])
     ]),
     CAT_PARENT_MUSIC: collections.OrderedDict([
-        (re.compile('', re.I), [
+        (regex.compile('', regex.I), [
             CAT_MUSIC_VIDEO, CAT_MUSIC_LOSSLESS, CAT_MUSIC_AUDIOBOOK, CAT_MUSIC_MP3
         ])
     ]),
     CAT_PARENT_BOOK: collections.OrderedDict([
-        (re.compile('', re.I), [
+        (regex.compile('', regex.I), [
             CAT_BOOK_COMICS, CAT_BOOK_MAGS, CAT_BOOK_EBOOK
         ])
     ])
@@ -333,8 +333,8 @@ Each element in the array can be three things:
 --Dicts--
 CAT_MOVIE_3D: [
     {
-        re.compile('3D', re.I): True,
-        re.compile('[\-\. _](H?SBS|OU)([\-\. _]|$)', re.I): True
+        regex.compile('3D', regex.I): True,
+        regex.compile('[\-\. _](H?SBS|OU)([\-\. _]|$)', regex.I): True
     }
 ]
 The dict signifies that both regexes must match their supplied values
@@ -342,200 +342,200 @@ for the category to be applied. In this case, both regexes must match.
 If we wanted one to match and one to not, we'd mark one as False.
 
 --Lists--
-(re.compile('DVDRIP|XVID.*?AC3|DIVX\-GERMAN', re.I), False)
+(regex.compile('DVDRIP|XVID.*?AC3|DIVX\-GERMAN', regex.I), False)
 In this example, we set the category to fail if the regex matches.
 Consider it as: (regex, categorise?)
 
 --Patterns--
 CAT_TV_HD: [
-    re.compile('1080|720', re.I)
+    regex.compile('1080|720', regex.I)
 ],
 The majority of entries look like this: match this release to this category
 if this regex matches.
 """
 category_regex = {
     CAT_TV_FOREIGN: [
-        re.compile(
+        regex.compile(
             '(seizoen|staffel|danish|flemish|(\.| |\b|\-)(HU|NZ)|dutch|Deutsch|nl\.?subbed|nl\.?sub|\.NL|\.ITA|norwegian|swedish|swesub|french|german|spanish)[\.\- \b]',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '\.des\.(?!moines)|Chinese\.Subbed|vostfr|Hebrew\.Dubbed|\.HEB\.|Nordic|Hebdub|NLSubs|NL\-Subs|NLSub|Deutsch| der |German | NL |staffel|videomann',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(danish|flemish|nlvlaams|dutch|nl\.?sub|swedish|swesub|icelandic|finnish|french|truefrench[\.\- ](?:.dtv|dvd|br|bluray|720p|1080p|LD|dvdrip|internal|r5|bdrip|sub|cd\d|dts|dvdr)|german|nl\.?subbed|deutsch|espanol|SLOSiNH|VOSTFR|norwegian|[\.\- ]pl|pldub|norsub|[\.\- ]ITA)[\.\- ]',
-            re.I),
-        re.compile('(french|german)$', re.I)
+            regex.I),
+        regex.compile('(french|german)$', regex.I)
     ],
     CAT_TV_SPORT: [
-        re.compile(
+        regex.compile(
             '(f1\.legends|epl|motogp|bellator|strikeforce|the\.ultimate\.fighter|supercup|wtcc|red\.bull.*?race|tour\.de\.france|bundesliga|la\.liga|uefa|EPL|ESPN|WWE\.|WWF\.|WCW\.|MMA\.|UFC\.|(^|[\. ])FIA\.|PGA\.|NFL\.|NCAA\.)',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             'Twenty20|IIHF|wimbledon|Kentucky\.Derby|WBA|Rugby\.|TNA\.|DTM\.|NASCAR|SBK|NBA(\.| )|NHL\.|NRL\.|MLB\.|Playoffs|FIFA\.|Serie.A|netball\.anz|formula1|indycar|Superleague|V8\.Supercars|((19|20)\d{2}.*?olympics?|olympics?.*?(19|20)\d{2})|x(\ |\.|\-)games',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(\b|\_|\.| )(Daegu|AFL|La.Vuelta|BMX|Gymnastics|IIHF|NBL|FINA|Drag.Boat|HDNET.Fights|Horse.Racing|WWF|World.Championships|Tor.De.France|Le.Triomphe|Legends.Of.Wrestling)(\b|\_|\.| )',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(\b|\_|\.| )(Fighting.Championship|tour.de.france|Boxing|Cycling|world.series|Formula.Renault|FA.Cup|WRC|GP3|WCW|Road.Racing|AMA|MFC|Grand.Prix|Basketball|MLS|Wrestling|World.Cup)(\b|\_|\.| )',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(\b|\_|\.| )(Swimming.*?Men|Swimming.*?Women|swimming.*?champion|WEC|World.GP|CFB|Rally.Challenge|Golf|Supercross|WCK|Darts|SPL|Snooker|League Cup|Ligue1|Ligue)(\b|\_|\.| )',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(\b|\_|\.| )(Copa.del.rey|League.Cup|Carling.Cup|Cricket|The.Championship|World.Max|KNVB|GP2|Soccer|PGR3|Cage.Contender|US.Open|CFL|Weightlifting|New.Delhi|Euro|WBC)(\b|\_|\.| )',
-            re.I),
-        re.compile('^london(\.| )2012', re.I)
+            regex.I),
+        regex.compile('^london(\.| )2012', regex.I)
     ],
     CAT_TV_DOCU: [
-        (re.compile('\-DOCUMENT', re.I), False),
-        re.compile(
+        (regex.compile('\-DOCUMENT', regex.I), False),
+        regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)(48\.Hours\.Mystery|Discovery.Channel|BBC|History.Channel|National.Geographic|Nat Geo|Shark.Week)',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)((\b|_)(docu|BBC|document|a.and.e|National.geographic|Discovery.Channel|History.Channel|Travel.Channel|Science.Channel|Biography|Modern.Marvels|Inside.story|Hollywood.story|E.True|Documentary)(\b|_))',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)((\b|_)(Science.Channel|National.geographi|History.Chanel|Colossal|Discovery.travel|Planet.Science|Animal.Planet|Discovery.Sci|Regents|Discovery.World|Discovery.truth|Discovery.body|Dispatches|Biography|The.Investigator|Private.Life|Footballs.Greatest|Most.Terrifying)(\b|_))',
-            re.I)
+            regex.I)
     ],
     CAT_TV_HD: [
-        re.compile('1080|720', re.I)
+        regex.compile('1080|720', regex.I)
     ],
     CAT_TV_SD: [
-        re.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|DVDR|DVD-RIP|WEB-DL|x264|dvd)', re.I)
+        regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
     ],
     CAT_MOVIE_FOREIGN: [
-        re.compile(
+        regex.compile(
             '(\.des\.|danish|flemish|dutch|(\.| |\b|\-)(HU|FINA)|Deutsch|nl\.?subbed|nl\.?sub|\.NL|\.ITA|norwegian|swedish|swesub|french|german|spanish)[\.\- |\b]',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             'Chinese\.Subbed|vostfr|Hebrew\.Dubbed|\.Heb\.|Hebdub|NLSubs|NL\-Subs|NLSub|Deutsch| der |German| NL |turkish',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(danish|flemish|nlvlaams|dutch|nl\.?sub|swedish|swesub|icelandic|finnish|french|truefrench[\.\- ](?:dvd|br|bluray|720p|1080p|LD|dvdrip|internal|r5|bdrip|sub|cd\d|dts|dvdr)|german|nl\.?subbed|deutsch|espanol|SLOSiNH|VOSTFR|norwegian|[\.\- ]pl|pldub|norsub|[\.\- ]ITA)[\.\- ]',
-            re.I)
+            regex.I)
     ],
     CAT_MOVIE_SD: [
-        re.compile('(dvdscr|extrascene|dvdrip|\.CAM|dvdr|dvd9|dvd5|[\.\-\ ]ts)[\.\-\ ]', re.I),
+        regex.compile('(dvdscr|extrascene|dvdrip|\.CAM|dvdr|dvd9|dvd5|[\.\-\ ]ts)[\.\-\ ]', regex.I),
         {
-            re.compile('(divx|xvid|(\.| )r5(\.| ))', re.I): True,
-            re.compile('(720|1080)', re.I): False,
+            regex.compile('(divx|xvid|(\.| )r5(\.| ))', regex.I): True,
+            regex.compile('(720|1080)', regex.I): False,
         }
     ],
     CAT_MOVIE_3D: [
         {
-            re.compile('3D', re.I): True,
-            re.compile('[\-\. _](H?SBS|OU)([\-\. _]|$)', re.I): True
+            regex.compile('3D', regex.I): True,
+            regex.compile('[\-\. _](H?SBS|OU)([\-\. _]|$)', regex.I): True
         }
     ],
     CAT_MOVIE_HD: [
-        re.compile('x264|wmvhd|web\-dl|XvidHD|BRRIP|HDRIP|HDDVD|bddvd|BDRIP|webscr', re.I)
+        regex.compile('x264|wmvhd|web\-dl|XvidHD|BRRIP|HDRIP|HDDVD|bddvd|BDRIP|webscr', regex.I)
     ],
     CAT_MOVIE_BLURAY: [
-        re.compile('bluray|bd?25|bd?50|blu-ray|VC1|VC\-1|AVC|BDREMUX', re.I)
+        regex.compile('bluray|bd?25|bd?50|blu-ray|VC1|VC\-1|AVC|BDREMUX', regex.I)
     ],
     CAT_PC_MOBILEANDROID: [
-        re.compile('Android', re.I)
+        regex.compile('Android', regex.I)
     ],
     CAT_PC_MOBILEIOS: [
-        re.compile('(?!.*?Winall.*?)(IPHONE|ITOUCH|IPAD|Ipod)', re.I)
+        regex.compile('(?!.*?Winall.*?)(IPHONE|ITOUCH|IPAD|Ipod)', regex.I)
     ],
     CAT_PC_MOBILEOTHER: [
-        re.compile('COREPDA|symbian|xscale|wm5|wm6|J2ME', re.I)
+        regex.compile('COREPDA|symbian|xscale|wm5|wm6|J2ME', regex.I)
     ],
     CAT_PC_0DAY: [
-        (re.compile('DVDRIP|XVID.*?AC3|DIVX\-GERMAN', re.I), False),
-        re.compile(
+        (regex.compile('DVDRIP|XVID.*?AC3|DIVX\-GERMAN', regex.I), False),
+        regex.compile(
             '[\.\-_ ](x32|x64|x86|win64|winnt|win9x|win2k|winxp|winnt2k2003serv|win9xnt|win9xme|winnt2kxp|win2kxp|win2kxp2k3|keygen|regged|keymaker|winall|win32|template|Patch|GAMEGUiDE|unix|irix|solaris|freebsd|hpux|linux|windows|multilingual|software|Pro v\d{1,3})[\.\-_ ]',
-            re.I),
-        re.compile(
+            regex.I),
+        regex.compile(
             '(?!MDVDR).*?\-Walmart|PHP|\-SUNiSO|\.Portable\.|Adobe|CYGNUS|GERMAN\-|v\d{1,3}.*?Pro|MULTiLANGUAGE|Cracked|lz0|\-BEAN|MultiOS|\-iNViSiBLE|\-SPYRAL|WinAll|Keymaker|Keygen|Lynda\.com|FOSI|Keyfilemaker|DIGERATI|\-UNION|\-DOA|Laxity',
-            re.I)
+            regex.I)
     ],
     CAT_PC_MAC: [
-        re.compile('osx|os\.x|\.mac\.|MacOSX', re.I)
+        regex.compile('osx|os\.x|\.mac\.|MacOSX', regex.I)
     ],
     CAT_PC_ISO: [
-        re.compile('\-DYNAMiCS', re.I)
+        regex.compile('\-DYNAMiCS', regex.I)
     ],
     CAT_PC_GAMES: [
-        re.compile('\-Heist|\-RELOADED|\.GAME\-|\-SKIDROW|PC GAME|FASDOX|v\d{1,3}.*?\-TE|RIP\-unleashed|Razor1911',
-                   re.I)
+        regex.compile('\-Heist|\-RELOADED|\.GAME\-|\-SKIDROW|PC GAME|FASDOX|v\d{1,3}.*?\-TE|RIP\-unleashed|Razor1911',
+                   regex.I)
     ],
     CAT_XXX_X264: [
-        re.compile('x264|720|1080', re.I)
+        regex.compile('x264|720|1080', regex.I)
     ],
     CAT_XXX_XVID: [
-        re.compile('xvid|dvdrip|bdrip|brrip|pornolation|swe6|nympho|detoxication|tesoro|mp4', re.I)
+        regex.compile('xvid|dvdrip|bdrip|brrip|pornolation|swe6|nympho|detoxication|tesoro|mp4', regex.I)
     ],
     CAT_XXX_WMV: [
-        re.compile('wmv|f4v|flv|mov(?!ie)|mpeg|isom|realmedia|multiformat', re.I)
+        regex.compile('wmv|f4v|flv|mov(?!ie)|mpeg|isom|realmedia|multiformat', regex.I)
     ],
     CAT_XXX_DVD: [
-        re.compile('dvdr[^ip]|dvd5|dvd9', re.I)
+        regex.compile('dvdr[^ip]|dvd5|dvd9', regex.I)
     ],
     CAT_XXX_PACK: [
-        re.compile('[\._](pack)[\.\-_]', re.I)
+        regex.compile('[\._](pack)[\.\-_]', regex.I)
     ],
     CAT_XXX_IMAGESET: [
-        re.compile('imageset', re.I)
+        regex.compile('imageset', regex.I)
     ],
     CAT_GAME_NDS: [
-        re.compile('(\b|\-| |\.)(3DS|NDS)(\b|\-| |\.)', re.I)
+        regex.compile('(\b|\-| |\.)(3DS|NDS)(\b|\-| |\.)', regex.I)
     ],
     CAT_GAME_PS3: [
-        re.compile('PS3\-', re.I)
+        regex.compile('PS3\-', regex.I)
     ],
     CAT_GAME_PSP: [
-        re.compile('PSP\-', re.I)
+        regex.compile('PSP\-', regex.I)
     ],
     CAT_GAME_WIIWARE: [
-        re.compile('WIIWARE|WII.*?VC|VC.*?WII|WII.*?DLC|DLC.*?WII|WII.*?CONSOLE|CONSOLE.*?WII', re.I)
+        regex.compile('WIIWARE|WII.*?VC|VC.*?WII|WII.*?DLC|DLC.*?WII|WII.*?CONSOLE|CONSOLE.*?WII', regex.I)
     ],
     CAT_GAME_WII: [
-        (re.compile('WWII.*?(?!WII)', re.I), False),
-        re.compile('Wii', re.I)
+        (regex.compile('WWII.*?(?!WII)', regex.I), False),
+        regex.compile('Wii', regex.I)
     ],
     CAT_GAME_XBOX360DLC: [
-        re.compile('(DLC.*?xbox360|xbox360.*?DLC|XBLA.*?xbox360|xbox360.*?XBLA)', re.I)
+        regex.compile('(DLC.*?xbox360|xbox360.*?DLC|XBLA.*?xbox360|xbox360.*?XBLA)', regex.I)
     ],
     CAT_GAME_XBOX360: [
-        re.compile('XBOX360|x360', re.I)
+        regex.compile('XBOX360|x360', regex.I)
     ],
     CAT_GAME_XBOX: [
-        re.compile('XBOX', re.I)
+        regex.compile('XBOX', regex.I)
     ],
     CAT_MUSIC_VIDEO: [
-        (re.compile('(HDTV|S\d{1,2}|\-1920)', re.I), False),
-        re.compile(
+        (regex.compile('(HDTV|S\d{1,2}|\-1920)', regex.I), False),
+        regex.compile(
             '\-DDC\-|mbluray|\-VFI|m4vu|retail.*?(?!bluray.*?)x264|\-assass1ns|\-uva|(?!HDTV).*?\-SRP|x264.*?Fray|JESTERS|iuF|MDVDR|(?!HDTV).*?\-BTL|\-WMVA|\-GRMV|\-iLUV|x264\-(19|20)\d{2}',
-            re.I)
+            regex.I)
     ],
     CAT_MUSIC_AUDIOBOOK: [
-        re.compile('(audiobook|\bABOOK\b)', re.I)
+        regex.compile('(audiobook|\bABOOK\b)', regex.I)
     ],
     CAT_MUSIC_MP3: [
-        (re.compile('dvdrip|xvid|(x|h)264|720p|1080(i|p)|Bluray', re.I), False),
-        re.compile(
+        (regex.compile('dvdrip|xvid|(x|h)264|720p|1080(i|p)|Bluray', regex.I), False),
+        regex.compile(
             '( |\_)Int$|\-(19|20)\d{2}\-[a-z0-9]+$|^V A |Top.*?Charts|Promo CDS|Greatest(\_| )Hits|VBR|NMR|CDM|WEB(STREAM|MP3)|\-DVBC\-|\-CD\-|\-CDR\-|\-TAPE\-|\-Live\-\d{4}|\-DAB\-|\-LINE\-|CDDA|-Bootleg-|WEB\-\d{4}|\-CD\-|(\-|)EP\-|\-FM\-|2cd|\-Vinyl\-|\-SAT\-|\-LP\-|\-DE\-|\-cable\-|Radio\-\d{4}|Radio.*?Live\-\d{4}|\-SBD\-|\d{1,3}(CD|TAPE)',
-            re.I),
-        re.compile('^VA(\-|\_|\ )', re.I)
+            regex.I),
+        regex.compile('^VA(\-|\_|\ )', regex.I)
     ],
     CAT_MUSIC_LOSSLESS: [
-        (re.compile('dvdrip|xvid|264|720p|1080|Bluray', re.I), False),
-        re.compile('Lossless|FLAC', re.I)
+        (regex.compile('dvdrip|xvid|264|720p|1080|Bluray', regex.I), False),
+        regex.compile('Lossless|FLAC', regex.I)
     ],
     CAT_BOOK_COMICS: [
-        re.compile('cbr|cbz', re.I)
+        regex.compile('cbr|cbz', regex.I)
     ],
     CAT_BOOK_MAGS: [
-        re.compile('Mag(s|azin|azine|azines)', re.I)
+        regex.compile('Mag(s|azin|azine|azines)', regex.I)
     ],
     CAT_BOOK_EBOOK: [
-        re.compile('^(.* - (?:\[.*\] -)? .* (?:\[.*\])? \(\w{3,4}\))', re.I),
-        re.compile('Ebook|E?\-book|\) WW|\[Springer\]| epub|ISBN', re.I),
-        re.compile('[\(\[](?:(?:html|epub|pdf|mobi|azw|doc).?)+[\)\]]', re.I)
+        regex.compile('^(.* - (?:\[.*\] -)? .* (?:\[.*\])? \(\w{3,4}\))', regex.I),
+        regex.compile('Ebook|E?\-book|\) WW|\[Springer\]| epub|ISBN', regex.I),
+        regex.compile('[\(\[](?:(?:html|epub|pdf|mobi|azw|doc).?)+[\)\]]', regex.I)
     ]
 }
 
@@ -564,7 +564,7 @@ def determine_category(name, group_name=''):
 
 def is_hashed(name):
     """Check if the release name is a hash."""
-    return not re.match('( |\.|\-)', name, re.I) and re.match('^[a-f0-9]{16,}$', name, re.I)
+    return not regex.match('( |\.|\-)', name, regex.I) and regex.match('^[a-f0-9]{16,}$', name, regex.I)
 
 
 def check_group_category(name, group_name):
