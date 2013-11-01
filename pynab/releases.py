@@ -2,7 +2,8 @@ import datetime
 import time
 import hashlib
 import uuid
-import re
+import regex
+import math
 
 import pytz
 from bson.code import Code
@@ -12,6 +13,88 @@ from pynab.db import db
 import config
 import pynab.nzbs
 import pynab.categories
+import pynab.nfos
+import pynab.util
+import pynab.rars
+
+
+def names_from_nfos(release):
+    """Attempt to grab a release name from its NFO."""
+    log.debug('Parsing NFO for release details in: {}'.format(release['search_name']))
+    nfo = pynab.nfos.get(release['nfo']).decode('ascii', 'ignore')
+    if nfo:
+        return pynab.nfos.attempt_parse(nfo)
+    else:
+        log.debug('NFO not available for release: {}'.format(release['search_name']))
+        return []
+
+
+def names_from_files(release):
+    """Attempt to grab a release name from filenames inside the release."""
+    log.debug('Parsing files for release details in: {}'.format(release['search_name']))
+    if release['files']['names']:
+        potential_names = []
+        for file in release['files']['names']:
+            log.debug('Checking file name: {}'.format(file))
+
+            name = pynab.rars.attempt_parse(file)
+
+            if name:
+                potential_names.append(name)
+
+        return potential_names
+    else:
+        log.debug('File list was empty for release: {}'.format(release['search_name']))
+        return []
+
+
+def discover_name(release):
+    """Attempts to fix a release name by nfo or filelist."""
+    potential_names = [release['search_name'],]
+
+    if 'files' in release:
+        potential_names += names_from_files(release)
+
+    if release['nfo']:
+        potential_names += names_from_nfos(release)
+
+    if len(potential_names) > 1:
+        old_category = release['category']['_id']
+        calculated_old_category = pynab.categories.determine_category(release['search_name'])
+
+        log.debug('Release Name: {}'.format(release['search_name']))
+        log.debug('Old Category: {:d} Recalculated Old Category: {:d}'.format(old_category, calculated_old_category))
+
+        for name in potential_names:
+            new_category = pynab.categories.determine_category(name)
+
+            # the release may already be categorised by the group it came from
+            # so if we check the name and it doesn't fit a category, it's probably
+            # a shitty name
+            if (math.floor(calculated_old_category / 1000) * 1000) == pynab.categories.CAT_PARENT_MISC:
+                # sometimes the group categorisation is better than name-based
+                # so check if they're in the same parent and that parent isn't misc
+                if (math.floor(new_category / 1000) * 1000) == pynab.categories.CAT_PARENT_MISC:
+                    # ignore this name, since it's apparently gibberish
+                    continue
+                else:
+                    if (math.floor(new_category / 1000) * 1000) == (math.floor(old_category / 1000) * 1000):
+                        # if they're the same parent, use the new category
+                        search_name = name
+                        category_id = new_category
+
+                        log.info('Found new name for {}: {} with category {:d}'.format(release['search_name'], search_name, category_id))
+
+                        return search_name, category_id
+                    else:
+                        # if they're not the same parent and they're not misc, ignore
+                        continue
+            else:
+                # the old name fit some other category better
+                continue
+    else:
+        log.debug('No potential names found for release.')
+        return None, None
 
 
 def clean_release_name(name):
@@ -68,20 +151,20 @@ def process():
             zip_count = 0
 
             for number, part in binary['parts'].items():
-                if re.search(pynab.nzbs.rar_part_regex, part['subject'], re.I):
+                if regex.search(pynab.nzbs.rar_part_regex, part['subject'], regex.I):
                     rar_count += 1
-                if re.search(pynab.nzbs.nfo_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
-                                                                                            part['subject'], re.I):
+                if regex.search(pynab.nzbs.nfo_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], regex.I):
                     nfos.append(part)
-                if re.search(pynab.nzbs.rar_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
-                                                                                            part['subject'], re.I):
+                if regex.search(pynab.nzbs.rar_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], regex.I):
                     rars.append(part)
-                if re.search(pynab.nzbs.par2_regex, part['subject'], re.I):
+                if regex.search(pynab.nzbs.par2_regex, part['subject'], regex.I):
                     par_count += 1
-                    if not re.search(pynab.nzbs.par_vol_regex, part['subject'], re.I):
+                    if not regex.search(pynab.nzbs.par_vol_regex, part['subject'], regex.I):
                         pars.append(part)
-                if re.search(pynab.nzbs.zip_regex, part['subject'], re.I) and not re.search(pynab.nzbs.metadata_regex,
-                                                                                            part['subject'], re.I):
+                if regex.search(pynab.nzbs.zip_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part['subject'], regex.I):
                     zip_count += 1
 
             log.debug('Binary {} has {} rars and {} rar_parts.'.format(binary['name'], len(rars), rar_count))
@@ -146,6 +229,7 @@ def process():
                             'status': 1,
                             'updated': pytz.utc.localize(datetime.datetime.now()),
                             'group': db.groups.find_one({'name': binary['group_name']}, {'name': 1}),
+                            'regex': db.regexes.find_one({'_id': binary['regex_id']}),
                             'category': category,
                             'nzb': nzb,
                             'nzb_size': nzb_size
