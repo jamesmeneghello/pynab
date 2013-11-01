@@ -1,4 +1,4 @@
-import re
+import regex
 import unicodedata
 import difflib
 import datetime
@@ -86,7 +86,12 @@ def search(name, year):
         year_query = ''
 
     r = requests.get(OMDB_SEARCH_URL + name + year_query)
-    data = r.json()
+    try:
+        data = r.json()
+    except:
+        log.debug('There was a problem accessing the API page.')
+        return None
+
     if 'Search' in data:
         for movie in data['Search']:
             # doublecheck, but the api should've searched properly
@@ -115,18 +120,18 @@ def get_details(id):
 
 def parse_movie(search_name):
     """Parses a movie name into name / year."""
-    result = re.search('^(?P<name>.*)[\.\-_\( ](?P<year>19\d{2}|20\d{2})', search_name, re.I)
+    result = regex.search('^(?P<name>.*)[\.\-_\( ](?P<year>19\d{2}|20\d{2})', search_name, regex.I)
     if result:
         result = result.groupdict()
         if 'year' not in result:
-            result = re.search(
+            result = regex.search(
                 '^(?P<name>.*)[\.\-_ ](?:dvdrip|bdrip|brrip|bluray|hdtv|divx|xvid|proper|repack|real\.proper|sub\.?fix|sub\.?pack|ac3d|unrated|1080i|1080p|720p|810p)',
-                search_name, re.I)
+                search_name, regex.I)
             if result:
                 result = result.groupdict()
 
         if 'name' in result:
-            name = re.sub('\(.*?\)|\.|_', ' ', result['name'])
+            name = regex.sub('\(.*?\)|\.|_', ' ', result['name'])
             if 'year' in result:
                 year = '({})'.format(result['year'])
             else:
@@ -139,6 +144,6 @@ def parse_movie(search_name):
 def clean_name(name):
     """Cleans a show name for searching (against omdb)."""
     name = unicodedata.normalize('NFKD', name)
-    name = re.sub('[._\-]', ' ', name)
-    name = re.sub('[\':!"#*’,()?$&]', '', name)
+    name = regex.sub('[._\-]', ' ', name)
+    name = regex.sub('[\':!"#*’,()?$&]', '', name)
     return name

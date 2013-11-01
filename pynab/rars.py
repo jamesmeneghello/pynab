@@ -1,6 +1,6 @@
 import tempfile
 import os
-import re
+import regex
 import shutil
 import subprocess
 
@@ -9,11 +9,55 @@ from pynab import log
 from pynab.db import db
 import pynab.nzbs
 import pynab.releases
+import pynab.util
 from pynab.server import Server
 import config
 
-MAYBE_PASSWORDED_REGEX = re.compile('\.(ace|cab|tar|gz|url)$', re.I)
-PASSWORDED_REGEX = re.compile('password\.url', re.I)
+MAYBE_PASSWORDED_REGEX = regex.compile('\.(ace|cab|tar|gz|url)$', regex.I)
+PASSWORDED_REGEX = regex.compile('password\.url', regex.I)
+
+
+def attempt_parse(file):
+    name = ''
+    match = pynab.util.Match()
+
+    # Directory\Title.Year.Format.Group.mkv
+    if match.match('(?<=\\\).*?BLURAY.(1080|720)P.*?KNORLOADING(?=\.MKV)', file, regex.I):
+        name = match.match_obj.group(0)
+    # Title.Format.ReleaseGroup.mkv
+    elif match.match('.*?(1080|720)(|P).(SON)', file, regex.I):
+        name = match.match_obj.group(0).replace('_', '.')
+    # EBook
+    elif match.match('.*\.(epub|mobi|azw3|pdf|prc)', file, regex.I):
+        name = match.match_obj.group(0)\
+            .replace('.epub', '')\
+            .replace('.mobi', '')\
+            .replace('.azw3', '')\
+            .replace('.pdf', '')\
+            .replace('.prc', '')
+    # scene format generic
+    elif match.match('([a-z0-9\'\-\.\_\(\)\+\ ]+\-[a-z0-9\'\-\.\_\(\)\ ]+)(.*?\\\\.*?|)\.(?:\w{3,4})$', file, regex.I):
+        gen_s = match.match_obj.group(0)
+        # scene format no folder
+        if match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', gen_s, regex.I):
+            if len(match.match_obj.group(1)) > 15:
+                name = match.match_obj.group(1)
+        # check if file is in a folder, and use folder if so
+        elif match.match('^(.*?\\\\)(.*?\\\\|)(.*?)$', gen_s, regex.I):
+            folder_name = match.match_obj.group(1)
+            folder_2_name = match.match_obj.group(2)
+            if match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_name, regex.I):
+                name = match.match_obj.group(1)
+            elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', folder_name, regex.I):
+                name = match.match_obj.group(1)
+            elif match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_2_name, regex.I):
+                name = match.match_obj.group(1)
+            elif match.match('^([a-z0-9\.\_\- ]+\-(?:.+)\(html\))\\\\', folder_name, regex.I):
+                name = match.match_obj.group(1)
+        elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', gen_s, regex.I):
+            name = match.match_obj.group(1)
+
+    return name
 
 
 def check_rar(filename):
@@ -154,13 +198,16 @@ def check_release_files(server, group_name, nzb):
     return None
 
 
-def process(limit=20):
+def process(limit=20, category=0):
     """Processes release rarfiles to check for passwords and filecounts. Optionally
     deletes passworded releases."""
     log.info('Checking for passworded releases and deleting them if appropriate...')
 
     with Server() as server:
-        for release in db.releases.find({'passworded': None}).limit(limit):
+        query = {'passworded': None}
+        if category:
+            query['category._id'] = int(category)
+        for release in db.releases.find(query).limit(limit):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 

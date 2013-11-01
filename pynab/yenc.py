@@ -1,7 +1,7 @@
 """With big thanks to SABNZBD, since they're maybe the only ones with yenc code that
 works in Python 3"""
 
-import re
+import regex
 
 from pynab import log
 
@@ -74,7 +74,7 @@ def yenc_check(data):
     return (ybegin, ypart, yend), data
 
 
-YSPLIT_RE = re.compile(r'([a-zA-Z0-9]+)=')
+YSPLIT_RE = regex.compile(r'([a-zA-Z0-9]+)=')
 
 
 def yenc_split(line, splits=None):

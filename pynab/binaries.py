@@ -1,4 +1,4 @@
-import re
+import regex
 import time
 import datetime
 import pytz
@@ -104,28 +104,28 @@ def process():
     # where(), but it's slow as hell because it's processed by the JS engine
     relevant_groups = db.parts.distinct('group_name')
     for part in db.parts.find({'group_name': {'$in': relevant_groups}}, exhaust=True):
-        for regex in db.regexes.find({'group_name': {'$in': [part['group_name'], '*']}}).sort('ordinal', 1):
+        for reg in db.regexes.find({'group_name': {'$in': [part['group_name'], '*']}}).sort('ordinal', 1):
             # convert php-style regex to python
-            # ie. /(\w+)/i -> (\w+), re.I
+            # ie. /(\w+)/i -> (\w+), regex.I
             # no need to handle s, as it doesn't exist in python
 
             # why not store it as python to begin with? some regex
             # shouldn't be case-insensitive, and this notation allows for that
-            r = regex['regex']
+            r = reg['regex']
             flags = r[r.rfind('/') + 1:]
             r = r[r.find('/') + 1:r.rfind('/')]
-            regex_flags = re.I if 'i' in flags else 0
+            regex_flags = regex.I if 'i' in flags else 0
 
             try:
-                result = re.search(r, part['subject'], regex_flags)
+                result = regex.search(r, part['subject'], regex_flags)
             except:
-                log.error('Broken regex detected. _id: {:d}, removing...'.format(regex['_id']))
-                db.regexes.remove({'_id': regex['_id']})
+                log.error('Broken regex detected. _id: {:d}, removing...'.format(reg['_id']))
+                db.regexes.remove({'_id': reg['_id']})
                 continue
 
             match = result.groupdict() if result else None
             if match:
-                log.debug('Matched part {} to {}.'.format(part['subject'], regex['regex']))
+                log.debug('Matched part {} to {}.'.format(part['subject'], reg['regex']))
                 # remove whitespace in dict values
                 match = {k: v.strip() for k, v in match.items()}
 
@@ -146,7 +146,7 @@ def process():
                 # segment numbers have been stripped by this point, so don't worry
                 # about accidentally hitting those instead
                 if not match.get('parts'):
-                    result = re.search('(\d{1,3}\/\d{1,3})', part['subject'])
+                    result = regex.search('(\d{1,3}\/\d{1,3})', part['subject'])
                     if result:
                         match['parts'] = result.group(1)
 
@@ -175,8 +175,8 @@ def process():
                             'posted_by': part['posted_by'],
                             'group_name': part['group_name'],
                             'xref': part['xref'],
-                            'regex_id': regex['_id'],
-                            'category_id': regex['category_id'],
+                            'regex_id': reg['_id'],
+                            'category_id': reg['category_id'],
                             'req_id': match.get('reqid'),
                             'total_parts': int(total),
                             'parts': {current: part}
@@ -210,7 +210,7 @@ def parse_xref(xref):
     groups = []
     raw_groups = xref.split(' ')
     for raw_group in raw_groups:
-        result = re.search('^([a-z0-9\.\-_]+):(\d+)?$', raw_group, re.I)
+        result = regex.search('^([a-z0-9\.\-_]+):(\d+)?$', raw_group, regex.I)
         if result:
             groups.append(result.group(1))
     return groups

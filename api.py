@@ -1,4 +1,4 @@
-import re
+import regex
 
 import bottle
 from bottle import request, response
@@ -21,7 +21,7 @@ def api():
         # reform s|search into ^s$|^search$
         # if we don't, 's' matches 'caps' (s)
         r = '|'.join(['^{0}$'.format(r) for r in r.split('|')])
-        if re.search(r, function):
+        if regex.search(r, function):
             dataset = dict()
             dataset['get_link'] = get_link
             data = func(dataset)
