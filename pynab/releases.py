@@ -83,18 +83,18 @@ def discover_name(release):
                         search_name = name
                         category_id = new_category
 
-                        log.info('Found new name for {}: {} with category {:d}'.format(release['search_name'], search_name, category_id))
+                        log.debug('Found new name for {}: {} with category {:d}'.format(release['search_name'], search_name, category_id))
 
                         return search_name, category_id
                     else:
                         # if they're not the same parent and they're not misc, ignore
                         continue
             else:
-                # the old name fit some other category better
-                continue
-    else:
-        log.debug('No potential names found for release.')
-        return None, None
+                # the old name was apparently fine
+                return True, False
+
+    log.debug('No potential names found for release.')
+    return None, None
 
 
 def clean_release_name(name):
