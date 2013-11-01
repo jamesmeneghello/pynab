@@ -90,7 +90,11 @@ I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both shou
 Installation
 ------------
 
-### Ubuntu ###
+### Ubuntu 12.04 and earlier ###
+
+Follow the instructions by broknbottle in issue #13 to install Python 3.3.x, then follow the 13.04 instructions.
+
+### Ubuntu 13.04/13.10 ###
 
 Install mongodb-10gen by following the instructions here:
 http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
@@ -311,6 +315,10 @@ F.A.Q.
 This means that your config.py is out of date. Re-copy config.sample.py and re-enter your details.
 Generally speaking this should become less of a problem as time goes on - only new features require new
 config options, and the project is mostly in bugfix mode at the moment.
+
+- I get an error "cannot import regex" or something similar!
+
+Re-run `pip3 install -r requirements.txt`. You're missing some libraries that we use.
 
 - Start.py keeps failing with some kind of EOFError or just some random error.
 
