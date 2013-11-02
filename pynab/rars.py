@@ -83,7 +83,10 @@ def check_rar(filename):
 
 
 def get_rar_info(server, group_name, messages):
-    data = server.get(group_name, messages)
+    try:
+        data = server.get(group_name, messages)
+    except:
+        data = None
 
     if data:
         # if we got the requested articles, save them to a temp rar

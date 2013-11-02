@@ -61,7 +61,11 @@ def process(limit=5, category=0):
 
                 if nfos:
                     for nfo in nfos:
-                        article = server.get(release['group']['name'], [nfo['#text'], ])
+                        try:
+                            article = server.get(release['group']['name'], [nfo['#text'], ])
+                        except:
+                            article = None
+
                         if article:
                             data = gzip.compress(article.encode('utf-8'))
                             nfo_file = fs.put(data, filename='.'.join([release['name'], 'nfo', 'gz']))
