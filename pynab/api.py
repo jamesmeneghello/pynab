@@ -234,7 +234,10 @@ def search(dataset=None, params=None):
                             categories.append(child['_id'])
                     else:
                         categories.append(category['_id'])
-                query['category._id'].update({'$in': categories})
+                if 'category._id' in query:
+                    query['category._id'].update({'$in': categories})
+                else:
+                    query['category._id'] = {'$in': categories}
 
             # group names
             grp_names = request.query.group or []
@@ -251,7 +254,7 @@ def search(dataset=None, params=None):
         except Exception as e:
             # normally a try block this long would make me shudder
             # but we don't distinguish between errors, so it's fine
-            print(e)
+            log.error('Incorrect API Paramter or parsing error: {}'.format(e))
             return api_error(201)
 
         log.debug('Query parameters: {0}'.format(query))
