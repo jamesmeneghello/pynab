@@ -210,11 +210,10 @@ def search(dataset=None, params=None):
             # set limit to request or default
             # this will also match limit == 0, which would be infinite
             limit = request.query.limit or None
-            if limit and int(limit) < int(config.site['result_limit']):
+            if limit and int(limit) <= int(config.site['result_limit']):
                 limit = int(limit)
             else:
                 limit = int(config.site['result_default'])
-
 
             # offset is only available for rss searches and won't work with text
             offset = request.query.offset or None
@@ -267,7 +266,7 @@ def search(dataset=None, params=None):
             # we remove carets because mongo's FT search is probably smart enough
             terms = ''
             if search_terms:
-                terms = '{0}'.format(' '.join(search_terms.replace('^', ' ').split(' '))).strip()
+                terms = ' '.join(['\"{}\"'.format(term) for term in search_terms.replace('^', '').split(' ')])
 
             # build the full query - db.command() uses a different format
             full = {
@@ -279,6 +278,7 @@ def search(dataset=None, params=None):
             }
 
             results = db.command(**full)['results']
+
             if results:
                 results = [r['obj'] for r in results]
             else:
