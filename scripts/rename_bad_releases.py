@@ -8,23 +8,9 @@ import pynab.releases
 from pynab.db import db
 from pynab import log
 
-parser = argparse.ArgumentParser(description='''
-Rename Bad Releases
 
-Takes either a regex_id or category_id and renames releases from their NFO or filenames.
-Note that you really need to finish post-processing before you can do this.
-''')
-# not supported yet
-#parser.add_argument('--regex', nargs='?', help='Regex ID of releases to rename')
-parser.add_argument('category', help='Category to rename')
-
-args = parser.parse_args()
-
-print('Note: Don\'t run this on a category like TV, only Misc-Other and Books.')
-input('To continue, press enter. To exit, press ctrl-c.')
-
-if args.category:
-    for release in db.releases.find({'category._id': int(args.category), '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
+def rename_bad_releases(category):
+    for release in db.releases.find({'category._id': int(category), '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
         log.debug('Finding name for {}...'.format(release['search_name']))
         name, category_id = pynab.releases.discover_name(release)
 
@@ -64,3 +50,22 @@ if args.category:
                 }
             )
 
+
+
+parser = argparse.ArgumentParser(description='''
+Rename Bad Releases
+
+Takes either a regex_id or category_id and renames releases from their NFO or filenames.
+Note that you really need to finish post-processing before you can do this.
+''')
+# not supported yet
+#parser.add_argument('--regex', nargs='?', help='Regex ID of releases to rename')
+parser.add_argument('category', help='Category to rename')
+
+args = parser.parse_args()
+
+print('Note: Don\'t run this on a category like TV, only Misc-Other and Books.')
+input('To continue, press enter. To exit, press ctrl-c.')
+
+if args.category:
+    rename_bad_releases(args.category)
