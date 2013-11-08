@@ -214,7 +214,7 @@ def process(limit=20, category=0):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
-            if 'rars' in nzb and nzb['rars']:
+            if nzb and 'rars' in nzb:
                 info = check_release_files(server, release['group']['name'], nzb)
                 if info:
                     log.info('Adding file data to release: {}'.format(release['name']))
