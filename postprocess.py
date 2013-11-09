@@ -22,19 +22,19 @@ def mp_error(msg, *args):
     return multiprocessing.get_logger().error(msg, *args)
 
 
-def process_tvrage(limit):
+def process_tvrage():
     pynab.tvrage.process()
 
 
-def process_nfos(limit):
+def process_nfos():
     pynab.nfos.process()
 
 
-def process_rars(limit):
+def process_rars():
     pynab.rars.process()
 
 
-def process_imdb(limit):
+def process_imdb():
     pynab.imdb.process()
 
 
