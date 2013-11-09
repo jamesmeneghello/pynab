@@ -69,6 +69,12 @@ site = {
     # setting this to 1 will cut out releases that only contain an nzb, etc.
     'min_archives': 1,
 
+    # min_completion: the minimum completion % that a release should satisfy
+    # if it's lower than this, it'll get removed eventually
+    # it'll only create releases of this completion if 3 hours have passed to make sure
+    # we're not accidentally cutting off the end of a new release
+    'min_completion': 99,
+
     # postprocessing settings
     # -----------------------
 

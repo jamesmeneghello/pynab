@@ -141,10 +141,18 @@ def process():
     mapper = Code("""
         function() {
             var complete = true;
+            var total_segments = 0;
+            var available_segments = 0;
+
             parts_length = Object.keys(this.parts).length;
+
+            // we should have at least one segment from each part
             if (parts_length >= this.total_parts) {
                 for (var key in this.parts) {
                     segments_length = Object.keys(this.parts[key].segments).length;
+                    available_segments += segments_length;
+
+                    total_segments += this.parts[key].total_segments;
                     if (segments_length < this.parts[key].total_segments) {
                         complete = false
                     }
@@ -152,7 +160,10 @@ def process():
             } else {
                 complete = false
             }
-            emit(this._id, complete)
+            var completion = available_segments / parseFloat(total_segments) * 100.0;
+            if (complete || completion >= """ + str(config.site['min_completion']) + """)
+                emit(this._id, completion)
+
         }
     """)
 
