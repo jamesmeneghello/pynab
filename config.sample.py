@@ -11,10 +11,10 @@ site = {
     'description': 'a pynab api',
 
     # don't edit this
-    'version': '0.1',
+    'version': '1.0',
 
     # generally leave this alone too
-    'api_version': '0.1',
+    'api_version': '0.2.3',
 
     # your administrator email (shows on rss feed)
     'email': '',
