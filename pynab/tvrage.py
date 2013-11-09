@@ -116,7 +116,7 @@ def search(show):
                         akas.append(rage_show['akas']['aka']['#text'])
                     elif isinstance(rage_show['akas']['aka'], list):
                         for aka in rage_show['akas']['aka']:
-                            if '#text' in aka:
+                            if aka and '#text' in aka:
                                 akas.append(aka['#text'])
                             else:
                                 akas.append(aka)
