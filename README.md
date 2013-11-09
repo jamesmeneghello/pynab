@@ -1,3 +1,8 @@
+NOTE
+====
+
+Any time you pull master and it updates, re-copy the sample config and put your details in.
+
 pynab
 =====
 
