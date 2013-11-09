@@ -18,7 +18,7 @@ import config
 
 
 def mp_error(msg, *args):
-    return multiprocessing.get_logger().error(msg, *args)
+    return multiprocessing.get_logger().exception(msg, *args)
 
 
 def init_update():
