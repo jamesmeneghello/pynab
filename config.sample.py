@@ -59,7 +59,7 @@ site = {
 
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be
-    # set this to 3 days or so
+    # set this to 3 days or so, don't set it to 0
     'dead_binary_age': 3,
 
     # release processing settings
@@ -74,6 +74,10 @@ site = {
     # it'll only create releases of this completion if 3 hours have passed to make sure
     # we're not accidentally cutting off the end of a new release
     'min_completion': 99,
+
+    # 100% completion resulted in about 11,000 unmatched releases after 4 weeks over 6 groups
+    # lowering that to 99% built an extra 10,500 releases
+
 
     # postprocessing settings
     # -----------------------
