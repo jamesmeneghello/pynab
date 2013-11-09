@@ -19,9 +19,6 @@ site = {
     # your administrator email (shows on rss feed)
     'email': '',
 
-    # site-wide random seed
-    'seed': '',
-
     # api settings
     # ------------
 
@@ -98,11 +95,6 @@ site = {
     # 'C:\\Program Files (x86)\\Unrar\\Unrar.exe'
     'unrar_path': '',
 
-    # rar_limit: number of rar checks to do per start.py cycle
-    # set this to a low number - you have to pull a whole part of the release
-    # so it takes a while
-    'rar_limit': 10,
-
     # delete_passworded: delete releases that are passworded
     'delete_passworded': True,
 
@@ -116,25 +108,13 @@ site = {
     # couchpotato sometimes depends on this data for API usage, definitely recommended
     'process_imdb': True,
 
-    # imdb_limit: number of releases to match to IMDB per start.py cycle
-    # medium-ish number for this one - you don't want to smash their api
-    'imdb_limit': 40,
-
     # process_tvrage: match TV releases against TVRage
     # sickbeard sometimes depends on this data for API usage, definitely recommended
     'process_tvrage': True,
 
-    # tvrage_limit: number of releases to match to TVRage per start.py cycle
-    # medium-ish number for this one - you don't want to smash their api
-    'tvrage_limit': 40,
-
     # process_nfos: grab NFOs for releases for other use
     # this can be used to clean release names, etc
     'process_nfos': True,
-
-    # nfo_limit: number of releases to fetch NFOs for per start.py cycle
-    # these don't take long, so get quite a few
-    'nfo_limit': 100,
 
     # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
     # so if we can't find a match for some movie, wait 7 days before trying that movie again
