@@ -17,9 +17,10 @@ beyond my own needs, but this is what open source is for.
 
 Note that because this is purely for API access, THERE IS NO WEB FRONTEND. You
 cannot add users through a web interface, manage releases, etc. There isn't a
-frontend. Again, if you'd like to add one, feel free - something like 99.9%
-of the usage of my old Newznab server was API-only for Sickbeard, Couchpotato,
-Headphones etc - so it's low-priority.
+frontend. Something like 99.9% of the usage of my old Newznab server was API-only
+for Sickbeard, Couchpotato, Headphones etc - so it's low-priority.
+
+@DanielSchaffer is working on a WebUI for Pynab here: https://github.com/DanielSchaffer/pynab/
 
 
 Features
@@ -37,7 +38,7 @@ Features
 In development:
 ---------------
 
-- Release renaming for obfuscated releases
+- Release renaming for obfuscated releases (works for misc/books, breaks other stuff)
 - Pre-DB comparisons maybe?
 
 
@@ -136,9 +137,9 @@ You can also import a regex dump or create your own.
 
 	WARNING:
 
-	This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
-	make sure you make a copy of them first. The import script will actively delete
-	things, newznab conversion will just copy - but better to be safe.
+    This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
+    make sure you make a copy of them first. The import script will actively delete
+    things, newznab conversion will just copy - but better to be safe.
 
 Pynab can transfer some data across from Newznab - notably your groups (and settings),
 any regexes, blacklists, categories and TVRage/IMDB/TVDB data, as well as user details
@@ -196,6 +197,24 @@ set in config.py:
 start.py is your update script - it'll take care of indexing messages, collating binaries and
 creating releases.
 
+### Post-processing Releases ###
+
+Some APIs (sometimes Sickbeard, usually Couchpotato) rely on some post-processed metadata
+to be able to easily find releases. Sickbeard looks for TVRage IDs, CouchPotato for IMDB IDs,
+for instance. These don't come from Usenet - we match them against online databases.
+
+To run the post-process script, do this:
+
+    > python3 postprocess.py
+
+This will run a quick once-over of all releases to match to available local data, then a slow
+process of pulling individual articles off Usenet for NFOs, RARs and other data. Finally, it'll
+rename any shitty releases in Misc-Other and Ebooks, optionally deleting any releases it can't
+fix after that (NB: won't do this until I'm satisfied it's safe).
+
+Note that SB/CP will have trouble finding some stuff until it's been post-processed - Sickbeard
+will usually search by name as well, but CP tends not to do so, so keep your releases post-processed.
+
 ### Backfilling Groups ###
 
 Pynab has a backfill mechanism very similar to Newznab. This can be run sequentially to start.py,
@@ -220,7 +239,16 @@ Note that you can combine the backfill script with Screen to backfill multiple g
 	> screen /bin/bash
 	> python3 scripts/backfill.py -g alt.binaries.someothergroup
 	> (press ctrl-a then d)
+	> screen /bin/bash
 	> python3 start.py
+	> (press ctrl-a then d)
+	> screen /bin/bash
+	> python3 post_process.py
+	> (press ctrl-a then d)
+	> tail -f pynab.log
+
+The last line will enable you to see output from all the windows, if logging_file is enabled.
+This is pretty spammy and unreadable, though. Watchdog to come with summarised stats for the DB.
 
 By running start.py at the same time as the backfill scripts, start.py will automatically take care of 
 processing parts created by the backfill scripts at regular intervals, preventing the parts table from
@@ -326,6 +354,9 @@ Python's Multiprocessing Pool is such that any error will tend to flip it out an
 so combined with NNTP implementations' rather.. "free" usage of error messages and standards, this'll
 happen for a while until I catch all the weird bugs. Found a new, weird crash? Post an issue!
 
+Most of these got cleaned up in a recent revision, but there's still the potential for broken servers
+to return bad data.
+
 - I'm getting some random error while trying to fill groups
 
 Go into config.py and set logging_level to logging.DEBUG and logging_file to something appropriate,
@@ -357,3 +388,4 @@ Acknowledgements
 - The Newznab team, for creating a great piece of software
 - Everyone who contributed to the NN+ regex collection
 - Kevinlekiller, for his blacklist regex
+- Everyone who's sent in issues and tested the software
