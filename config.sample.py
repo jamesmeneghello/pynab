@@ -11,7 +11,7 @@ site = {
     'description': 'a pynab api',
 
     # don't edit this
-    'version': '1.0',
+    'version': '1.0.0',
 
     # generally leave this alone too
     'api_version': '0.2.3',
