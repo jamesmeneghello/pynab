@@ -1,4 +1,5 @@
 import multiprocessing
+from multiprocessing.pool import Pool
 import time
 import logging
 import signal
@@ -17,12 +18,35 @@ import pynab.imdb
 import config
 
 
+class LogExceptions(object):
+    def __init__(self, callable):
+        self.__callable = callable
+        return
+
+    def __call__(self, *args, **kwargs):
+        try:
+            result = self.__callable(*args, **kwargs)
+
+        except Exception as e:
+            # Here we add some debugging help. If multiprocessing's
+            # debugging is on, it will arrange to log the traceback
+            mp_error(traceback.format_exc())
+            # Re-raise the original exception so the Pool worker can
+            # clean up
+            raise
+
+        # It was fine, give a normal answer
+        return result
+    pass
+
+
+class LoggingPool(Pool):
+    def map_async(self, func, iterable=None, chunksize=0, callback=None, error_callback=None):
+        return Pool.apply_async(self, LogExceptions(func), iterable, chunksize, callback, error_callback)
+
+
 def mp_error(msg, *args):
     return multiprocessing.get_logger().exception(msg, *args)
-
-
-def init_update():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def update(group_name):
@@ -56,8 +80,7 @@ if __name__ == '__main__':
         if active_groups:
             # if maxtasksperchild is more than 1, everything breaks
             # they're long processes usually, so no problem having one task per child
-            pool = multiprocessing.Pool(processes=config.site['update_threads'], initializer=init_update,
-                                        maxtasksperchild=1)
+            pool = multiprocessing.Pool(processes=config.site['update_threads'], maxtasksperchild=1)
             result = pool.map_async(update, active_groups)
             try:
                 result.get()
