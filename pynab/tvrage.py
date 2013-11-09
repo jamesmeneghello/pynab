@@ -125,8 +125,9 @@ def search(show):
 
                 # check matches in akas
                 for aka in akas:
-                    ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(aka)).ratio() * 100)
-                    matches[ratio] = rage_show
+                    if aka:
+                        ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(aka)).ratio() * 100)
+                        matches[ratio] = rage_show
 
             # check for link matches
             if 'link' in rage_show:
