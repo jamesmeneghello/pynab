@@ -102,7 +102,7 @@ def movie_search(dataset=None):
         try:
             imdb_id = request.query.imdbid or None
             if imdb_id:
-                query['imdb._id'] = int(imdb_id)
+                query['imdb._id'] = 'tt' + imdb_id
 
             genres = request.query.genre or None
             if genres:
