@@ -50,22 +50,21 @@ def rename_bad_releases(category):
                 }
             )
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='''
+    Rename Bad Releases
 
+    Takes either a regex_id or category_id and renames releases from their NFO or filenames.
+    Note that you really need to finish post-processing before you can do this.
+    ''')
+    # not supported yet
+    #parser.add_argument('--regex', nargs='?', help='Regex ID of releases to rename')
+    parser.add_argument('category', help='Category to rename')
 
-parser = argparse.ArgumentParser(description='''
-Rename Bad Releases
+    args = parser.parse_args()
 
-Takes either a regex_id or category_id and renames releases from their NFO or filenames.
-Note that you really need to finish post-processing before you can do this.
-''')
-# not supported yet
-#parser.add_argument('--regex', nargs='?', help='Regex ID of releases to rename')
-parser.add_argument('category', help='Category to rename')
+    print('Note: Don\'t run this on a category like TV, only Misc-Other and Books.')
+    input('To continue, press enter. To exit, press ctrl-c.')
 
-args = parser.parse_args()
-
-print('Note: Don\'t run this on a category like TV, only Misc-Other and Books.')
-input('To continue, press enter. To exit, press ctrl-c.')
-
-if args.category:
-    rename_bad_releases(args.category)
+    if args.category:
+        rename_bad_releases(args.category)
