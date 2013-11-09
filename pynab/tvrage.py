@@ -21,11 +21,22 @@ def process(limit=100, online=True):
     log.info('Processing TV episodes to add TVRage data...')
 
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
-    for release in db.releases.find({'tvrage._id': {'$exists': False},
-                                     'category.parent_id': 5000,
-                                     'tvrage.possible': {'$exists': False},
-                                     '$or': [{'tvrage.attempted': {'$exists': False}},
-                                             {'tvrage.attempted': {'$lte': expiry}}]}).limit(limit):
+
+    query = {
+        'tvrage._id': {'$exists': False},
+        'category.parent_id': 5000,
+    }
+
+    if online:
+        query.update({
+            'tvrage.possible': {'$exists': False},
+            '$or': [
+             {'tvrage.attempted': {'$exists': False}},
+             {'tvrage.attempted': {'$lte': expiry}}
+            ]
+        })
+
+    for release in db.releases.find(query).limit(limit):
         log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
         show = parse_show(release['search_name'])
         if show:
@@ -125,8 +136,9 @@ def search(show):
 
                 # check matches in akas
                 for aka in akas:
-                    ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(aka)).ratio() * 100)
-                    matches[ratio] = rage_show
+                    if aka:
+                        ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(aka)).ratio() * 100)
+                        matches[ratio] = rage_show
 
             # check for link matches
             if 'link' in rage_show:
