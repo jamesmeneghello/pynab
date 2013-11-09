@@ -18,6 +18,28 @@ import pynab.util
 import pynab.rars
 
 
+def strip_req(release):
+    """Strips REQ IDs out of releases and cleans them up so they can be properly matched
+    in post-processing."""
+    regexes = [
+        regex.compile('^a\.b\.mmEFNet - REQ (?P<reqid>\d+) - (?P<name>.*)', regex.I)
+    ]
+
+    for r in regexes:
+        result = r.search(release['search_name'])
+        if result:
+            result_dict = result.groupdict()
+            if 'name' in result_dict and 'reqid' in result_dict:
+                log.info('Found request {}, storing req_id and renaming...'.format(result_dict['name']))
+                db.releases.update({'_id': release['_id']},{
+                    '$set': {
+                        'search_name': result_dict['name'],
+                        'req_id': result_dict['reqid']
+                    }
+                })
+                return
+
+
 def names_from_nfos(release):
     """Attempt to grab a release name from its NFO."""
     log.debug('Parsing NFO for release details in: {}'.format(release['search_name']))

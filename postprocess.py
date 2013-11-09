@@ -3,6 +3,7 @@ import time
 import logging
 
 from pynab import log
+from pynab.db import db
 
 import pynab.groups
 import pynab.binaries
@@ -42,6 +43,10 @@ if __name__ == '__main__':
 
     # print MP log as well
     multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
+
+    # take care of REQ releases first
+    for release in db.releases.find({'search_name': {'$regex': 'req', '$options': '-i'}}):
+        pynab.releases.strip_req(release)
 
     # start with a quick post-process
     log.info('Starting with a quick post-process to clear out the cruft that\'s available locally...')
@@ -90,7 +95,6 @@ if __name__ == '__main__':
         if config.site['delete_bad_releases']:
             log.info('Deleting bad releases...')
             # not confident in this yet
-            #db.releases.remove({''})
 
         # wait for the configured amount of time between cycles
         log.info('Sleeping for {:d} seconds...'.format(config.site['postprocess_wait']))
