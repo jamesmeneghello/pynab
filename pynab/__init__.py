@@ -7,8 +7,14 @@ __version__ = '0.1.0'
 
 import logging
 import config
+import logging.handlers
 
 log = logging.getLogger(__name__)
-logging.basicConfig(filename=config.site['logging_file'],
-                    level=config.site['logging_level'],
-                    format='"%(asctime)s - %(levelname)s - %(message)s"')
+log.setLevel(config.site['logging_level'])
+
+if config.site['logging_file']:
+    handler = logging.handlers.RotatingFileHandler(config.site['logging_file'], maxBytes=config.site['max_log_size'], backupCount=5)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    log.addHandler(handler)
+else:
+    logging.basicConfig(format='"%(asctime)s - %(levelname)s - %(message)s"')

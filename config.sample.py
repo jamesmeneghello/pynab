@@ -76,8 +76,7 @@ site = {
     'min_completion': 99,
 
     # 100% completion resulted in about 11,000 unmatched releases after 4 weeks over 6 groups
-    # lowering that to 99% built an extra 10,500 releases
-
+    # lowering that to 99% built an extra 3,500 releases
 
     # postprocessing settings
     # -----------------------
@@ -150,6 +149,10 @@ site = {
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
     # generally, debug if something goes wrong, info for normal usage
     'logging_level': logging.DEBUG,
+
+    # max_log_size: maximum size of logfiles before they get rotated
+    # number, in bytes (this is 50mb)
+    'max_log_size': 50*1024*1024,
 
     # regex update settings
     # ---------------------
