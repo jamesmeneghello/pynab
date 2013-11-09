@@ -15,6 +15,57 @@ OMDB_SEARCH_URL = 'http://www.omdbapi.com/?s='
 OMDB_DETAIL_URL = 'http://www.omdbapi.com/?i='
 
 
+def process_release(release, online=True):
+    log.info('Processing Movie information for movie {}.'.format(release['search_name']))
+    name, year = parse_movie(release['search_name'])
+    if name and year:
+        log.debug('Parsed as {} {}'.format(name, year))
+        imdb = db.imdb.find_one({'name': clean_name(name), 'year': year})
+        if not imdb and online:
+            log.info('Movie not found in local IMDB DB, searching online...')
+            movie = search(clean_name(name), year)
+            if movie and movie['Type'] == 'movie':
+                db.imdb.update(
+                    {'_id': movie['imdbID']},
+                    {
+                        '$set': {
+                            'name': movie['Title'],
+                            'year': movie['Year']
+                        }
+                    },
+                    upsert=True
+                )
+                imdb = db.imdb.find_one({'_id': movie['imdbID']})
+
+        if imdb:
+            log.info('IMDB match found, appending IMDB ID to release.')
+            db.releases.update({'_id': release['_id']}, {
+                '$set': {
+                    'imdb': imdb
+                }
+            })
+        elif not imdb and online:
+            log.warning('Could not find IMDB data to associate with release {}.'.format(release['search_name']))
+            db.releases.update({'_id': release['_id']}, {
+                '$set': {
+                    'imdb': {
+                        'attempted': datetime.datetime.now(pytz.utc)
+                    }
+                }
+            })
+        else:
+            log.warning('Could not find local IMDB data to associate with release {}.'.format(release['search_name']))
+    else:
+        log.warning('Could not parse name for movie data: {}.'.format(release['search_name']))
+        db.releases.update({'_id': release['_id']}, {
+            '$set': {
+                'imdb': {
+                    'possible': False
+                }
+            }
+        })
+
+
 def process(limit=100, online=True):
     """Process movies without imdb data and append said data."""
     log.info('Processing movies to add IMDB data...')
@@ -25,53 +76,7 @@ def process(limit=100, online=True):
                                      'imdb.possible': {'$exists': False},
                                      '$or': [{'imdb.attempted': {'$exists': False}},
                                              {'imdb.attempted': {'$lte': expiry}}]}).limit(limit):
-        log.info('Processing Movie information for movie {}.'.format(release['search_name']))
-        name, year = parse_movie(release['search_name'])
-        if name and year:
-            imdb = db.imdb.find_one({'name': clean_name(name), 'year': year})
-            if not imdb and online:
-                log.info('Movie not found in local IMDB DB, searching online...')
-                movie = search(clean_name(name), year)
-                if movie and movie['Type'] == 'movie':
-                    db.imdb.update(
-                        {'_id': movie['imdbID']},
-                        {
-                            '$set': {
-                                'name': movie['Title'],
-                                'year': movie['Year']
-                            }
-                        },
-                        upsert=True
-                    )
-                    imdb = db.imdb.find_one({'_id': movie['imdbID']})
-
-            if imdb:
-                log.info('IMDB match found, appending IMDB ID to release.')
-                db.releases.update({'_id': release['_id']}, {
-                    '$set': {
-                        'imdb': imdb
-                    }
-                })
-            elif not imdb and online:
-                log.warning('Could not find IMDB data to associate with release {}.'.format(release['search_name']))
-                db.releases.update({'_id': release['_id']}, {
-                    '$set': {
-                        'imdb': {
-                            'attempted': datetime.datetime.now(pytz.utc)
-                        }
-                    }
-                })
-            else:
-                log.warning('Could not find local IMDB data to associate with release {}.'.format(release['search_name']))
-        else:
-            log.warning('Could not parse name for movie data: {}.'.format(release['search_name']))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'imdb': {
-                        'possible': False
-                    }
-                }
-            })
+        process_release(release, online)
 
 
 def search(name, year):
@@ -133,7 +138,7 @@ def parse_movie(search_name):
         if 'name' in result:
             name = regex.sub('\(.*?\)|\.|_', ' ', result['name'])
             if 'year' in result:
-                year = '({})'.format(result['year'])
+                year = result['year']
             else:
                 year = ''
             return name, year
