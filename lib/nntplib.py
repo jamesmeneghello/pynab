@@ -555,7 +555,8 @@ class _NNTPBase:
 
         try:
             # Try to decompress.
-            decomp = zlib.decompress(lines)
+            dc_obj = zlib.decompressobj()
+            decomp = dc_obj.decompress(lines)
             # Remove the last crlf and split the line into a list @crlf's
             if decomp[-2:] == b'\r\n':
                 decomp = decomp[:-2].split(b'\r\n')
