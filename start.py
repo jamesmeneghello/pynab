@@ -1,6 +1,8 @@
 import multiprocessing
 import time
 import logging
+import pytz
+import datetime
 
 from pynab import log
 from pynab.db import db
@@ -67,6 +69,10 @@ if __name__ == '__main__':
             # process releases
             # TODO: likewise
             pynab.releases.process()
+
+            # clean up dead binaries
+            dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.site['dead_binary_age'])
+            db.binaries.remove({'posted': {'$lte': dead_time}})
 
             # wait for the configured amount of time between cycles
             log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))

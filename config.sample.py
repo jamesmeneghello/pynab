@@ -57,6 +57,11 @@ site = {
     # make sure there's no quotes around it
     'backfill_days': 10,
 
+    # dead_binary_age: number of days to keep binaries for matching
+    # realistically if they're not completed after a day or two, they're not going to be
+    # set this to 3 days or so
+    'dead_binary_age': 3,
+
     # release processing settings
     # ---------------------------
 
