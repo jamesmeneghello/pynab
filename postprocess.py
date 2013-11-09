@@ -43,11 +43,11 @@ if __name__ == '__main__':
     # print MP log as well
     multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
 
-    while True:
-        # start with a quick post-process
-        log.info('Starting with a quick post-process to clear out the cruft that\'s available locally...')
-        scripts.quick_postprocess.local_postprocess()
+    # start with a quick post-process
+    log.info('Starting with a quick post-process to clear out the cruft that\'s available locally...')
+    scripts.quick_postprocess.local_postprocess()
 
+    while True:
         # grab and append tvrage data to tv releases
         tvrage_p = None
         if config.site['process_tvrage']:
