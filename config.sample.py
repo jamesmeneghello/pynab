@@ -67,6 +67,11 @@ site = {
     # postprocessing settings
     # -----------------------
 
+    # postprocess_wait: time to sleep between postprocess.py loops
+    # setting this to 0 may be horrible to online APIs, but if you've got a good
+    # local db it should be fine
+    'postprocess_wait': 0,
+
     # process_rars: whether to check for passworded releases, get file size and count
     # this uses extra bandwidth, since it needs to download at least one archive
     # for something like a bluray release, this is quite large
@@ -89,6 +94,9 @@ site = {
 
     # delete_potentially_passworded: delete releases that are probably passworded
     'delete_potentially_passworded': True,
+
+    # delete_bad_releases: delete releases that we can't rename out of misc-other
+    'delete_bad_releases': True,
 
     # process_imdb: match movie releases against IMDB
     # couchpotato sometimes depends on this data for API usage, definitely recommended
