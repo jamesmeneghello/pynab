@@ -1,25 +1,13 @@
-A Friendly Note
----------------
+NOTE
+====
 
-If you run into problems, read the FAQ first.
-
-When posting crashes and issues, please include a logfile - you can generate one by
-setting "logging_file" to something and "logging_level" to "logging.DEBUG".
-
-
-###Warning###
-
-This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
-make sure you make a copy of them first. Only the import script will actively delete
-things, newznab conversion will just copy - but better to be safe.
-
-
+Any time you pull master and it updates, re-copy the sample config and put your details in.
 
 pynab
 =====
 
 Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
-consisting of (currently) ~4,600 SLoC, compared to Newznab's ~104,000 lines of
+consisting of (currently) ~4,000 SLoC, compared to Newznab's ~104,000 lines of
 php/template. Performance and reliability are significantly improved, as is
 maintainability and a noted reduction in the sheer terror I experienced upon
 looking at some of the NN code in an attempt to fix a few annoying bugs.
@@ -34,9 +22,10 @@ beyond my own needs, but this is what open source is for.
 
 Note that because this is purely for API access, THERE IS NO WEB FRONTEND. You
 cannot add users through a web interface, manage releases, etc. There isn't a
-frontend. Again, if you'd like to add one, feel free - something like 99.9%
-of the usage of my old Newznab server was API-only for Sickbeard, Couchpotato,
-Headphones etc - so it's low-priority.
+frontend. Something like 99.9% of the usage of my old Newznab server was API-only
+for Sickbeard, Couchpotato, Headphones etc - so it's low-priority.
+
+@DanielSchaffer is working on a WebUI for Pynab here: https://github.com/DanielSchaffer/pynab/
 
 
 Features
@@ -54,6 +43,7 @@ Features
 In development:
 ---------------
 
+- Release renaming for obfuscated releases (works for misc/books, breaks other stuff)
 - Pre-DB comparisons maybe?
 
 
@@ -97,7 +87,7 @@ Installation and execution is reasonably easy.
 Requirements
 ------------
 
-- Python 3.3 or higher
+- Python 3.3 or higher (might work on 3.2)
 - MongoDB 2.4.x or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
@@ -106,7 +96,11 @@ I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both shou
 Installation
 ------------
 
-### Ubuntu ###
+### Ubuntu 12.04 and earlier ###
+
+Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodese/pynab/issues/15) to install Python 3.3.x, then follow the 13.04 instructions.
+
+### Ubuntu 13.04/13.10 ###
 
 Install mongodb-10gen by following the instructions here:
 http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
@@ -145,6 +139,12 @@ You can get one by following the instructions on their website (generally a dona
 You can also import a regex dump or create your own.
 
 ### Converting from Newznab ###
+
+	WARNING:
+
+    This software is unstable as yet, so keep backups of everything - if you're importing NZBs,
+    make sure you make a copy of them first. The import script will actively delete
+    things, newznab conversion will just copy - but better to be safe.
 
 Pynab can transfer some data across from Newznab - notably your groups (and settings),
 any regexes, blacklists, categories and TVRage/IMDB/TVDB data, as well as user details
@@ -201,6 +201,63 @@ set in config.py:
 
 start.py is your update script - it'll take care of indexing messages, collating binaries and
 creating releases.
+
+### Post-processing Releases ###
+
+Some APIs (sometimes Sickbeard, usually Couchpotato) rely on some post-processed metadata
+to be able to easily find releases. Sickbeard looks for TVRage IDs, CouchPotato for IMDB IDs,
+for instance. These don't come from Usenet - we match them against online databases.
+
+To run the post-process script, do this:
+
+    > python3 postprocess.py
+
+This will run a quick once-over of all releases to match to available local data, then a slow
+process of pulling individual articles off Usenet for NFOs, RARs and other data. Finally, it'll
+rename any shitty releases in Misc-Other and Ebooks, optionally deleting any releases it can't
+fix after that (NB: won't do this until I'm satisfied it's safe).
+
+Note that SB/CP will have trouble finding some stuff until it's been post-processed - Sickbeard
+will usually search by name as well, but CP tends not to do so, so keep your releases post-processed.
+
+### Backfilling Groups ###
+
+Pynab has a backfill mechanism very similar to Newznab. This can be run sequentially to start.py,
+so that you effectively fill releases in both directions. Because binary and release processing
+is atomic, there are no issues running multiple scripts at the same time - you are effectively
+only limited by the number of available NNTP connections, your bandwidth and your available 
+processing power.
+
+You can use the backfill scripts as so:
+
+	> python3 scripts/backfill.py -g <group> -d <date>
+
+You can optionally specify a group - omitting the group argument will operate a backfill over all
+groups. You can also optionally specify a particular date to backfill to - omitting a date will fall
+back onto your config.py's backfill_days parameter.
+
+Note that you can combine the backfill script with Screen to backfill multiple groups at once, like so:
+
+	> screen /bin/bash
+	> python3 scripts/backfill.py -g alt.binaries.somegroup
+	> (press ctrl-a then d)
+	> screen /bin/bash
+	> python3 scripts/backfill.py -g alt.binaries.someothergroup
+	> (press ctrl-a then d)
+	> screen /bin/bash
+	> python3 start.py
+	> (press ctrl-a then d)
+	> screen /bin/bash
+	> python3 post_process.py
+	> (press ctrl-a then d)
+	> tail -f pynab.log
+
+The last line will enable you to see output from all the windows, if logging_file is enabled.
+This is pretty spammy and unreadable, though. Watchdog to come with summarised stats for the DB.
+
+By running start.py at the same time as the backfill scripts, start.py will automatically take care of 
+processing parts created by the backfill scripts at regular intervals, preventing the parts table from
+becoming extremely large.
 
 ### Starting the API ###
 
@@ -259,17 +316,32 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     processes = 4 [or whatever number of cpu cores you have]
     threads = 2
 
+### Using the miscellaneous scripts ###
+
+To create a user (will return a generated API key):
+
+	> python3 scripts/create_user.py <email>
+
+To update indexes (generally only run if a commit message tells you to):
+
+	> python3 scripts/ensure_indexes.py 
+
+Update regex (run it every now and then, but it doesn't update that often):
+
+	> python3 scripts/update_regex.py
+
+Quickly match releases to local post-processing databases (run this pretty often, 
+it'll probably be incorporated into start.py at some point):
+
+	> python3 scripts/quick_postprocess.py
+
+Categorise all uncategorised releases - this runs automatically after import.
+
+	> python3 scripts/process_uncategorised.py
+
+
 F.A.Q.
 ======
-
-- Everything keeps breaking! AAAAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-There's heavy development going on currently. This means that, since there's no stable release yet,
-everything is in a constant state of flux. Typically, it means I'm introducing and fixing bugs
-(which in turn means I'm creating new ones). Once everything's hammered out and a stable copy is
-completed, I'll be branching off into development and all your shit should stop breaking.
-
-That day is not today, however. (within the next few days, hopefully)
 
 - I keep getting errors related to "config.<something>" and start.py stops.
 
@@ -277,12 +349,29 @@ This means that your config.py is out of date. Re-copy config.sample.py and re-e
 Generally speaking this should become less of a problem as time goes on - only new features require new
 config options, and the project is mostly in bugfix mode at the moment.
 
+- I get an error "cannot import regex" or something similar!
+
+Re-run `pip3 install -r requirements.txt`. You're missing some libraries that we use.
+
 - Start.py keeps failing with some kind of EOFError or just some random error.
 
 Python's Multiprocessing Pool is such that any error will tend to flip it out and kill all the workers,
 so combined with NNTP implementations' rather.. "free" usage of error messages and standards, this'll
 happen for a while until I catch all the weird bugs. Found a new, weird crash? Post an issue!
 
+Most of these got cleaned up in a recent revision, but there's still the potential for broken servers
+to return bad data.
+
+- I'm getting some random error while trying to fill groups
+
+Go into config.py and set logging_level to logging.DEBUG and logging_file to something appropriate,
+then upload the log somewhere and attach it to an issue.
+
+- How do I enable header compression?
+
+You don't - it's automatically enabled if your provider supports it. The benefits of using it are so 
+large time-wise that there's no real reason to include a config option to turn it off. If you can think
+of a reason to include it, post an issue and let me know.
 
 Newznab API
 ===========
@@ -297,11 +386,6 @@ with noted exceptions:
 - COMMENTS-ADD (...)
 - USER (not yet implemented, since API access is currently unlimited)
 
-Known Problems
-==============
-
-- ~~Running the processing scripts on a server remote to the MongoDB server will cause problems, especially if the processor is Windows-based.~~ No longer relevant, performance improvements have obsoleted this.
-
 
 Acknowledgements
 ================
@@ -309,3 +393,4 @@ Acknowledgements
 - The Newznab team, for creating a great piece of software
 - Everyone who contributed to the NN+ regex collection
 - Kevinlekiller, for his blacklist regex
+- Everyone who's sent in issues and tested the software

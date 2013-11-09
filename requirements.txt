@@ -8,3 +8,4 @@ xmltodict
 pynzb
 requests
 roman
+regex

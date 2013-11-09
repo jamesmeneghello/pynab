@@ -63,7 +63,7 @@ are strings, not numbers, since they are rarely used for calculations.
 # - support HDR
 
 # Imports
-import re
+import regex
 import socket
 import collections
 import datetime
@@ -555,7 +555,8 @@ class _NNTPBase:
 
         try:
             # Try to decompress.
-            decomp = zlib.decompress(lines)
+            dc_obj = zlib.decompressobj()
+            decomp = dc_obj.decompress(lines)
             # Remove the last crlf and split the line into a list @crlf's
             if decomp[-2:] == b'\r\n':
                 decomp = decomp[:-2].split(b'\r\n')
@@ -700,7 +701,7 @@ class _NNTPBase:
         return resp, self._grouplist(lines)
 
     def _getdescriptions(self, group_pattern, return_all):
-        line_pat = re.compile('^(?P<group>[^ \t]+)[ \t]+(.*)$')
+        line_pat = regex.compile('^(?P<group>[^ \t]+)[ \t]+(.*)$')
         # Try the more std (acc. to RFC2980) LIST NEWSGROUPS first
         resp, lines = self._longcmdstring('LIST NEWSGROUPS ' + group_pattern)
         if not resp.startswith('215'):
@@ -875,7 +876,7 @@ class _NNTPBase:
         - resp: server response if successful
         - list: list of (nr, value) strings
         """
-        pat = re.compile('^([0-9]+) ?(.*)\n?')
+        pat = regex.compile('^([0-9]+) ?(.*)\n?')
         resp, lines = self._longcmdstring('XHDR {0} {1}'.format(hdr, str), file)
         def remove_number(line):
             m = pat.match(line)
@@ -951,7 +952,7 @@ class _NNTPBase:
         warnings.warn("The XGTITLE extension is not actively used, "
                       "use descriptions() instead",
                       DeprecationWarning, 2)
-        line_pat = re.compile('^([^ \t]+)[ \t]+(.*)$')
+        line_pat = regex.compile('^([^ \t]+)[ \t]+(.*)$')
         resp, raw_lines = self._longcmdstring('XGTITLE ' + group, file)
         lines = []
         for raw_line in raw_lines:

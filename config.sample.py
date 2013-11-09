@@ -11,16 +11,13 @@ site = {
     'description': 'a pynab api',
 
     # don't edit this
-    'version': '0.1',
+    'version': '1.0.0',
 
     # generally leave this alone too
-    'api_version': '0.1',
+    'api_version': '0.2.3',
 
     # your administrator email (shows on rss feed)
     'email': '',
-
-    # site-wide random seed
-    'seed': '',
 
     # api settings
     # ------------
@@ -57,6 +54,11 @@ site = {
     # make sure there's no quotes around it
     'backfill_days': 10,
 
+    # dead_binary_age: number of days to keep binaries for matching
+    # realistically if they're not completed after a day or two, they're not going to be
+    # set this to 3 days or so, don't set it to 0
+    'dead_binary_age': 3,
+
     # release processing settings
     # ---------------------------
 
@@ -64,8 +66,22 @@ site = {
     # setting this to 1 will cut out releases that only contain an nzb, etc.
     'min_archives': 1,
 
+    # min_completion: the minimum completion % that a release should satisfy
+    # if it's lower than this, it'll get removed eventually
+    # it'll only create releases of this completion if 3 hours have passed to make sure
+    # we're not accidentally cutting off the end of a new release
+    'min_completion': 99,
+
+    # 100% completion resulted in about 11,000 unmatched releases after 4 weeks over 6 groups
+    # lowering that to 99% built an extra 3,500 releases
+
     # postprocessing settings
     # -----------------------
+
+    # postprocess_wait: time to sleep between postprocess.py loops
+    # setting this to 0 may be horrible to online APIs, but if you've got a good
+    # local db it should be fine
+    'postprocess_wait': 0,
 
     # process_rars: whether to check for passworded releases, get file size and count
     # this uses extra bandwidth, since it needs to download at least one archive
@@ -79,40 +95,26 @@ site = {
     # 'C:\\Program Files (x86)\\Unrar\\Unrar.exe'
     'unrar_path': '',
 
-    # rar_limit: number of rar checks to do per start.py cycle
-    # set this to a low number - you have to pull a whole part of the release
-    # so it takes a while
-    'rar_limit': 10,
-
     # delete_passworded: delete releases that are passworded
     'delete_passworded': True,
 
     # delete_potentially_passworded: delete releases that are probably passworded
     'delete_potentially_passworded': True,
 
+    # delete_bad_releases: delete releases that we can't rename out of misc-other
+    'delete_bad_releases': True,
+
     # process_imdb: match movie releases against IMDB
     # couchpotato sometimes depends on this data for API usage, definitely recommended
     'process_imdb': True,
-
-    # imdb_limit: number of releases to match to IMDB per start.py cycle
-    # medium-ish number for this one - you don't want to smash their api
-    'imdb_limit': 40,
 
     # process_tvrage: match TV releases against TVRage
     # sickbeard sometimes depends on this data for API usage, definitely recommended
     'process_tvrage': True,
 
-    # tvrage_limit: number of releases to match to TVRage per start.py cycle
-    # medium-ish number for this one - you don't want to smash their api
-    'tvrage_limit': 40,
-
     # process_nfos: grab NFOs for releases for other use
     # this can be used to clean release names, etc
     'process_nfos': True,
-
-    # nfo_limit: number of releases to fetch NFOs for per start.py cycle
-    # these don't take long, so get quite a few
-    'nfo_limit': 100,
 
     # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
     # so if we can't find a match for some movie, wait 7 days before trying that movie again
@@ -127,6 +129,10 @@ site = {
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
     # generally, debug if something goes wrong, info for normal usage
     'logging_level': logging.DEBUG,
+
+    # max_log_size: maximum size of logfiles before they get rotated
+    # number, in bytes (this is 50mb)
+    'max_log_size': 50*1024*1024,
 
     # regex update settings
     # ---------------------

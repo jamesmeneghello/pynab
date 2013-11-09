@@ -211,8 +211,6 @@ class RarFile(object):
             if head_type == 0x73:
                 #TODO: Try to factor this out to reduce time spent in syscalls.
                 self.fp.seek(offset + 2) # Seek to just after HEAD_CRC
-                #FIXME: Check header CRC on all blocks.
-                assert self._check_crc(self.fp.read(11), head_crc)
 
             # TODO: Rework handling of file headers.
             elif head_type == 0x74:

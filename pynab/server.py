@@ -1,5 +1,5 @@
 import lib.nntplib as nntplib
-import re
+import regex
 import time
 import datetime
 import math
@@ -23,7 +23,11 @@ class Server:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
-            self.connection.quit()
+            try:
+                self.connection.quit()
+            except Exception as e:
+                pass
+
 
     def group(self, group_name):
         self.connect()
@@ -99,7 +103,7 @@ class Server:
             self.connection.group(group_name)
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
-            log.debug('NNTP Error: {}'.format(nntpe))
+            log.debug('NNTP Error.')
             return None
 
         messages = {}
@@ -111,7 +115,7 @@ class Server:
             received.append(id)
 
             # get the current segment number
-            results = re.findall('\((\d+)[\/](\d+)\)', overview['subject'])
+            results = regex.findall('\((\d+)[\/](\d+)\)', overview['subject'])
 
             # it might match twice, so just get the last one
             # the first is generally the part number
@@ -139,7 +143,6 @@ class Server:
                     'segment': int(segment_number),
                     'size': int(overview[':bytes']),
                 }
-
 
                 # if we've already got a binary by this name, add this segment
                 if subject in messages:

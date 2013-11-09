@@ -1,7 +1,9 @@
 import gzip
 import pymongo
+import regex
 
 import pynab.nzbs
+import pynab.util
 
 from pynab import log
 from pynab.db import db, fs
@@ -9,18 +11,40 @@ from pynab.server import Server
 
 NFO_MAX_FILESIZE = 50000
 
+NFO_REGEX = [
+    regex.compile('((?>\w+[.\-_])+(?:\w+-\d*[a-zA-Z][a-zA-Z0-9]*))', regex.I),
+
+]
+
+def attempt_parse(nfo):
+    potential_names = []
+
+    for regex in NFO_REGEX:
+        result = regex.search(nfo)
+        if result:
+            potential_names.append(result.group(0))
+
+    return potential_names
+
 
 def get(nfo_id):
     """Retrieves and un-gzips an NFO from GridFS."""
-    return gzip.decompress(fs.get(nfo_id).read())
+    if nfo_id:
+        return gzip.decompress(fs.get(nfo_id).read())
+    else:
+        return None
 
 
-def process(limit=5):
+def process(limit=5, category=0):
     """Process releases for NFO parts and download them."""
     log.info('Checking for NFO segments...')
 
     with Server() as server:
-        for release in db.releases.find({'nfo': None}).limit(limit).sort('posted', pymongo.ASCENDING):
+        query = {'nfo': None}
+        if category:
+            query['category._id'] = int(category)
+
+        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING):
             log.debug('Checking for NFO in {}...'.format(release['search_name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
@@ -37,7 +61,11 @@ def process(limit=5):
 
                 if nfos:
                     for nfo in nfos:
-                        article = server.get(release['group']['name'], [nfo['#text'], ])
+                        try:
+                            article = server.get(release['group']['name'], [nfo['#text'], ])
+                        except:
+                            article = None
+
                         if article:
                             data = gzip.compress(article.encode('utf-8'))
                             nfo_file = fs.put(data, filename='.'.join([release['name'], 'nfo', 'gz']))

@@ -105,7 +105,10 @@ def update(group_name):
                 log.error('{}: Server\'s last article {:d} is lower than the local {:d}'.format(group_name, last,
                                                                                                 group['last']))
                 if server.connection:
-                    server.connection.quit()
+                    try:
+                        server.connection.quit()
+                    except:
+                        pass
                 return False
         else:
             # otherwise, start from x days old
@@ -113,7 +116,10 @@ def update(group_name):
             if not start:
                 log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
                 if server.connection:
-                    server.connection.quit()
+                    try:
+                        server.connection.quit()
+                    except:
+                        pass
                 return False
             else:
                 db.groups.update({
@@ -173,7 +179,10 @@ def update(group_name):
                     else:
                         log.error('{}: Failed while saving parts.'.format(group_name))
                         if server.connection:
-                            server.connection.quit()
+                            try:
+                                server.connection.quit()
+                            except:
+                                pass
                         return False
                 else:
                     log.error('Problem updating group - trying again...')
@@ -184,7 +193,10 @@ def update(group_name):
 
                 if end == last:
                     if server.connection:
-                        server.connection.quit()
+                        try:
+                            server.connection.quit()
+                        except:
+                            pass
                     return True
                 else:
                     start = end + 1

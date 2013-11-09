@@ -1,4 +1,4 @@
-import re
+import regex
 import unicodedata
 import difflib
 import datetime
@@ -10,20 +10,10 @@ import pytz
 
 from pynab.db import db
 from pynab import log
+import pynab.util
 import config
 
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
-
-
-class ShowMatch(object):
-    """Holds a regex match result so we can use it in chained if statements."""
-
-    def __init__(self):
-        self.match_obj = None
-
-    def match(self, *args, **kwds):
-        self.match_obj = re.match(*args, **kwds)
-        return self.match_obj is not None
 
 
 def process(limit=100, online=True):
@@ -126,7 +116,7 @@ def search(show):
                         akas.append(rage_show['akas']['aka']['#text'])
                     elif isinstance(rage_show['akas']['aka'], list):
                         for aka in rage_show['akas']['aka']:
-                            if '#text' in aka:
+                            if aka and '#text' in aka:
                                 akas.append(aka['#text'])
                             else:
                                 akas.append(aka)
@@ -140,7 +130,7 @@ def search(show):
 
             # check for link matches
             if 'link' in rage_show:
-                link_result = re.search('tvrage\.com\/((?!shows)[^\/]*)$', rage_show['link'], re.I)
+                link_result = regex.search('tvrage\.com\/((?!shows)[^\/]*)$', rage_show['link'], regex.I)
                 if link_result:
                     ratio = int(difflib.SequenceMatcher(None, show['clean_name'],
                                                         clean_name(link_result.group(1))).ratio() * 100)
@@ -175,9 +165,9 @@ def clean_name(name):
     """Cleans a show name for searching (against tvrage)."""
     name = unicodedata.normalize('NFKD', name)
 
-    name = re.sub('[._\-]', ' ', name)
-    name = re.sub('[\':!"#*’,()?]', '', name)
-    name = re.sub('\s{2,}', ' ', name)
+    name = regex.sub('[._\-]', ' ', name)
+    name = regex.sub('[\':!"#*’,()?]', '', name)
+    name = regex.sub('\s{2,}', ' ', name)
 
     replace_chars = {
         '$': 's',
@@ -198,44 +188,44 @@ def parse_show(search_name):
     # named capturing groups in a list and semi-intelligent processing?
 
     show = {}
-    match = ShowMatch()
-    if match.match('^(.*?)[\. \-]s(\d{1,2})\.?e(\d{1,3})(?:\-e?|\-?e)(\d{1,3})\.', search_name, re.I):
+    match = pynab.util.Match()
+    if match.match('^(.*?)[\. \-]s(\d{1,2})\.?e(\d{1,3})(?:\-e?|\-?e)(\d{1,3})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': [int(match.match_obj.group(3)), int(match.match_obj.group(4))],
         }
-    elif match.match('^(.*?)[\. \-]s(\d{2})\.?e(\d{2})(\d{2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]s(\d{2})\.?e(\d{2})(\d{2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': [int(match.match_obj.group(3)), int(match.match_obj.group(4))],
         }
-    elif match.match('^(.*?)[\. \-]s(\d{1,2})\.?e(\d{1,3})\.?', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]s(\d{1,2})\.?e(\d{1,3})\.?', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': int(match.match_obj.group(3)),
         }
-    elif match.match('^(.*?)[\. \-]s(\d{1,2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]s(\d{1,2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': 'all',
         }
-    elif match.match('^(.*?)[\. \-]s(\d{1,2})d\d{1}\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]s(\d{1,2})d\d{1}\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': 'all',
         }
-    elif match.match('^(.*?)[\. \-](\d{1,2})x(\d{1,3})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](\d{1,2})x(\d{1,3})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': int(match.match_obj.group(3)),
         }
-    elif match.match('^(.*?)[\. \-](19|20)(\d{2})[\.\-](\d{2})[\.\-](\d{2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](19|20)(\d{2})[\.\-](\d{2})[\.\-](\d{2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': match.match_obj.group(2) + match.match_obj.group(3),
@@ -243,7 +233,7 @@ def parse_show(search_name):
             'air_date': '{}{}-{}-{}'.format(match.match_obj.group(2), match.match_obj.group(3),
                                             match.match_obj.group(4), match.match_obj.group(5))
         }
-    elif match.match('^(.*?)[\. \-](\d{2}).(\d{2})\.(19|20)(\d{2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](\d{2}).(\d{2})\.(19|20)(\d{2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': match.match_obj.group(4) + match.match_obj.group(5),
@@ -251,7 +241,7 @@ def parse_show(search_name):
             'air_date': '{}{}-{}-{}'.format(match.match_obj.group(4), match.match_obj.group(5),
                                             match.match_obj.group(2), match.match_obj.group(3))
         }
-    elif match.match('^(.*?)[\. \-](\d{2}).(\d{2})\.(\d{2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](\d{2}).(\d{2})\.(\d{2})\.', search_name, regex.I):
         # this regex is particularly awful, but i don't think it gets used much
         # seriously, > 15? that's going to be a problem in 2 years
         if 15 < int(match.match_obj.group(4)) <= 99:
@@ -265,37 +255,37 @@ def parse_show(search_name):
             'episode': '{}/{}'.format(match.match_obj.group(2), match.match_obj.group(3)),
             'air_date': '{}-{}-{}'.format(season, match.match_obj.group(2), match.match_obj.group(3))
         }
-    elif match.match('^(.*?)[\. \-]20(\d{2})\.e(\d{1,3})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]20(\d{2})\.e(\d{1,3})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': '20' + match.match_obj.group(2),
             'episode': int(match.match_obj.group(3)),
         }
-    elif match.match('^(.*?)[\. \-]20(\d{2})\.Part(\d{1,2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]20(\d{2})\.Part(\d{1,2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': '20' + match.match_obj.group(2),
             'episode': int(match.match_obj.group(3)),
         }
-    elif match.match('^(.*?)[\. \-](?:Part|Pt)\.?(\d{1,2})\.', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](?:Part|Pt)\.?(\d{1,2})\.', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': 1,
             'episode': int(match.match_obj.group(2)),
         }
-    elif match.match('^(.*?)[\. \-](?:Part|Pt)\.?([ivx]+)', search_name, re.I):
+    elif match.match('^(.*?)[\. \-](?:Part|Pt)\.?([ivx]+)', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': 1,
             'episode': roman.fromRoman(str.upper(match.match_obj.group(2)))
         }
-    elif match.match('^(.*?)[\. \-]EP?\.?(\d{1,3})', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]EP?\.?(\d{1,3})', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': 1,
             'episode': int(match.match_obj.group(2)),
         }
-    elif match.match('^(.*?)[\. \-]Seasons?\.?(\d{1,2})', search_name, re.I):
+    elif match.match('^(.*?)[\. \-]Seasons?\.?(\d{1,2})', search_name, regex.I):
         show = {
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
@@ -306,7 +296,7 @@ def parse_show(search_name):
 
     if 'name' in show and show['name']:
         # check for country code or name (Biggest Loser Australia etc)
-        country = re.search('[\._ ](US|UK|AU|NZ|CA|NL|Canada|Australia|America)', show['name'], re.I)
+        country = regex.search('[\._ ](US|UK|AU|NZ|CA|NL|Canada|Australia|America)', show['name'], regex.I)
         if country:
             if str.lower(country.group(1)) == 'canada':
                 show['country'] = 'CA'
@@ -322,7 +312,7 @@ def parse_show(search_name):
         if not isinstance(show['season'], int) and len(show['season']) == 4:
             show['series_full'] = '{}/{}'.format(show['season'], show['episode'])
         else:
-            year = re.search('[\._ ](19|20)(\d{2})', search_name, re.I)
+            year = regex.search('[\._ ](19|20)(\d{2})', search_name, regex.I)
             if year:
                 show['year'] = year.group(1) + year.group(2)
 
