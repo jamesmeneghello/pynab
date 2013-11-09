@@ -22,7 +22,7 @@ def strip_req(release):
     """Strips REQ IDs out of releases and cleans them up so they can be properly matched
     in post-processing."""
     regexes = [
-        regex.compile('^a\.b\.mmEFNet - REQ (?P<reqid>\d+) - (?P<name>.*)', regex.I)
+        regex.compile('^a\.b\.mmEFNet - REQ (?P<reqid>.+) - (?P<name>.*)', regex.I)
     ]
 
     for r in regexes:
@@ -31,7 +31,7 @@ def strip_req(release):
             result_dict = result.groupdict()
             if 'name' in result_dict and 'reqid' in result_dict:
                 log.info('Found request {}, storing req_id and renaming...'.format(result_dict['name']))
-                db.releases.update({'_id': release['_id']},{
+                db.releases.update({'_id': release['_id']}, {
                     '$set': {
                         'search_name': result_dict['name'],
                         'req_id': result_dict['reqid']
