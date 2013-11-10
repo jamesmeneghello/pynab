@@ -25,19 +25,23 @@ def api():
             dataset = dict()
             dataset['get_link'] = get_link
             data = func(dataset)
-            output_format = request.query.o or 'xml'
-            if output_format == 'xml':
-                # return as xml
-                response.set_header('Content-type', 'application/rss+xml')
-                return data
-            elif output_format == 'json':
-                # bottle auto-converts into json
-                return xmltodict.parse(data)
-            else:
-                return pynab.api.api_error(201)
+            return switch_output(data)
 
     # didn't match any functions
     return pynab.api.api_error(202)
+
+
+def switch_output(data):
+    output_format = request.query.o or 'xml'
+    if output_format == 'xml':
+        # return as xml
+        response.set_header('Content-type', 'application/rss+xml')
+        return data
+    elif output_format == 'json':
+        # bottle auto-converts into json
+        return xmltodict.parse(data)
+    else:
+        return pynab.api.api_error(201)
 
 
 def get_link(route=''):
@@ -57,7 +61,7 @@ def get_link(route=''):
                 url += ':' + request.environ['SERVER_PORT']
 
     if route:
-        url += app.get_url(route)
+        url += route
 
     return url
 
