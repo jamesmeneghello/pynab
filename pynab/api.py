@@ -65,6 +65,9 @@ def get_nfo(dataset=None):
 def get_nzb(dataset=None):
     if auth():
         guid = request.query.guid or None
+        if not guid:
+            guid = request.query.id or None
+
         if guid:
             release = db.releases.find_one({'id': guid})
             if release:
