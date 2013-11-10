@@ -23,19 +23,19 @@ def mp_error(msg, *args):
 
 
 def process_tvrage():
-    pynab.tvrage.process()
+    pynab.tvrage.process(0)
 
 
 def process_nfos():
-    pynab.nfos.process()
+    pynab.nfos.process(0)
 
 
 def process_rars():
-    pynab.rars.process()
+    pynab.rars.process(0)
 
 
 def process_imdb():
-    pynab.imdb.process()
+    pynab.imdb.process(0)
 
 
 if __name__ == '__main__':
