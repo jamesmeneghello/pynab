@@ -114,7 +114,7 @@ Note that you can also edit mongodb.conf to include:
 
 You also need to install Python 3.3, associated packages and pip3:
 
-    sudo apt-get install python3 python3-setuptools
+    sudo apt-get install python3 python3-setuptools python3-pip
 
 ### Universal ###
 
