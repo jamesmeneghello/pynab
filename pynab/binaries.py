@@ -126,8 +126,12 @@ def process():
             match = result.groupdict() if result else None
             if match:
                 log.debug('Matched part {} to {}.'.format(part['subject'], reg['regex']))
+
                 # remove whitespace in dict values
-                match = {k: v.strip() for k, v in match.items()}
+                try:
+                    match = {k: v.strip() for k, v in match.items()}
+                except:
+                    pass
 
                 # fill name if reqid is available
                 if match.get('reqid') and not match.get('name'):
