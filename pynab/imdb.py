@@ -2,7 +2,7 @@ import regex
 import unicodedata
 import difflib
 import datetime
-
+import pymongo
 import requests
 import pytz
 
@@ -85,7 +85,7 @@ def process(limit=100, online=True):
                 {'imdb.attempted': {'$lte': expiry}}
             ]
         })
-    for release in db.releases.find(query).limit(limit):
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING).batch_size(500):
         process_release(release, online)
 
 
