@@ -163,8 +163,9 @@ def process():
                     if match['parts'].find('/') == -1:
                         match['parts'] = match['parts'].replace('-', '/') \
                             .replace('~', '/').replace(' of ', '/') \
-                            .replace('[', '').replace(']', '') \
-                            .replace('(', '').replace(')', '')
+
+                    match['parts'].replace('[', '').replace(']', '') \
+                        .replace('(', '').replace(')', '')
 
                     current, total = match['parts'].split('/')
 
