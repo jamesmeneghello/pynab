@@ -68,6 +68,10 @@ def create_indexes():
                                  ('posted', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([
+                                 ('search_name', pymongo.ASCENDING),
+                                 ('posted', pymongo.ASCENDING)
+                             ], background=True)
+    db.releases.ensure_index([
                                  ('tvrage._id', pymongo.ASCENDING),
                                  ('category._id', pymongo.ASCENDING)
                              ], background=True)
