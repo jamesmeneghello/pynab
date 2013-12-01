@@ -126,6 +126,10 @@ class Server:
                 ignored += 1
                 continue
 
+            # make sure the header contains everything we need
+            if ':bytes' not in overview:
+                continue
+
             # assuming everything didn't fuck up, continue
             if int(segment_number) > 0 and int(total_segments) > 0:
                 # strip the segment number off the subject so
