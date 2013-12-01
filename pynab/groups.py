@@ -51,6 +51,7 @@ def backfill(group_name, date=None):
         if target_article > start:
             start = target_article
 
+        retries = 0
         while True:
             messages = server.scan(group_name, start, end)
 
@@ -64,12 +65,18 @@ def backfill(group_name, date=None):
                                              'first': start
                                          }
                                      })
-                    pass
+                    retries = 0
                 else:
                     log.error('{}: Failed while saving parts.'.format(group_name))
                     if server.connection:
                         server.connection.quit()
                     return False
+            else:
+                    log.error('Problem updating group - trying again...')
+                    retries += 1
+                    # keep trying the same block 3 times, then skip
+                    if retries <= 3:
+                        continue
 
             if start == target_article:
                 if server.connection:
@@ -142,11 +149,11 @@ def update(group_name):
         total_date = end_date - start_date
 
         log.debug('{}: Start: {:d} ({}) End: {:d} ({}) Total: {:d} ({} days, {} hours, {} minutes)'
-        .format(
-            group_name, start, start_date,
-            end, end_date,
-            total, total_date.days, total_date.seconds // 3600, (total_date.seconds // 60) % 60
-        )
+            .format(
+                group_name, start, start_date,
+                end, end_date,
+                total, total_date.days, total_date.seconds // 3600, (total_date.seconds // 60) % 60
+            )
         )
         if total > 0:
             if not group['last']:
@@ -176,6 +183,7 @@ def update(group_name):
                                                  'last': end
                                              }
                                          })
+                        retries = 0
                     else:
                         log.error('{}: Failed while saving parts.'.format(group_name))
                         if server.connection:
