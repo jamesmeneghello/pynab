@@ -103,7 +103,7 @@ class Server:
             self.connection.group(group_name)
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
-            log.debug('NNTP Error.')
+            log.debug('NNTP Error: ' + str(nntpe))
             return None
 
         messages = {}
@@ -218,8 +218,8 @@ class Server:
 
                 # if the server is missing an article, it's usually part of a large group
                 # so skip along quickishly, the datefinder will autocorrect itself anyway
-                #article += int(article * 0.001)
-                article += 1
+                article += int(article * 0.0001)
+                #article += 1
                 i += 1
                 continue
 

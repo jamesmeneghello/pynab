@@ -146,15 +146,22 @@ def update(group_name):
 
         start_date = server.post_date(group_name, start)
         end_date = server.post_date(group_name, end)
-        total_date = end_date - start_date
 
-        log.debug('{}: Start: {:d} ({}) End: {:d} ({}) Total: {:d} ({} days, {} hours, {} minutes)'
-            .format(
-                group_name, start, start_date,
-                end, end_date,
-                total, total_date.days, total_date.seconds // 3600, (total_date.seconds // 60) % 60
+        if start_date and end_date:
+            total_date = end_date - start_date
+
+            log.debug('{}: Start: {:d} ({}) End: {:d} ({}) Total: {:d} ({} days, {} hours, {} minutes)'
+                .format(
+                    group_name, start, start_date,
+                    end, end_date,
+                    total, total_date.days, total_date.seconds // 3600, (total_date.seconds // 60) % 60
+                )
             )
-        )
+        else:
+            log.debug('{}: Group is semi-broken - not all debug output is available. Start: {}, End: {}, Total: {}'
+                .format(group_name, start, end, total)
+            )
+
         if total > 0:
             if not group['last']:
                 log.info('{}: Starting new group with {:d} days and {:d} new parts.'
