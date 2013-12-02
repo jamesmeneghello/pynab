@@ -199,12 +199,6 @@ def update(group_name):
                             except:
                                 pass
                         return False
-                else:
-                    log.error('Problem updating group - trying again...')
-                    retries += 1
-                    # keep trying the same block 3 times, then skip
-                    if retries <= 3:
-                        continue
 
                 if end == last:
                     if server.connection:
