@@ -33,13 +33,18 @@ def api():
 
 def switch_output(data):
     output_format = request.query.o or 'xml'
+    output_callback = request.query.callback or None
+
     if output_format == 'xml':
         # return as xml
         response.set_header('Content-type', 'application/rss+xml')
         return data
     elif output_format == 'json':
-        # bottle auto-converts into json
-        return xmltodict.parse(data)
+        if output_callback:
+            return '{}({})'.format(output_callback, xmltodict.parse(data))
+        else:
+            # bottle auto-converts a python dict into json
+            return xmltodict.parse(data)
     else:
         return pynab.api.api_error(201)
 
