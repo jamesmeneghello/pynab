@@ -3,6 +3,7 @@ import regex
 import bottle
 from bottle import request, response
 import xmltodict
+import json
 
 from pynab import log
 import pynab.api
@@ -41,7 +42,7 @@ def switch_output(data):
         return data
     elif output_format == 'json':
         if output_callback:
-            return '{}({})'.format(output_callback, xmltodict.parse(data))
+            return '{}({})'.format(output_callback, json.dumps(xmltodict.parse(data)))
         else:
             # bottle auto-converts a python dict into json
             return xmltodict.parse(data)
