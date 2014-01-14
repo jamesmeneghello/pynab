@@ -104,7 +104,7 @@ class Server:
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
             log.debug('NNTP Error: ' + str(nntpe))
-            return None
+            return {}
 
         messages = {}
         ignored = 0

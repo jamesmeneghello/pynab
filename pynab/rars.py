@@ -212,7 +212,7 @@ def process(limit=20, category=0):
         query = {'passworded': None}
         if category:
             query['category._id'] = int(category)
-        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING).batch_size(500):
+        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING).batch_size(50):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
