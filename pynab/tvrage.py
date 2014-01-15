@@ -38,7 +38,7 @@ def process(limit=100, online=True):
             ]
         })
 
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING).batch_size(50):
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
         log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
         show = parse_show(release['search_name'])
         if show:

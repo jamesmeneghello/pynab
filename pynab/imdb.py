@@ -85,7 +85,7 @@ def process(limit=100, online=True):
                 {'imdb.attempted': {'$lte': expiry}}
             ]
         })
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING).batch_size(50):
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
         process_release(release, online)
 
 
