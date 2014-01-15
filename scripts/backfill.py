@@ -1,6 +1,8 @@
 import argparse
 import os
 import sys
+import dateutil.parser
+import pytz
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
@@ -22,7 +24,9 @@ args = parser.parse_args()
 if args.group:
     group = db.groups.find_one({'name': args.group})
     if group:
-        if pynab.groups.backfill(group['name']):
+        if not args.date:
+            args.date = None
+        if pynab.groups.backfill(group['name'], pytz.utc.localize(dateutil.parser.parse(args.date))):
             print('Group {0} successfully backfilled!'.format(group['name']))
         else:
             print('Problem backfilling group {0}.'.format(group['name']))
