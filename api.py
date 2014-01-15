@@ -43,7 +43,7 @@ def switch_output(data):
     elif output_format == 'json':
         if output_callback:
             response.content_type = 'application/javascript'
-            return '{}({})'.format(output_callback, json.dumps(xmltodict.parse(data)))
+            return '{}({})'.format(output_callback, json.dumps(xmltodict.parse(data, attr_prefix='')))
         else:
             # bottle auto-converts a python dict into json
             return xmltodict.parse(data, attr_prefix='')
