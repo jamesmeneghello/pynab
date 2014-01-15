@@ -46,7 +46,7 @@ def switch_output(data):
             return '{}({})'.format(output_callback, json.dumps(xmltodict.parse(data)))
         else:
             # bottle auto-converts a python dict into json
-            return xmltodict.parse(data)
+            return xmltodict.parse(data, attr_prefix='')
     else:
         return pynab.api.api_error(201)
 
