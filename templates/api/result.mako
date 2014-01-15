@@ -31,6 +31,7 @@
                            length="${release['nzb_size']}"
                            type="application/x-nzb"/>
                 <newznab:attr name="category" value="${release['category']['_id']}"/>
+                <newznab:attr name="group" value="${release['group']['name']}"/>
                 % if 'parent_id' in release['category']:
                     <newznab:attr name="category" value="${release['category']['parent_id']}"/>
                 % endif
