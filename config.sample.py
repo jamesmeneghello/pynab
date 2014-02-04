@@ -19,6 +19,9 @@ site = {
     # your administrator email (shows on rss feed)
     'email': '',
 
+	# enable web interface
+	'webui': True,
+
     # api settings
     # ------------
 

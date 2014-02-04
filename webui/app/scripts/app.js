@@ -2,7 +2,7 @@
 
 angular.module('pynabWebuiApp', ['ui.router','angularMoment', 'ngCookies'])
   .config(function ($stateProvider, $urlRouterProvider) {
-    $urlRouterProvider.otherwise('/');
+	$urlRouterProvider.otherwise('/');
 
     $stateProvider
       .state('index', {

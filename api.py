@@ -7,9 +7,11 @@ import json
 
 from pynab import log
 import pynab.api
+import config
 
 app = application = bottle.Bottle()
 
+#bottle.debug(True)
 
 @app.get('/scripts/:path#.+#')
 def serve_static(path):
@@ -19,6 +21,16 @@ def serve_static(path):
 @app.get('/styles/:path#.+#')
 def serve_static(path):
     return bottle.static_file(path, root='./webui/dist/styles/')
+
+
+@app.get('/views/:path#.+#')
+def serve_static(path):
+	return bottle.static_file(path, root='./webui/dist/views/')
+
+
+@app.get('/fonts/:path#.+#')
+def serve_static(path):
+	return bottle.static_file(path, root='./webui/dist/fonts/')
 
 
 @app.get('/api')
@@ -45,7 +57,8 @@ def api():
 @app.get('/')
 @app.get('/index.html')
 def index():
-    raise bottle.static_file('index.html', root='./webui/dist')
+	if config.site['webui']:
+	    raise bottle.static_file('index.html', root='./webui/dist')
 
 
 def switch_output(data):
