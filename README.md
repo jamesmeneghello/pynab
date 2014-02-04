@@ -393,6 +393,10 @@ You don't - it's automatically enabled if your provider supports it. The benefit
 large time-wise that there's no real reason to include a config option to turn it off. If you can think
 of a reason to include it, post an issue and let me know.
 
+- When attempting to start the API using Nginx or something similar, I just get internal server errors?
+
+Check uWSGI's logs. Most likely your logfiles are going somewhere that you don't have permission to write to.
+
 Newznab API
 ===========
 

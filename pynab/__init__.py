@@ -17,4 +17,4 @@ if config.site['logging_file']:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
 else:
-    logging.basicConfig(format='"%(asctime)s - %(levelname)s - %(message)s"')
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
