@@ -328,7 +328,7 @@ To update indexes (generally only run if a commit message tells you to):
 
 Update regex (run it every now and then, but it doesn't update that often):
 
-	> python3 scripts/update_regex.py
+    > python3 scripts/update_regex.py
 
 Quickly match releases to local post-processing databases (run this pretty often, 
 it'll probably be incorporated into start.py at some point):
@@ -339,6 +339,27 @@ Categorise all uncategorised releases - this runs automatically after import.
 
 	> python3 scripts/process_uncategorised.py
 
+
+### Building the WebUI ###
+
+Requires NPM:
+
+    > sudo apt-get install npm
+
+To build the webui from source, first modify the config to include your indexer host:
+
+    > cd webui/app/scripts
+    > vim config.js
+    > [add host url]
+
+Then initiate the build:
+
+    > cd webui
+    > npm install
+    > bower install
+    > grunt build
+
+This will build a working and optimised version of the UI into the dist/ directory.
 
 F.A.Q.
 ======

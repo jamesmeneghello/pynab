@@ -11,6 +11,16 @@ import pynab.api
 app = application = bottle.Bottle()
 
 
+@app.get('/scripts/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/scripts/')
+
+
+@app.get('/styles/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/styles/')
+
+
 @app.get('/api')
 def api():
     log.debug('Handling request for {0}.'.format(request.fullpath))
@@ -30,6 +40,12 @@ def api():
 
     # didn't match any functions
     return pynab.api.api_error(202)
+
+
+@app.get('/')
+@app.get('/index.html')
+def index():
+    raise bottle.static_file('index.html', root='./webui/dist')
 
 
 def switch_output(data):
