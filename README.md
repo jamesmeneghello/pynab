@@ -342,6 +342,8 @@ Categorise all uncategorised releases - this runs automatically after import.
 
 ### Building the WebUI ###
 
+### Note: Not yet functional, due to uglify being a pain in the ass ###
+
 Requires NPM:
 
     > sudo apt-get install npm
