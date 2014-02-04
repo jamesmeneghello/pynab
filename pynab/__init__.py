@@ -3,7 +3,7 @@
 
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import logging
 import config
