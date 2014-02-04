@@ -103,8 +103,8 @@ class Server:
             self.connection.group(group_name)
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
-            log.debug('NNTP Error.')
-            return None
+            log.debug('NNTP Error: ' + str(nntpe))
+            return {}
 
         messages = {}
         ignored = 0
@@ -124,6 +124,10 @@ class Server:
             else:
                 # if there's no match at all, it's probably not a binary
                 ignored += 1
+                continue
+
+            # make sure the header contains everything we need
+            if ':bytes' not in overview:
                 continue
 
             # assuming everything didn't fuck up, continue
@@ -195,29 +199,34 @@ class Server:
         """Retrieves the date of the specified post."""
         log.debug('{}: Retrieving date of article {:d}'.format(group_name, article))
 
-        articles = []
+        i = 0
+        while i < 10:
+            articles = []
 
-        try:
-            self.connection.group(group_name)
-            _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
-        except nntplib.NNTPError as e:
-            log.debug(e)
-            # leave this alone - we don't expect any data back
-            pass
+            try:
+                self.connection.group(group_name)
+                _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
+            except nntplib.NNTPError as e:
+                log.debug(e)
+                # leave this alone - we don't expect any data back
+                pass
 
-        try:
-            art_num, overview = articles[0]
-        except IndexError:
-            log.warning('{}: Server was missing article {:d}.'.format(group_name, article))
+            try:
+                art_num, overview = articles[0]
+            except IndexError:
+                log.warning('{}: Server was missing article {:d}.'.format(group_name, article))
 
-            # if the server is missing an article, it's usually part of a large group
-            # so skip along quickishly, the datefinder will autocorrect itself anyway
-            return self.post_date(group_name, article + int(article * 0.001))
+                # if the server is missing an article, it's usually part of a large group
+                # so skip along quickishly, the datefinder will autocorrect itself anyway
+                article += int(article * 0.0001)
+                #article += 1
+                i += 1
+                continue
 
-        if art_num and overview:
-            return dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
-        else:
-            return None
+            if art_num and overview:
+                return dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
+            else:
+                return None
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
@@ -253,13 +262,14 @@ class Server:
             while self.days_old(next_date) < days:
                 skip = 1
                 temp_date = self.post_date(group_name, upper - interval)
-                while temp_date > target_date:
-                    upper = upper - interval - (skip - 1)
-                    log.debug('{}: New upperbound: {:d} is {:d} days old.'
-                    .format(group_name, upper, self.days_old(temp_date))
-                    )
-                    skip *= 2
-                    temp_date = self.post_date(group_name, upper - interval)
+                if temp_date:
+                    while temp_date > target_date:
+                        upper = upper - interval - (skip - 1)
+                        log.debug('{}: New upperbound: {:d} is {:d} days old.'
+                        .format(group_name, upper, self.days_old(temp_date))
+                        )
+                        skip *= 2
+                        temp_date = self.post_date(group_name, upper - interval)
 
                 interval = math.ceil(interval / 2)
                 if interval <= 0:
@@ -268,11 +278,12 @@ class Server:
                 log.debug('{}: Set interval to {:d} articles.'.format(group_name, interval))
 
                 next_date = self.post_date(group_name, upper - 1)
-                while not next_date:
-                    upper = upper - skip
-                    skip *= 2
-                    log.debug('{}: Article was lost, getting next: {:d}'.format(group_name, upper))
-                    next_date = self.post_date(group_name, upper - 1)
+                if next_date:
+                    while not next_date:
+                        upper = upper - skip
+                        skip *= 2
+                        log.debug('{}: Article was lost, getting next: {:d}'.format(group_name, upper))
+                        next_date = self.post_date(group_name, upper - 1)
 
             log.debug('{}: Article is {:d} which is {:d} days old.'.format(group_name, upper, self.days_old(next_date)))
             return upper

@@ -3,11 +3,34 @@ import regex
 import bottle
 from bottle import request, response
 import xmltodict
+import json
 
 from pynab import log
 import pynab.api
+import config
 
 app = application = bottle.Bottle()
+
+#bottle.debug(True)
+
+@app.get('/scripts/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/scripts/')
+
+
+@app.get('/styles/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/styles/')
+
+
+@app.get('/views/:path#.+#')
+def serve_static(path):
+	return bottle.static_file(path, root='./webui/dist/views/')
+
+
+@app.get('/fonts/:path#.+#')
+def serve_static(path):
+	return bottle.static_file(path, root='./webui/dist/fonts/')
 
 
 @app.get('/api')
@@ -31,15 +54,28 @@ def api():
     return pynab.api.api_error(202)
 
 
+@app.get('/')
+@app.get('/index.html')
+def index():
+	if config.site['webui']:
+	    raise bottle.static_file('index.html', root='./webui/dist')
+
+
 def switch_output(data):
     output_format = request.query.o or 'xml'
+    output_callback = request.query.callback or None
+
     if output_format == 'xml':
         # return as xml
         response.set_header('Content-type', 'application/rss+xml')
         return data
     elif output_format == 'json':
-        # bottle auto-converts into json
-        return xmltodict.parse(data)
+        if output_callback:
+            response.content_type = 'application/javascript'
+            return '{}({})'.format(output_callback, json.dumps(xmltodict.parse(data, attr_prefix='')))
+        else:
+            # bottle auto-converts a python dict into json
+            return xmltodict.parse(data, attr_prefix='')
     else:
         return pynab.api.api_error(201)
 

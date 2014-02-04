@@ -3,6 +3,7 @@ import os
 import regex
 import shutil
 import subprocess
+import pymongo
 
 import lib.rar
 from pynab import log
@@ -12,6 +13,7 @@ import pynab.releases
 import pynab.util
 from pynab.server import Server
 import config
+
 
 MAYBE_PASSWORDED_REGEX = regex.compile('\.(ace|cab|tar|gz|url)$', regex.I)
 PASSWORDED_REGEX = regex.compile('password\.url', regex.I)
@@ -210,7 +212,7 @@ def process(limit=20, category=0):
         query = {'passworded': None}
         if category:
             query['category._id'] = int(category)
-        for release in db.releases.find(query).limit(limit):
+        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
             log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 

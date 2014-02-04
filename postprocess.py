@@ -23,19 +23,19 @@ def mp_error(msg, *args):
 
 
 def process_tvrage():
-    pynab.tvrage.process(0)
+    pynab.tvrage.process(500)
 
 
 def process_nfos():
-    pynab.nfos.process(0)
+    pynab.nfos.process(500)
 
 
 def process_rars():
-    pynab.rars.process(0)
+    pynab.rars.process(500)
 
 
 def process_imdb():
-    pynab.imdb.process(0)
+    pynab.imdb.process(500)
 
 
 if __name__ == '__main__':
@@ -93,7 +93,8 @@ if __name__ == '__main__':
         scripts.rename_bad_releases.rename_bad_releases(7020)
 
         if config.site['delete_bad_releases']:
-            log.info('Deleting bad releases...')
+            pass
+            #log.info('Deleting bad releases...')
             # not confident in this yet
 
         # wait for the configured amount of time between cycles

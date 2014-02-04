@@ -7,11 +7,13 @@ import roman
 import requests
 import xmltodict
 import pytz
+import pymongo
 
 from pynab.db import db
 from pynab import log
 import pynab.util
 import config
+
 
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
 
@@ -36,7 +38,7 @@ def process(limit=100, online=True):
             ]
         })
 
-    for release in db.releases.find(query).limit(limit):
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
         log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
         show = parse_show(release['search_name'])
         if show:

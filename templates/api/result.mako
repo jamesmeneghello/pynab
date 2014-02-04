@@ -27,6 +27,7 @@
                     <category>${release['category']['name']}</category>
                 % endif
                 <description>${release['search_name']}</description>
+                <group>${release['group']['name']}</group>
                 <enclosure url="${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}"
                            length="${release['nzb_size']}"
                            type="application/x-nzb"/>

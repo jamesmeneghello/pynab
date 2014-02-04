@@ -44,7 +44,7 @@ def process(limit=5, category=0):
         if category:
             query['category._id'] = int(category)
 
-        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.ASCENDING):
+        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
             log.debug('Checking for NFO in {}...'.format(release['search_name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 

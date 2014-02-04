@@ -20,13 +20,10 @@ limits or the like. If you'd like to use this software and want to add such
 functionality, please feel free to fork it! I won't have time to work on it
 beyond my own needs, but this is what open source is for.
 
-Note that because this is purely for API access, THERE IS NO WEB FRONTEND. You
-cannot add users through a web interface, manage releases, etc. There isn't a
-frontend. Something like 99.9% of the usage of my old Newznab server was API-only
+Note that because this is purely for API access, the WebUI is very simple. You
+cannot add users through a web interface, manage releases, etc. 
+Something like 99.9% of the usage of my old Newznab server was API-only
 for Sickbeard, Couchpotato, Headphones etc - so it's low-priority.
-
-@DanielSchaffer is working on a WebUI for Pynab here: https://github.com/DanielSchaffer/pynab/
-
 
 Features
 --------
@@ -67,9 +64,9 @@ Technical Differences to Newznab
   - Big IO savings
   - Generally quicker than off the HDD
   - You don't run into filesystem problems from having 2.5 million files in a few directories
-- No web interface
+- Very simple query interface
   - The vast majority of access to my indexer was API-based (1-5 web hits per month vs 50,000+ api hits)
-  - I'll probably make a very simple query interface
+  - It's not a replacement for Newznab if you have a lot of direct user interaction
 - Simplified authentication
   - No more usernames, passwords, or anything, really.
   - API key access required for everything - sure, it can be sniffed very easily, but it always could be. Worst that can happen: someone uses the API.
@@ -328,7 +325,7 @@ To update indexes (generally only run if a commit message tells you to):
 
 Update regex (run it every now and then, but it doesn't update that often):
 
-	> python3 scripts/update_regex.py
+    > python3 scripts/update_regex.py
 
 Quickly match releases to local post-processing databases (run this pretty often, 
 it'll probably be incorporated into start.py at some point):
@@ -339,6 +336,29 @@ Categorise all uncategorised releases - this runs automatically after import.
 
 	> python3 scripts/process_uncategorised.py
 
+
+### Building the WebUI ###
+
+Requires NPM and probably a few other things (post an issue if you're missing stuff):
+
+    > sudo apt-get install npm
+
+To build the webui from source, first modify the config to include your indexer host:
+
+    > cd webui/app/scripts
+    > vim config.js
+    > [add host url]
+
+Then initiate the build:
+
+    > cd webui
+    > npm install
+    > bower install
+    > grunt build
+
+This will build a working and optimised version of the UI into the dist/ directory, which
+will then be hosted by your webserver as part of api.py. Note that you can disable the web
+interface in the main configuration.
 
 F.A.Q.
 ======

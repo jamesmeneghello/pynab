@@ -63,8 +63,13 @@ def create_indexes():
     db.releases.ensure_index('rage._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('imdb._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('tvdb._id', pymongo.ASCENDING, background=True)
+    db.releases.ensure_index('posted', pymongo.DESCENDING, background=True)
     db.releases.ensure_index([
                                  ('search_name', 'text'),
+                                 ('posted', pymongo.ASCENDING)
+                             ], background=True)
+    db.releases.ensure_index([
+                                 ('search_name', pymongo.ASCENDING),
                                  ('posted', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([
@@ -74,6 +79,10 @@ def create_indexes():
     db.releases.ensure_index([
                                  ('posted', pymongo.DESCENDING),
                                  ('category._id', pymongo.ASCENDING)
+                             ], background=True)
+    db.releases.ensure_index([
+                                 ('posted', pymongo.ASCENDING),
+                                 ('nfo', pymongo.ASCENDING)
                              ], background=True)
     db.releases.ensure_index([
                                  ('posted', pymongo.ASCENDING),
