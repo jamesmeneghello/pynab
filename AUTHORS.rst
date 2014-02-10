@@ -11,3 +11,4 @@ Contributors
 ------------
 
 * @kevinlekiller - Compressed Header Support
+* @bettse
