@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
     <%!
-        import config
+        import config, sys
         from email import utils
     %>
 <rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
@@ -16,11 +16,18 @@
         % endif
 
         % for release in releases:
+            <%
+                if sys.version_info >= (3,3):
+                    timestamp = release['added'].timestamp()
+                else:
+                    timestamp = int(release['added'].strftime("%s"))
+            %>
+
             <item>
                 <title>${release['search_name']}</title>
                 <guid isPermaLink="true">${get_link('/details/' + release['id'])}</guid>
                 <link>${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}</link>
-                <pubDate>${utils.formatdate(release['added'].timestamp())}</pubDate>
+                <pubDate>${utils.formatdate(timestamp)}</pubDate>
                 % if 'parent_id' in release['category']:
                     <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>
                 % else:
