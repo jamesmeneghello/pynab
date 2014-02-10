@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">
     <%!
-        import pytz
+        import pytz, sys
         from pynab import binaries
     %>
 <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
@@ -14,7 +14,10 @@
 
     % for pkey, part in sorted(binary['parts'].items()):
     <%
-        timestamp = '{:.0f}'.format(part['posted'].replace(tzinfo=pytz.utc).timestamp())
+        if sys.version_info >= (3,3):
+            timestamp = '{:.0f}'.format(part['posted'].replace(tzinfo=pytz.utc).timestamp())
+        else:
+            timestamp = '{:.0f}'.format(int(part['posted'].replace(tzinfo=pytz.utc).strftime("%s")))
         subject = '{0} (1/{1:d})'.format(part['subject'], part['total_segments'])
     %>
         <file poster="${part['posted_by'] | x}" date="${timestamp | x}" subject="${subject | x}">
