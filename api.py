@@ -60,6 +60,10 @@ def index():
 	if config.site['webui']:
 	    raise bottle.static_file('index.html', root='./webui/dist')
 
+@app.get('/favicon.ico')
+def index():
+	if config.site['webui']:
+	    raise bottle.static_file('favicon.ico', root='./webui/dist')
 
 def switch_output(data):
     output_format = request.query.o or 'xml'
