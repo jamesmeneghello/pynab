@@ -43,8 +43,8 @@
                     <newznab:attr name="category" value="${release['category']['parent_id']}"/>
                 % endif
                 % if release.get('files'):
-                    <newznab:attr name="size" value="${release['files']['size']}"/>
-                    <newznab:attr name="files" value="${release['files']['count']}"/>
+                    <size>${release['files']['size']}</size>
+                    <files>${release['files']['count']}</files>
                 % endif
                 % if detail:
                     <newznab:attr name="poster" value="${release['posted_by']}"/>
