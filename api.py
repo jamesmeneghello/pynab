@@ -107,4 +107,4 @@ def get_link(route=''):
 
 
 if __name__ == '__main__':
-    bottle.run(app=app, host='0.0.0.0', port=8080)
+    bottle.run(app=app, host=config.site['api_host'], port=config.site['api_port'])
