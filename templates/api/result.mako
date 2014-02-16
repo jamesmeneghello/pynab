@@ -29,7 +29,7 @@
                 <title>${release['search_name']}</title>
                 <guid isPermaLink="true">${get_link('/details/' + release['id'])}</guid>
                 <link>${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}</link>
-                <pubDate>${utils.formatdate(timestamp)}</pubDate>
+                <pubDate>${utils.formatdate(added_date)}</pubDate>
                 % if 'parent_id' in release['category']:
                     <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>
                 % else:
