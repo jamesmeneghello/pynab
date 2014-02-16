@@ -397,6 +397,10 @@ of a reason to include it, post an issue and let me know.
 
 Check uWSGI's logs. Most likely your logfiles are going somewhere that you don't have permission to write to.
 
+- After updating from Git, the webui won't build, citing bower-install errors.
+
+Delete the webui/node_modules and webui/app/bower_components folder and re-run npm install / bower install.
+
 Newznab API
 ===========
 
