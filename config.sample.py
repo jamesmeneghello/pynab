@@ -32,6 +32,14 @@ site = {
     # result_default: default number if none is specified
     # make sure there's no quotes around it
     'result_default': 20,
+    
+    # api_host: ip or hostname to bind the api
+    # usually '0.0.0.0'
+    'api_host': '0.0.0.0',
+
+    # api_port: port number to bind the api
+    # usually 8080
+    'api_port': 8080,
 
     # scanning settings
     # -----------------
