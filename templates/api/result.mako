@@ -36,7 +36,7 @@
                     <category>${release['category']['name']}</category>
                 % endif
                 <description>${release['search_name']}</description>
-                <posted>${posted_date}</posted>
+                <posted>${utils.formatdate(posted_date)}</posted>
                 <group>${release['group']['name']}</group>
                 <enclosure url="${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}"
                            length="${release['nzb_size']}"
