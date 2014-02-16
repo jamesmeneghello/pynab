@@ -1,0 +1,50 @@
+$icon-font-path: "/bower_components/sass-bootstrap/fonts/";
+
+@import 'sass-bootstrap/lib/bootstrap';
+
+.browsehappy {
+    margin: 0.2em 0;
+    background: #ccc;
+    color: #000;
+    padding: 0.2em 0;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+    text-align: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.jumbotron .btn {
+    font-size: 21px;
+    padding: 14px 24px;
+}
+
+html,
+body {
+	height: 100%;
+	/* The html and body elements cannot have any padding or margin. */
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+	min-height: 100%;
+	height: auto;
+	/* Negative indent footer by it's height */
+	margin: 0 auto -40px;
+	padding: 0 0 40px;
+}
+
+#wrap > .container {
+	padding-top: 80px;
+}
+
+#footer {
+	height: 40px;
+	background-color: #f5f5f5;
+}
+
+.container .credit {
+    text-align: center;
+	margin: 10px 0;
+}
