@@ -18,9 +18,11 @@
         % for release in releases:
             <%
                 if sys.version_info >= (3,3):
-                    timestamp = release['added'].timestamp()
+                    added_date = release['added'].timestamp()
+                    posted_date = release['posted'].timestamp()
                 else:
-                    timestamp = int(release['added'].strftime("%s"))
+                    added_date = int(release['added'].strftime("%s"))
+                    posted_date = int(release['posted'].strftime("%s"))
             %>
 
             <item>
@@ -34,6 +36,7 @@
                     <category>${release['category']['name']}</category>
                 % endif
                 <description>${release['search_name']}</description>
+                <posted>${posted_date}</posted>
                 <group>${release['group']['name']}</group>
                 <enclosure url="${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}"
                            length="${release['nzb_size']}"
@@ -48,8 +51,8 @@
                 % endif
                 % if detail:
                     <newznab:attr name="poster" value="${release['posted_by']}"/>
+                    <newznab:attr name="posted" value="${posted_date}"/>
                     <newznab:attr name="grabs" value="${release['grabs']}"/>
-                    <newznab:attr name="usenetdate" value="${release['posted']}"/>
                     <newznab:attr name="group" value="${release['group']['name']}"/>
                 % endif
                 <newznab:attr name="guid" value="${release['id']}"/>
