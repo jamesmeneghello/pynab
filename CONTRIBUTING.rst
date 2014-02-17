@@ -87,8 +87,19 @@ Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
+1. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 3.3.
+
+Looking for something to do?
+----------------------------
+
+There are a number of features that'd be nice to have, but I don't have time to write. Have a crack at something on this list if you're bored:
+
+- Modify scripts/ensure_indexes.py to check for the existence of indexes and create those that are required, but missing. This can't just delete them and re-create - if it did, it could take days to rebuild indexes on large collections.
+- Expand the WebUI
+  - This includes expanding the information available from the API
+  - Work out a way to get SABConnect++ to work with it (no luck so far, since it can't detect XHR events it's unable to inject anything)
+- Expand server management scripts
+- Implement PreDB checking and improve handling bad/uncategorised releases
