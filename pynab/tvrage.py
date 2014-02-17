@@ -123,7 +123,7 @@ def search(show):
                 akas = []
                 # some of tvrage's return data is stupidly non-standard
                 # seriously, does this come from a wiki?
-                if 'aka' in rage_show['akas']:
+                if 'aka' in rage_show['akas'] and rage_show['akas']['aka']:
                     if '#text' in rage_show['akas']['aka']:
                         # it's a normal match
                         akas.append(rage_show['akas']['aka']['#text'])
