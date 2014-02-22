@@ -8,6 +8,7 @@ import requests
 import xmltodict
 import pytz
 import pymongo
+from lxml import etree
 
 from pynab.db import db
 from pynab import log
@@ -100,12 +101,88 @@ def process(limit=100, online=True):
 
 
 def search(show):
-    """Search TVRage online API for show data."""
     try:
         r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
-        result = xmltodict.parse(r.content)
     except:
         log.error('Problem retrieving TVRage XML. The API is probably down.')
+        return None
+    
+    content = r.content
+    
+    import time
+    a = time.clock()
+    show_lxml = search_lxml(show, content)
+    b = time.clock()
+    show_xmltodict = search_xmltodiff(show, content)
+    c = time.clock()
+    showid_lxml = show_lxml.get('showid') if show_lxml else None
+    showid_xmltodiff = show_xmltodict.get('showid') if show_xmltodict else None
+    log.info('Parse result: lxml id %s time %.6fs -- xmltodict id %s time %.6fs - speedup %.2f%%' % (showid_lxml, b-a, showid_xmltodiff, c-b, (c-b)/(b-a)*100))
+    if showid_lxml != showid_xmltodiff:
+        log.error('Different results for lxml (%s) and xmltodict (%s)' % (showid_lxml, showid_xmltodiff))
+    return show_xmltodict
+
+# use compiled xpaths and regex for speedup
+XPATH_SHOW = etree.XPath('//show')
+XPATH_NAME = etree.XPath('name/text()')
+XPATH_AKA = etree.XPath('akas/aka/text()')
+XPATH_LINK = etree.XPath('link/text()')
+XPATH_COUNTRY = etree.XPath('country/text()')
+
+RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
+
+
+def extract_names(xmlshow):
+    " Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"
+    yield from XPATH_NAME(xmlshow)
+    yield from XPATH_AKA(xmlshow)
+    link = XPATH_LINK(xmlshow)[0]
+    link_result = RE_LINK.search(link)
+    if link_result:
+        yield from link_result.groups()
+
+
+def search_lxml(show, content):
+    """Search TVRage online API for show data."""
+    try:
+        tree = etree.fromstring(content)
+    except:
+        log.error('Problem parsing XML with lxml')
+        return None
+
+    from itertools import chain
+    
+    matches = {}
+    # parse show names in the same order as returned by tvrage, first one is usually the good one
+    for xml_show in XPATH_SHOW(tree):
+        for name in extract_names(xml_show):
+            ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(name)).ratio() * 100)
+            if ratio == 100:
+                log.debug('lxml Found 100% xml_match: {}'.format(name))
+                return xmltodict.parse(etree.tostring(xml_show))['show']
+            matches[ratio] = xml_show
+                
+    # if no 100% is found, check highest ratio matches
+    for ratio, xml_match in sorted(matches.items(), reverse=True):
+        if ratio >= 80:
+            log.debug('lxml Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
+            return xmltodict.parse(etree.tostring(xml_match))['show']
+        elif 80 > ratio > 60:
+            if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
+                if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)):
+                    log.debug('lxml Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
+                    return xmltodict.parse(etree.tostring(xml_match))['show']
+
+    ratio, highest = sorted(matches.items(), reverse=True)[0]
+    log.debug('lxml highest xml_match was {}% with {}.'.format(ratio, XPATH_NAME(highest)[0]))
+    
+
+def search_xmltodiff(show, content):
+    """Search TVRage online API for show data."""
+    try:
+        result = xmltodict.parse(content)
+    except:
+        log.error('Problem parsing XML with xmltodict')
         return None
 
     # did the api return any shows?
@@ -155,21 +232,21 @@ def search(show):
             matches[ratio] = rage_show
 
         if 100 in matches:
-            log.debug('Found 100% match: {}'.format(matches[100]['name']))
+            log.debug('xmltodict Found 100% match: {}'.format(matches[100]['name']))
             return matches[100]
         else:
             for ratio, match in sorted(matches.items(), reverse=True):
                 if ratio >= 80:
-                    log.debug('Found {:d}% match: {}'.format(ratio, match['name']))
+                    log.debug('xmltodict Found {:d}% match: {}'.format(ratio, match['name']))
                     return match
                 elif 80 > ratio > 60:
                     if 'country' in show and show['country'] and match['country']:
                         if str.lower(show['country']) == str.lower(match['country']):
-                            log.debug('Found {:d}% match: {}'.format(ratio, match['name']))
+                            log.debug('xmltodict Found {:d}% match: {}'.format(ratio, match['name']))
                             return match
 
             ratio, highest = sorted(matches.items(), reverse=True)[0]
-            log.debug('Highest match was {}% with {}.'.format(ratio, highest['name']))
+            log.debug('xmltodict Highest match was {}% with {}.'.format(ratio, highest['name']))
 
     log.error('Could not find TVRage match online.')
     return None
@@ -192,7 +269,7 @@ def clean_name(name):
     for k, v in replace_chars.items():
         name = name.replace(k, v)
 
-    return name
+    return name.lower()
 
 
 def parse_show(search_name):
