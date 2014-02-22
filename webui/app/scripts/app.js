@@ -1,28 +1,11 @@
 'use strict';
 
-angular.module('pynabWebuiApp', ['ui.router','angularMoment', 'ngCookies'])
-  .config(function ($stateProvider, $urlRouterProvider) {
-	$urlRouterProvider.otherwise('/');
+var pynabWebuiApp = angular.module('pynabWebuiApp', ['ngRoute', 'angularMoment', 'ngCookies', 'ui.bootstrap', 'ngResource']);
 
-    $stateProvider
-      .state('index', {
-        url: '/',
-        views: {
-          'content': {templateUrl: 'views/index.html'}
-        }
-      })
-      .state('search', {
-        url: '/search',
-        views: {
-          'content': {templateUrl: 'views/search.html', controller: 'SearchCtrl'}
-        }
-      })
-      .state('about', {
-        url: '/about',
-        templateUrl: 'views/about.html'
-      });
-  })
-  .run(['$rootScope', '$state', '$stateParams', function($rootScope, $state, $stateParams) {
-    $rootScope.$state = $state;
-    $rootScope.$stateParams = $stateParams;
+pynabWebuiApp.config(['$routeProvider', function($routeProvider) {
+    $routeProvider.
+    when('/', {templateUrl: 'views/index.html'}).
+    when('/search', {templateUrl: 'views/search.html', controller: 'SearchCtrl'}).
+    when('/about', {templateUrl: 'views/about.html'}).
+    otherwise({redirectTo: '/'});
   }]);

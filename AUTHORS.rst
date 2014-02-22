@@ -11,3 +11,5 @@ Contributors
 ------------
 
 * @kevinlekiller - Compressed Header Support
+* @bettse - Various bugfixes
+* @guillp - Group management scripts and bugfixes

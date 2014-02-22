@@ -1,9 +1,9 @@
-import regex
+import json
 
+import regex
 import bottle
 from bottle import request, response
 import xmltodict
-import json
 
 from pynab import log
 import pynab.api
@@ -25,12 +25,12 @@ def serve_static(path):
 
 @app.get('/views/:path#.+#')
 def serve_static(path):
-	return bottle.static_file(path, root='./webui/dist/views/')
+    return bottle.static_file(path, root='./webui/dist/views/')
 
 
 @app.get('/fonts/:path#.+#')
 def serve_static(path):
-	return bottle.static_file(path, root='./webui/dist/fonts/')
+    return bottle.static_file(path, root='./webui/dist/fonts/')
 
 
 @app.get('/api')
@@ -57,13 +57,15 @@ def api():
 @app.get('/')
 @app.get('/index.html')
 def index():
-	if config.site['webui']:
-	    raise bottle.static_file('index.html', root='./webui/dist')
+    if config.site['webui']:
+        raise bottle.static_file('index.html', root='./webui/dist')
+
 
 @app.get('/favicon.ico')
 def index():
-	if config.site['webui']:
-	    raise bottle.static_file('favicon.ico', root='./webui/dist')
+    if config.site['webui']:
+        raise bottle.static_file('favicon.ico', root='./webui/dist')
+
 
 def switch_output(data):
     output_format = request.query.o or 'xml'

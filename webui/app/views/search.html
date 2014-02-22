@@ -33,22 +33,28 @@
 		
 	</div>
 
-	<div class="container col-sm-8 col-md-8 col-lg-8 pull-right" ng-show="searchResults">
-		<table class="table table-striped">
-			<thead>
-				<td>Title</td>
-				<td>Age</td>
-				<td>Group</td>
-				<td>Category</td>
-				<td>Download NZB</td>
-			</thead>
-			<tr ng-repeat="item in searchResults">
-				<td>{{item.title}}</td>
-				<td><span am-time-ago="item.pubDate"></span></td>
-				<td>{{item.group}}</td>
+	<div class="container col-sm-8 col-md-8 col-lg-8 pull-right">
+		<table class="table table-striped" id="browsetable">
+			<tr>
+				<th class="item"><label>Title</label></th>
+				<th>Age</th>
+                <th>Size</th>
+				<th>Group</th>
+				<th>Category</th>
+				<th>Download NZB</th>
+			</tr>
+			<tr ng-repeat="item in searchResults | orderBy:sortOrder">
+				<td class="item"><label>{{item.title}}</label></td>
+				<td><span am-time-ago="item.posted"></span></td>
+				<td>{{item.size | bytes}}</td>
+                <td>{{item.group}}</td>
 				<td>{{item.category}}</td>
 				<td><a href="{{item.link}}">Click</a></td>
 			</tr>
 		</table>
 	</div>
+    <div class="container col-sm-8 col-md-8 col-lg-8 pull-right" ng-hide="searchResults">
+        <p>No results found.</p>
+    </div>
+
 </div>

@@ -2,6 +2,7 @@ import datetime
 import os
 import gzip
 import pymongo
+import pprint
 
 from mako.template import Template
 from mako import exceptions
@@ -301,6 +302,8 @@ def search(dataset=None, params=None):
         dataset['total'] = total
         dataset['search'] = True
         dataset['api_key'] = request.query.apikey
+
+        pprint.pprint(results)
 
         try:
             tmpl = Template(
