@@ -19,6 +19,16 @@ import config
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
 
 
+# use compiled xpaths and regex for speedup
+XPATH_SHOW = etree.XPath('//show')
+XPATH_NAME = etree.XPath('name/text()')
+XPATH_AKA = etree.XPath('akas/aka/text()')
+XPATH_LINK = etree.XPath('link/text()')
+XPATH_COUNTRY = etree.XPath('country/text()')
+
+RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
+
+
 def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
     log.info('Processing TV episodes to add TVRage data...')
@@ -101,6 +111,7 @@ def process(limit=100, online=True):
 
 
 def search(show):
+    """Search TVRage's online API for show data."""
     try:
         r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
     except:
@@ -108,32 +119,11 @@ def search(show):
         return None
     
     content = r.content
-    
-    import time
-    a = time.clock()
-    show_lxml = search_lxml(show, content)
-    b = time.clock()
-    show_xmltodict = search_xmltodiff(show, content)
-    c = time.clock()
-    showid_lxml = show_lxml.get('showid') if show_lxml else None
-    showid_xmltodiff = show_xmltodict.get('showid') if show_xmltodict else None
-    log.info('Parse result: lxml id %s time %.6fs -- xmltodict id %s time %.6fs - speedup %.2f%%' % (showid_lxml, b-a, showid_xmltodiff, c-b, (c-b)/(b-a)*100))
-    if showid_lxml != showid_xmltodiff:
-        log.error('Different results for lxml (%s) and xmltodict (%s)' % (showid_lxml, showid_xmltodiff))
-    return show_xmltodict
-
-# use compiled xpaths and regex for speedup
-XPATH_SHOW = etree.XPath('//show')
-XPATH_NAME = etree.XPath('name/text()')
-XPATH_AKA = etree.XPath('akas/aka/text()')
-XPATH_LINK = etree.XPath('link/text()')
-XPATH_COUNTRY = etree.XPath('country/text()')
-
-RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
+    return search_lxml(show, content)
 
 
 def extract_names(xmlshow):
-    " Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"
+    """Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"""
     yield from XPATH_NAME(xmlshow)
     yield from XPATH_AKA(xmlshow)
     link = XPATH_LINK(xmlshow)[0]
@@ -174,82 +164,8 @@ def search_lxml(show, content):
                     return xmltodict.parse(etree.tostring(xml_match))['show']
 
     ratio, highest = sorted(matches.items(), reverse=True)[0]
+    log.warning('No TVRage match found for {}.'.format(show['clean_name']))
     log.debug('lxml highest xml_match was {}% with {}.'.format(ratio, XPATH_NAME(highest)[0]))
-    
-
-def search_xmltodiff(show, content):
-    """Search TVRage online API for show data."""
-    try:
-        result = xmltodict.parse(content)
-    except:
-        log.error('Problem parsing XML with xmltodict')
-        return None
-
-    # did the api return any shows?
-    if 'show' in result['Results']:
-        result = result['Results']
-
-        # if we only got 1 match, put it in a list so we can just foreach it regardless
-        if 'showid' in result['show']:
-            result['show'] = [result['show']]
-
-        matches = {}
-        for rage_show in result['show']:
-            # do aka matches first so they're most likely to get overwritten
-            if 'akas' in rage_show:
-                akas = []
-                # some of tvrage's return data is stupidly non-standard
-                # seriously, does this come from a wiki?
-                if 'aka' in rage_show['akas'] and rage_show['akas']['aka']:
-                    if '#text' in rage_show['akas']['aka']:
-                        # it's a normal match
-                        akas.append(rage_show['akas']['aka']['#text'])
-                    elif isinstance(rage_show['akas']['aka'], list):
-                        for aka in rage_show['akas']['aka']:
-                            if aka and '#text' in aka:
-                                akas.append(aka['#text'])
-                            else:
-                                akas.append(aka)
-                    else:
-                        akas.append(rage_show['akas']['aka'])
-
-                # check matches in akas
-                for aka in akas:
-                    if aka:
-                        ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(aka)).ratio() * 100)
-                        matches[ratio] = rage_show
-
-            # check for link matches
-            if 'link' in rage_show:
-                link_result = regex.search('tvrage\.com\/((?!shows)[^\/]*)$', rage_show['link'], regex.I)
-                if link_result:
-                    ratio = int(difflib.SequenceMatcher(None, show['clean_name'],
-                                                        clean_name(link_result.group(1))).ratio() * 100)
-                    matches[ratio] = rage_show
-
-            # check for title matches
-            ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(rage_show['name'])).ratio() * 100)
-            matches[ratio] = rage_show
-
-        if 100 in matches:
-            log.debug('xmltodict Found 100% match: {}'.format(matches[100]['name']))
-            return matches[100]
-        else:
-            for ratio, match in sorted(matches.items(), reverse=True):
-                if ratio >= 80:
-                    log.debug('xmltodict Found {:d}% match: {}'.format(ratio, match['name']))
-                    return match
-                elif 80 > ratio > 60:
-                    if 'country' in show and show['country'] and match['country']:
-                        if str.lower(show['country']) == str.lower(match['country']):
-                            log.debug('xmltodict Found {:d}% match: {}'.format(ratio, match['name']))
-                            return match
-
-            ratio, highest = sorted(matches.items(), reverse=True)[0]
-            log.debug('xmltodict Highest match was {}% with {}.'.format(ratio, highest['name']))
-
-    log.error('Could not find TVRage match online.')
-    return None
 
 
 def clean_name(name):
