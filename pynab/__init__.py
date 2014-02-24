@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 log.setLevel(config.site['logging_level'])
 
 if config.site['logging_file']:
-    handler = logging.handlers.RotatingFileHandler(config.site['logging_file'], maxBytes=config.site['max_log_size'], backupCount=5)
+    handler = logging.handlers.RotatingFileHandler(config.site['logging_file'], maxBytes=config.site['max_log_size'], backupCount=5, encoding='utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
 else:
