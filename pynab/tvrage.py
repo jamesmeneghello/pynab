@@ -9,6 +9,7 @@ import xmltodict
 import pytz
 import pymongo
 from lxml import etree
+from collections import defaultdict
 
 from pynab.db import db
 from pynab import log
@@ -140,32 +141,30 @@ def search_lxml(show, content):
         log.error('Problem parsing XML with lxml')
         return None
 
-    from itertools import chain
-    
-    matches = {}
+    matches = defaultdict(list)
     # parse show names in the same order as returned by tvrage, first one is usually the good one
     for xml_show in XPATH_SHOW(tree):
         for name in extract_names(xml_show):
             ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(name)).ratio() * 100)
             if ratio == 100:
-                log.debug('lxml Found 100% xml_match: {}'.format(name))
+                log.debug('Found 100% xml_match: {}'.format(name))
                 return xmltodict.parse(etree.tostring(xml_show))['show']
-            matches[ratio] = xml_show
+            matches[ratio].append(xml_show)
                 
     # if no 100% is found, check highest ratio matches
-    for ratio, xml_match in sorted(matches.items(), reverse=True):
-        if ratio >= 80:
-            log.debug('lxml Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
-            return xmltodict.parse(etree.tostring(xml_match))['show']
-        elif 80 > ratio > 60:
-            if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
-                if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)):
-                    log.debug('lxml Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
-                    return xmltodict.parse(etree.tostring(xml_match))['show']
+    for ratio, xml_matches in sorted(matches.items(), reverse=True):
+        for xml_match in xml_matches:
+            if ratio >= 80:
+                log.debug('Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
+                return xmltodict.parse(etree.tostring(xml_match))['show']
+            elif 80 > ratio > 60:
+                if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
+                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)):
+                        log.debug('Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
+                        return xmltodict.parse(etree.tostring(xml_match))['show']
 
-    ratio, highest = sorted(matches.items(), reverse=True)[0]
-    log.warning('No TVRage match found for {}.'.format(show['clean_name']))
-    log.debug('lxml highest xml_match was {}% with {}.'.format(ratio, XPATH_NAME(highest)[0]))
+    ratio, highests = sorted(matches.items(), reverse=True)[0]
+    log.warning('No TVRage match found for {}, highest match was {}%.'.format(show['clean_name'], ratio))
 
 
 def clean_name(name):

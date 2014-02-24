@@ -1,6 +1,3 @@
-#!/usr/local/bin/python2.7
-# encoding: utf-8
-
 import argparse
 import os
 import re
@@ -75,7 +72,7 @@ def remove(args):
     for group in groups:
         db.groups.remove(group['_id'])
     if skipped_names:
-        print('These groups where not in the database and where skipped:')
+        print('These groups were not in the database and were skipped:')
         for name in skipped_names:
             print('  ', name)
 
@@ -84,7 +81,7 @@ def enable(args):
     for group in groups:
         db.groups.update({'_id': group['_id']}, {'$set': {'active': 1}})
     if skipped_names:
-        print('These groups where not in the database and where skipped:')
+        print('These groups were not in the database and were skipped:')
         for name in skipped_names:
             print('  ', name)
 
@@ -93,7 +90,7 @@ def disable(args):
     for group in groups:
         db.groups.update({'_id': group['_id']}, {'$set': {'active': 0}})
     if skipped_names:
-        print('These groups where not in the database and where skipped:')
+        print('These groups were not in the database and were skipped:')
         for name in skipped_names:
             print('  ', name)
 
