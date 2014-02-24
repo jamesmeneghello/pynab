@@ -9,3 +9,4 @@ pynzb
 requests
 roman
 regex
+python-daemonize
