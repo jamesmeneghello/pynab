@@ -246,9 +246,9 @@ def process(limit=20, category=0):
                 }
             })
 
-    if config.postprocess.get('delete_passworded'):
+    if config.postprocess.get('delete_passworded', True):
         log.info('Deleting passworded releases...')
-        if config.postprocess.get('delete_potentially_passworded'):
+        if config.postprocess.get('delete_potentially_passworded', True):
             query = {'passworded': {'$in': [True, 'potentially']}}
         else:
             query = {'passworded': True}
