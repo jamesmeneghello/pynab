@@ -70,7 +70,7 @@ def process(limit=100, online=True):
     """Process movies without imdb data and append said data."""
     log.info('Processing movies to add IMDB data...')
 
-    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
+    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     query = {
         'imdb._id': {'$exists': False},

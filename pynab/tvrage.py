@@ -34,7 +34,7 @@ def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
     log.info('Processing TV episodes to add TVRage data...')
 
-    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
+    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     query = {
         'tvrage._id': {'$exists': False},

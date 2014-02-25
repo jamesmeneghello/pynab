@@ -4,7 +4,7 @@ from pynab.server import Server
 from pynab import parts
 import config
 
-MESSAGE_LIMIT = config.site['message_scan_limit']
+MESSAGE_LIMIT = config.scan.get('message_scan_limit', 20000)
 
 
 def backfill(group_name, date=None):
@@ -16,7 +16,7 @@ def backfill(group_name, date=None):
     if date:
         target_article = server.day_to_post(group_name, server.days_old(date))
     else:
-        target_article = server.day_to_post(group_name, config.site['backfill_days'])
+        target_article = server.day_to_post(group_name, config.scan.get('backfill_days', 10))
 
     group = db.groups.find_one({'name': group_name})
     if group:
@@ -119,7 +119,7 @@ def update(group_name):
                 return False
         else:
             # otherwise, start from x days old
-            start = server.day_to_post(group_name, config.site['new_group_scan_days'])
+            start = server.day_to_post(group_name, config.scan.get('new_group_scan_days', 5))
             if not start:
                 log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
                 if server.connection:
@@ -165,7 +165,7 @@ def update(group_name):
         if total > 0:
             if not group['last']:
                 log.info('{}: Starting new group with {:d} days and {:d} new parts.'
-                .format(group_name, config.site['new_group_scan_days'], total))
+                .format(group_name, config.scan.get('new_group_scan_days', 5), total))
             else:
                 log.info('{}: Group has {:d} new parts.'.format(group_name, total))
 

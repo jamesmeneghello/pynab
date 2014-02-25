@@ -10,10 +10,11 @@ import config
 import logging.handlers
 
 log = logging.getLogger(__name__)
-log.setLevel(config.site['logging_level'])
+log.setLevel(config.log.get('logging_level', logging.DEBUG))
 
-if config.site['logging_file']:
-    handler = logging.handlers.RotatingFileHandler(config.site['logging_file'], maxBytes=config.site['max_log_size'], backupCount=5, encoding='utf-8')
+logging_file = config.log.get('logging_file')
+if logging_file:
+    handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
 else:

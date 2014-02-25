@@ -20,9 +20,10 @@ class Match(object):
 
 def update_blacklist():
     """Check for Blacklist update and load them into Mongo."""
-    if 'blacklist_url' in config.site:
+    blacklist_url = config.postprocess.get('blacklist_url')
+    if blacklist_url:
         log.info('Starting blacklist update...')
-        response = requests.get(config.site['blacklist_url'])
+        response = requests.get(blacklist_url)
         lines = response.text.splitlines()
 
         for line in lines:
@@ -53,9 +54,10 @@ def update_blacklist():
 
 def update_regex():
     """Check for NN+ regex update and load them into Mongo."""
-    if 'regex_url' in config.site:
+    regex_url = config.postprocess.get('regex_url')
+    if regex_url:
         log.info('Starting regex update...')
-        response = requests.get(config.site['regex_url'])
+        response = requests.get(regex_url)
         lines = response.text.splitlines()
 
         # get the revision by itself

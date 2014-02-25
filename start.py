@@ -52,7 +52,7 @@ if __name__ == '__main__':
         if active_groups:
             # if maxtasksperchild is more than 1, everything breaks
             # they're long processes usually, so no problem having one task per child
-            pool = multiprocessing.Pool(processes=config.site['update_threads'], maxtasksperchild=1)
+            pool = multiprocessing.Pool(processes=config.scan.get('update_threads', 4), maxtasksperchild=1)
             result = pool.map_async(update, active_groups)
             try:
                 result.get()
@@ -71,12 +71,13 @@ if __name__ == '__main__':
             pynab.releases.process()
 
             # clean up dead binaries
-            dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.site['dead_binary_age'])
+            dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
             db.binaries.remove({'posted': {'$lte': dead_time}})
 
             # wait for the configured amount of time between cycles
-            log.info('Sleeping for {:d} seconds...'.format(config.site['update_wait']))
-            time.sleep(config.site['update_wait'])
+            update_wait = config.scan.get('update_wait', 300)
+            log.info('Sleeping for {:d} seconds...'.format(update_wait))
+            time.sleep(update_wait)
         else:
             log.info('No groups active, cancelling start.py...')
             break
