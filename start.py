@@ -6,7 +6,7 @@ import pytz
 import datetime
 import traceback
 
-from pynab import log
+from pynab import log, log_descriptor
 from pynab.db import db
 
 import pynab.groups
@@ -47,7 +47,12 @@ def daemonize(pidfile):
     try:
         import traceback
         from daemonize import Daemonize
-        daemon = Daemonize(app='pynab', pid=pidfile, action=main)
+
+        fds = []
+        if log_descriptor:
+            fds = [log_descriptor]
+
+        daemon = Daemonize(app='pynab', pid=pidfile, action=main, keep_fds=fds)
         daemon.start()
     except SystemExit:
         raise
