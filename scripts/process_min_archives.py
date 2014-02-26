@@ -13,7 +13,7 @@ def process_minarchives():
     for release in db.releases.find():
         data = pynab.nzbs.get_nzb_dict(release['nzb'])
 
-        if data['rar_count'] + data['zip_count'] < config.site['min_archives']:
+        if data['rar_count'] + data['zip_count'] < config.postprocess.get('min_archives', 1):
             print('DELETING: Release {} has {} rars and {} zips.'.format(release['search_name'], data['rar_count'],
                                                                          data['zip_count']))
             db.releases.remove({'_id': release['_id']})

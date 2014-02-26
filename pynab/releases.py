@@ -161,7 +161,7 @@ def process():
                 complete = false
             }
             var completion = available_segments / parseFloat(total_segments) * 100.0;
-            if (complete || completion >= """ + str(config.site['min_completion']) + """)
+            if (complete || completion >= """ + str(config.postprocess.get('min_completion', 99)) + """)
                 emit(this._id, completion)
 
         }
@@ -203,7 +203,7 @@ def process():
 
                 log.debug('Binary {} has {} rars and {} rar_parts.'.format(binary['name'], len(rars), rar_count))
 
-                if rar_count + zip_count < config.site['min_archives']:
+                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
                     log.debug('Binary does not have the minimum required archives.')
                     db.binaries.remove({'_id': binary['_id']})
                     continue

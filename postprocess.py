@@ -55,24 +55,24 @@ if __name__ == '__main__':
     while True:
         # grab and append tvrage data to tv releases
         tvrage_p = None
-        if config.site['process_tvrage']:
+        if config.postprocess.get('process_tvrage', True):
             tvrage_p = multiprocessing.Process(target=process_tvrage)
             tvrage_p.start()
 
         imdb_p = None
-        if config.site['process_imdb']:
+        if config.postprocess.get('process_imdb', True):
             imdb_p = multiprocessing.Process(target=process_imdb)
             imdb_p.start()
 
         # grab and append nfo data to all releases
         nfo_p = None
-        if config.site['process_nfos']:
+        if config.postprocess.get('process_nfos', True):
             nfo_p = multiprocessing.Process(target=process_nfos)
             nfo_p.start()
 
         # check for passwords, file count and size
         rar_p = None
-        if config.site['process_rars']:
+        if config.postprocess.get('process_rars', True):
             rar_p = multiprocessing.Process(target=process_rars)
             rar_p.start()
 
@@ -92,11 +92,12 @@ if __name__ == '__main__':
         scripts.rename_bad_releases.rename_bad_releases(8010)
         scripts.rename_bad_releases.rename_bad_releases(7020)
 
-        if config.site['delete_bad_releases']:
+        if config.postprocess.get('delete_bad_releases', False):
             pass
             #log.info('Deleting bad releases...')
             # not confident in this yet
 
         # wait for the configured amount of time between cycles
-        log.info('Sleeping for {:d} seconds...'.format(config.site['postprocess_wait']))
-        time.sleep(config.site['postprocess_wait'])
+        postprocess_wait = config.postprocess.get('postprocess_wait', 1)
+        log.info('Sleeping for {:d} seconds...'.format(postprocess_wait))
+        time.sleep(postprocess_wait)

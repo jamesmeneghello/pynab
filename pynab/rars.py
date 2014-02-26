@@ -120,45 +120,50 @@ def get_rar_info(server, group_name, messages):
                 'files.names': [r.filename for r in files]
             }
 
-            # make a tempdir to extract rar to
-            tmp_dir = tempfile.mkdtemp()
-            log.debug('Creating temp directory: {}...'.format(tmp_dir))
-            exe = [
-                '"{}"'.format(config.site['unrar_path']),
-                'e', '-ai', '-ep', '-r', '-kb',
-                '-c-', '-id', '-p-', '-y', '-inul',
-                '"{}"'.format(t.name),
-                '"{}"'.format(tmp_dir)
-            ]
-
-            try:
-                subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
-            except subprocess.CalledProcessError as cpe:
-                log.debug('Archive had issues while extracting: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
-                log.debug('Not to worry, it\'s probably a multi-volume rar (most are).')
-                log.debug(info)
-
-            inner_passwords = []
-            for file in files:
-                fpath = os.path.join(tmp_dir, file.filename)
+            unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
+            if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
+                log.debug('Skipping archive decompression because unrar_path is not set or incorrect')
+                log.debug('If the rar is not password protected, but contains an inner archive that is, we will not know')
+            else:
+                # make a tempdir to extract rar to
+                tmp_dir = tempfile.mkdtemp()
+                log.debug('Creating temp directory: {}...'.format(tmp_dir))
+                exe = [
+                    '"{}"'.format(unrar_path),
+                    'e', '-ai', '-ep', '-r', '-kb',
+                    '-c-', '-id', '-p-', '-y', '-inul',
+                    '"{}"'.format(t.name),
+                    '"{}"'.format(tmp_dir)
+                ]
+    
                 try:
-                    inner_files = check_rar(fpath)
-                except lib.rar.BadRarFile:
-                    log.debug('Inner file {} wasn\'t a RAR archive.'.format(file.filename))
-                    continue
+                    subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
+                except subprocess.CalledProcessError as cpe:
+                    log.debug('Archive had issues while extracting: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    log.debug('Not to worry, it\'s probably a multi-volume rar (most are).')
+                    log.debug(info)
 
-                if inner_files:
-                    inner_passwords += [r.is_encrypted for r in inner_files]
-                else:
-                    passworded = True
-                    break
-
-            if not passworded:
-                passworded = any(inner_passwords)
-
-            log.debug('Deleting temp files...')
-            os.remove(t.name)
-            shutil.rmtree(tmp_dir)
+                inner_passwords = []
+                for file in files:
+                    fpath = os.path.join(tmp_dir, file.filename)
+                    try:
+                        inner_files = check_rar(fpath)
+                    except lib.rar.BadRarFile:
+                        log.debug('Inner file {} wasn\'t a RAR archive.'.format(file.filename))
+                        continue
+    
+                    if inner_files:
+                        inner_passwords += [r.is_encrypted for r in inner_files]
+                    else:
+                        passworded = True
+                        break
+    
+                if not passworded:
+                    passworded = any(inner_passwords)
+    
+                log.debug('Deleting temp files...')
+                os.remove(t.name)
+                shutil.rmtree(tmp_dir)
         else:
             log.debug('Archive was encrypted or passworded.')
             passworded = True
@@ -241,9 +246,9 @@ def process(limit=20, category=0):
                 }
             })
 
-    if config.site['delete_passworded']:
+    if config.postprocess.get('delete_passworded', True):
         log.info('Deleting passworded releases...')
-        if config.site['delete_potentially_passworded']:
+        if config.postprocess.get('delete_potentially_passworded', True):
             query = {'passworded': {'$in': [True, 'potentially']}}
         else:
             query = {'passworded': True}

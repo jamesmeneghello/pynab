@@ -177,11 +177,11 @@ def details(dataset=None):
 
 
 def caps(dataset=None):
-    dataset['app_version'] = config.site['version']
-    dataset['api_version'] = config.site['api_version']
-    dataset['email'] = config.site['email'] or ''
-    dataset['result_limit'] = config.site['result_limit'] or 20
-    dataset['result_default'] = config.site['result_default'] or 20
+    dataset['app_version'] = config.api.get('version', '1.0.0')
+    dataset['api_version'] = config.api.get('api_version', '0.2.3')
+    dataset['email'] = config.api.get('email', '')
+    dataset['result_limit'] = config.api.get('result_limit', 20)
+    dataset['result_default'] = config.api.get('result_default', 20)
 
     categories = {}
     for category in db.categories.find():
@@ -214,10 +214,10 @@ def search(dataset=None, params=None):
             # set limit to request or default
             # this will also match limit == 0, which would be infinite
             limit = request.query.limit or None
-            if limit and int(limit) <= int(config.site['result_limit']):
+            if limit and int(limit) <= int(config.api.get('result_limit', 100)):
                 limit = int(limit)
             else:
-                limit = int(config.site['result_default'])
+                limit = int(config.api.get('result_default', 20))
 
             # offset is only available for rss searches and won't work with text
             offset = request.query.offset or None
