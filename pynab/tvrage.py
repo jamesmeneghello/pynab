@@ -159,7 +159,7 @@ def search_lxml(show, content):
                 return xmltodict.parse(etree.tostring(xml_match))['show']
             elif 80 > ratio > 60:
                 if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
-                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)):
+                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)[0]):
                         log.debug('Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
                         return xmltodict.parse(etree.tostring(xml_match))['show']
 
