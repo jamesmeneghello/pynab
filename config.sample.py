@@ -38,6 +38,9 @@ api = {
     # usually 8080
     'api_port': 8080,
 
+    # pid_file: process file for the api, if daemonized
+    # make sure it's writable, leave blank for nginx
+    'pid_file': ''
 }
 
 scan = {
@@ -69,6 +72,10 @@ scan = {
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so, don't set it to 0
     'dead_binary_age': 3,
+
+    # pid_file: process file for the scanner, if daemonized
+    # make sure it's writable, leave blank for nginx
+    'pid_file': ''
 
 }
 

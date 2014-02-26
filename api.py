@@ -4,6 +4,7 @@ import regex
 import bottle
 from bottle import request, response
 import xmltodict
+import traceback
 
 from pynab import log
 import pynab.api
@@ -121,7 +122,7 @@ def daemonize(pidfile):
 
 
 def main():
-    bottle.run(app=app, host=config.site.get('api_host', '0.0.0.0'), port=config.site.get('api_port', 8080))
+    bottle.run(app=app, host=config.api.get('api_host', '0.0.0.0'), port=config.api.get('api_port', 8080))
     
 
 if __name__ == '__main__':
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if args.daemonize:
-        pidfile = args.pid_file or config.site.get('api_pid_file')
+        pidfile = args.pid_file or config.api.get('api_pid_file')
         if not pidfile:
             log.error("A pid file is required to run as a daemon, please supply one either in the config file '{}' or as argument".format(config.__file__))
         else:

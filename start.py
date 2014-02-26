@@ -4,6 +4,7 @@ import time
 import logging
 import pytz
 import datetime
+import traceback
 
 from pynab import log
 from pynab.db import db
@@ -104,7 +105,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if args.daemonize:
-        pidfile = args.pid_file or config.site.get('pid_file')
+        pidfile = args.pid_file or config.scan.get('pid_file')
         if not pidfile:
             log.error("A pid file is required to run as a daemon, please supply one either in the config file '{}' or as argument".format(config.__file__))
         else:
