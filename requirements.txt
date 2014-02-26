@@ -10,3 +10,5 @@ requests
 roman
 regex
 lxml
+python-daemonize
+
