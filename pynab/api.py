@@ -9,7 +9,7 @@ from mako import exceptions
 from bottle import request, response
 
 from pynab.db import db, fs
-from pynab import log
+from pynab import log, root_dir
 import config
 
 
@@ -162,8 +162,7 @@ def details(dataset=None):
 
                 try:
                     tmpl = Template(
-                        filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
-                                              'templates/api/result.mako'))
+                        filename=os.path.join(root_dir, 'templates/api/result.mako'))
                     return tmpl.render(**dataset)
                 except:
                     log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
@@ -194,7 +193,7 @@ def caps(dataset=None):
 
     try:
         tmpl = Template(
-            filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/caps.mako'))
+            filename=os.path.join(root_dir, 'templates/api/caps.mako'))
         return tmpl.render(**dataset)
     except:
         log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
@@ -307,7 +306,7 @@ def search(dataset=None, params=None):
 
         try:
             tmpl = Template(
-                filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'templates/api/result.mako'))
+                filename=os.path.join(root_dir, 'templates/api/result.mako'))
             return tmpl.render(**dataset)
         except:
             log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))

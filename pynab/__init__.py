@@ -8,6 +8,7 @@ __version__ = '1.1.0'
 import logging
 import config
 import logging.handlers
+import os
 
 log = logging.getLogger(__name__)
 log.setLevel(config.log.get('logging_level', logging.DEBUG))
@@ -22,3 +23,6 @@ if logging_file:
     log_descriptor = handler.stream.fileno()
 else:
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+
+# set up root_dir for use with templates etc
+root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
