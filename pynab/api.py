@@ -302,8 +302,6 @@ def search(dataset=None, params=None):
         dataset['search'] = True
         dataset['api_key'] = request.query.apikey
 
-        pprint.pprint(results)
-
         try:
             tmpl = Template(
                 filename=os.path.join(root_dir, 'templates/api/result.mako'))
