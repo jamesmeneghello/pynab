@@ -198,7 +198,7 @@ def process():
 
     end = time.time()
 
-    log.info('scan: processed {1:.1f} binary chunks of {2:d} parts in {:.2f}s'
+    log.info('scan: processed {} binary chunks of {} parts each in {:.2f}s'
         .format(approx_chunks, CHUNK_SIZE, end - start)
     )
 
