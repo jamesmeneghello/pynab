@@ -180,8 +180,6 @@ def search_lxml(show, content):
                     if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)[0]):
                         return xmltodict.parse(etree.tostring(xml_match))['show']
 
-    ratio, highests = sorted(matches.items(), reverse=True)[0]
-
 
 def clean_name(name):
     """Cleans a show name for searching (against tvrage)."""
