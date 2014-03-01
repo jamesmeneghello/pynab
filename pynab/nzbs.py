@@ -80,7 +80,7 @@ def create(gid, name, binary):
         tpl = Template(filename=os.path.join(root_dir, 'templates/nzb.mako'))
         xml = tpl.render(version=pynab.__version__, name=name, category=category, binary=binary)
     except:
-        log.error('Failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
+        log.error('nzb: failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
         return None
 
     data = gzip.compress(xml.encode('utf-8'))
@@ -112,11 +112,11 @@ def import_nzb(filepath, quick=True):
                 if 'group' in elem.tag and 'groups' not in elem.tag:
                     release['group_name'] = elem.text
         except:
-            log.error('Error parsing NZB files: file appears to be corrupt.')
+            log.error('nzb: error parsing NZB files: file appears to be corrupt.')
             return False
 
         if 'name' not in release:
-            log.error('Failed to import nzb: {0}'.format(filepath))
+            log.error('nzb: failed to import nzb: {0}'.format(filepath))
             return False
 
         # check that it doesn't exist first
@@ -153,7 +153,7 @@ def import_nzb(filepath, quick=True):
             if 'group_name' in release:
                 group = db.groups.find_one({'name': release['group_name']}, {'name': 1})
                 if not group:
-                    log.error('Could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
+                    log.error('nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
                     return False
                 release['group'] = group
                 del release['group_name']
@@ -167,12 +167,12 @@ def import_nzb(filepath, quick=True):
             try:
                 db.releases.insert(release)
             except:
-                log.error('Problem saving release: {0}'.format(release))
+                log.error('nzb: problem saving release: {0}'.format(release))
                 return False
             f.close()
 
             return True
         else:
-            log.error('Release already exists: {0}'.format(release['name']))
+            log.error('nzb: release already exists: {0}'.format(release['name']))
             return False
 

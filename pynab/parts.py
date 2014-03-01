@@ -56,7 +56,7 @@ def save_all(parts):
                 save(part)
             return True
     except pymongo.errors.PyMongoError as e:
-        log.error('could not write parts to db: {0}'.format(e))
+        log.error('parts: could not write to db: {0}'.format(e))
         return False
 
 

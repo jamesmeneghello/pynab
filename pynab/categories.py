@@ -562,7 +562,7 @@ def determine_category(name, group_name=''):
     if not category:
         category = CAT_MISC_OTHER
 
-    log.info('[{}]: {} ({})'.format(
+    log.info('category: [{}]: {} ({})'.format(
         name,
         get_category_name(category),
         category

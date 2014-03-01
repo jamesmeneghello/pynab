@@ -60,7 +60,7 @@ def save(binary):
                 'parts': binary['parts']
             })
     except:
-        log.error('binary was too large to fit in DB!')
+        log.error('binary: binary was too large to fit in DB!')
 
 
 def save_and_clear(binaries=None, parts=None):
@@ -89,7 +89,6 @@ def process():
     binaries = {}
     orphan_binaries = []
     processed_parts = []
-    approx_chunks = db.parts.count() / CHUNK_SIZE
 
     # new optimisation: if we only have parts from a couple of groups,
     # we don't want to process the regex for every single one.
@@ -115,7 +114,7 @@ def process():
             try:
                 result = regex.search(r, part['subject'], regex_flags)
             except:
-                log.error('broken regex detected. _id: {:d}, removing...'.format(reg['_id']))
+                log.error('binary: broken regex detected. _id: {:d}, removing...'.format(reg['_id']))
                 db.regexes.remove({'_id': reg['_id']})
                 continue
 
@@ -198,8 +197,8 @@ def process():
 
     end = time.time()
 
-    log.info('scan: processed {} binary chunks of {} parts each in {:.2f}s'
-        .format(approx_chunks, CHUNK_SIZE, end - start)
+    log.info('binary: processed {} parts in {:.2f}s'
+        .format(db.parts.count(), end - start)
     )
 
 

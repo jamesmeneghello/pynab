@@ -35,7 +35,7 @@ class Server:
         try:
             response, count, first, last, name = self.connection.group(group_name)
         except nntplib.NNTPError:
-            log.error('Problem sending group command to server.')
+            log.error('server: Problem sending group command to server.')
             return False
 
         return response, count, first, last, name
@@ -54,7 +54,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('Could not connect to news server: {}'.format(e))
+                log.error('server: Could not connect to news server: {}'.format(e))
                 return False
 
         return True
@@ -75,7 +75,7 @@ class Server:
                     else:
                         return None
             except nntplib.NNTPError as nntpe:
-                log.error('{}: Problem retrieving messages from server: {}.'.format(group_name, nntpe))
+                log.error('server: [{}]: Problem retrieving messages: {}.'.format(group_name, nntpe))
                 return None
 
             return data
@@ -175,10 +175,9 @@ class Server:
 
         end = time.time()
 
-        log.info('{}: retrieved {} - {} in {:.2f}s [{} recv, {} pts, {} ign, {} blk]'.format(
+        log.info('server: [{}]: retrieved {} - {} in {:.2f}s [{} recv, {} pts, {} ign, {} blk]'.format(
             group_name,
             first, last,
-            last - first + 1,
             end - start,
             len(received),
             total_parts,
@@ -259,10 +258,10 @@ class Server:
                         skip *= 2
                         next_date = self.post_date(group_name, upper - 1)
 
-            log.debug('{}: article {:d} is {:d} days old.'.format(group_name, upper, self.days_old(next_date)))
+            log.debug('server: {}: article {:d} is {:d} days old.'.format(group_name, upper, self.days_old(next_date)))
             return upper
         else:
-            log.error('{}: could not get group information.'.format(group_name))
+            log.error('server: {}: could not get group information.'.format(group_name))
             return False
 
     @staticmethod

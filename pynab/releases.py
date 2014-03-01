@@ -94,7 +94,7 @@ def discover_name(release):
                         search_name = name
                         category_id = new_category
 
-                        log.info('[{}] - [{}] - rename: {} ({} -> {} -> {})'.format(
+                        log.info('release: [{}] - [{}] - rename: {} ({} -> {} -> {})'.format(
                             release['_id'],
                             release['search_name'],
                             search_name,
@@ -111,7 +111,7 @@ def discover_name(release):
                 # the old name was apparently fine
                 return True, False
 
-    log.info('[{}] - [{}] - no rename'.format(
+    log.info('release: [{}] - [{}] - no rename'.format(
         release['_id'],
         release['search_name']
     ))
@@ -205,7 +205,7 @@ def process():
                         zip_count += 1
 
                 if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    log.info('[{}] - binary: removed (less than minimum archives)'.format(
+                    log.info('release: [{}] - removed (less than minimum archives)'.format(
                         binary['name']
                     ))
                     db.binaries.remove({'_id': binary['_id']})
@@ -236,7 +236,7 @@ def process():
                 if nzb:
                     added_count += 1
 
-                    log.debug('[{}] - binary: added release ({} rars, {} rarparts)'.format(
+                    log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
                         binary['name'],
                         len(rars),
                         rar_count
@@ -285,7 +285,7 @@ def process():
                 db.binaries.remove({'_id': binary['_id']})
 
     end = time.time()
-    log.info('binary: added {} out of {} binaries in {:.2f}s'.format(
+    log.info('release: added {} out of {} binaries in {:.2f}s'.format(
         added_count,
         binary_count,
         end - start

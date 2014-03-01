@@ -75,19 +75,19 @@ def process(limit=5, category=0):
                                     }
                                 })
 
-                                log.info('[{}] - [{}] - nfo added'.format(
+                                log.info('nfo: [{}] - [{}] - nfo added'.format(
                                     release['_id'],
                                     release['search_name']
                                 ))
                                 break
                         else:
-                            log.warning('[{}] - [{}] - nfo unavailable'.format(
+                            log.warning('nfo: [{}] - [{}] - nfo unavailable'.format(
                                 release['_id'],
                                 release['search_name']
                             ))
                             continue
                 else:
-                    log.warning('[{}] - [{}] - no nfo in release'.format(
+                    log.warning('nfo: [{}] - [{}] - no nfo in release'.format(
                         release['_id'],
                         release['search_name']
                     ))

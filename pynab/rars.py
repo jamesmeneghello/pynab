@@ -121,8 +121,8 @@ def get_rar_info(server, group_name, messages):
 
             unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
             if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
-                log.error('skipping archive decompression because unrar_path is not set or incorrect')
-                log.error('if the rar is not password protected, but contains an inner archive that is, we will not know')
+                log.error('rar: skipping archive decompression because unrar_path is not set or incorrect')
+                log.error('rar: if the rar is not password protected, but contains an inner archive that is, we will not know')
             else:
                 # make a tempdir to extract rar to
                 tmp_dir = tempfile.mkdtemp()
@@ -137,7 +137,7 @@ def get_rar_info(server, group_name, messages):
                 try:
                     subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
                 except subprocess.CalledProcessError as cpe:
-                    log.debug('issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
 
                 inner_passwords = []
                 for file in files:
@@ -230,7 +230,7 @@ def process(limit=20, category=0):
 
                     continue
 
-            log.warning('[{}] - [{}] - file info: no rars in release'.format(
+            log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
                 release['_id'],
                 release['search_name']
             ))

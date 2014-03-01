@@ -85,7 +85,7 @@ def process(limit=100, online=True):
                 time.sleep(1)
 
             if rage:
-                log.info('[{}] - [{}] - tvrage added: {}'.format(
+                log.info('tvrage: [{}] - [{}] - tvrage added: {}'.format(
                     release['_id'],
                     release['search_name'],
                     method
@@ -97,7 +97,7 @@ def process(limit=100, online=True):
                     }
                 })
             elif not rage and online:
-                log.warning('[{}] - [{}] - tvrage failed: {}'.format(
+                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
                     release['_id'],
                     release['search_name'],
                     'no show found (online)'
@@ -111,13 +111,13 @@ def process(limit=100, online=True):
                     }
                 })
             else:
-                log.warning('[{}] - [{}] - tvrage failed: {}'.format(
+                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
                     release['_id'],
                     release['search_name'],
                     'no show found (local)'
                 ))
         else:
-            log.warning('[{}] - [{}] - tvrage failed: {}'.format(
+            log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
                     release['_id'],
                     release['search_name'],
                     'no suitable regex for show name'
