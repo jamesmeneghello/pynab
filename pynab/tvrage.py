@@ -188,6 +188,7 @@ def clean_name(name):
     name = regex.sub('[._\-]', ' ', name)
     name = regex.sub('[\':!"#*’,()?]', '', name)
     name = regex.sub('\s{2,}', ' ', name)
+    name = regex.sub('\[.*\]', '', name)
 
     replace_chars = {
         '$': 's',
@@ -197,6 +198,9 @@ def clean_name(name):
 
     for k, v in replace_chars.items():
         name = name.replace(k, v)
+
+    pattern = regex.compile(' (hdtv|dvd|xvid|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+) ', regex.I)
+    name = pattern.sub('', name)
 
     return name.lower()
 
