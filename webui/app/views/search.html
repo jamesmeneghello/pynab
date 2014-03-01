@@ -43,7 +43,7 @@
 				<th>Category</th>
 				<th>Download NZB</th>
 			</tr>
-			<tr ng-repeat="item in searchResults | orderBy:sortOrder">
+			<tr ng-repeat="item in searchResults track by $index | orderBy:sortOrder">
 				<td class="item"><label>{{item.title}}</label></td>
 				<td><span am-time-ago="item.posted"></span></td>
 				<td>{{item.size | bytes}}</td>
