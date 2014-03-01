@@ -49,7 +49,7 @@ if __name__ == '__main__':
         pynab.releases.strip_req(release)
 
     # start with a quick post-process
-    log.info('Starting with a quick post-process to clear out the cruft that\'s available locally...')
+    log.info('starting with a quick post-process to clear out the cruft that\'s available locally...')
     scripts.quick_postprocess.local_postprocess()
 
     while True:
@@ -99,5 +99,5 @@ if __name__ == '__main__':
 
         # wait for the configured amount of time between cycles
         postprocess_wait = config.postprocess.get('postprocess_wait', 1)
-        log.info('Sleeping for {:d} seconds...'.format(postprocess_wait))
+        log.info('sleeping for {:d} seconds...'.format(postprocess_wait))
         time.sleep(postprocess_wait)

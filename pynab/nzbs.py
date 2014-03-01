@@ -70,7 +70,6 @@ def get_nzb_dict(nzb_id):
 def create(gid, name, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
-    log.debug('Creating NZB {0}.nzb.gz and storing it to GridFS...'.format(gid))
     if binary['category_id']:
         category = db.categories.find_one({'id': binary['category_id']})
     else:

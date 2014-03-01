@@ -1,6 +1,7 @@
 import regex
 import collections
 from pynab import log
+from pynab.db import db
 
 # category codes
 # these are stored in the db, as well
@@ -540,26 +541,33 @@ category_regex = {
 }
 
 
+def get_category_name(id):
+    category = db.categories.find_one({'_id': id})
+    parent_category = db.categories.find_one({'_id': category['parent_id']})
+
+    return '{} > {}'.format(parent_category['name'], category['name'])
+
+
 def determine_category(name, group_name=''):
     """Categorise release based on release name and group name."""
-    log.debug('Attempting to determine category for {0}...'.format(name))
 
     if is_hashed(name):
-        log.debug('Release is hashed!')
-        return CAT_MISC_OTHER
+        category = CAT_MISC_OTHER
+    else:
+        category = check_group_category(name, group_name)
+        if not category:
+            for parent_category in parent_category_regex.keys():
+                category = check_parent_category(name, parent_category)
 
-    category = check_group_category(name, group_name)
-    if category:
-        return category
+    if not category:
+        category = CAT_MISC_OTHER
 
-    for parent_category in parent_category_regex.keys():
-        category = check_parent_category(name, parent_category)
-        if category:
-            log.debug('Category found as: {:d}'.format(category))
-            return category
-
-    # if all else fails
-    return CAT_MISC_OTHER
+    log.info('[{}]: {} ({})'.format(
+        name,
+        get_category_name(category),
+        category
+    ))
+    return category
 
 
 def is_hashed(name):
@@ -573,33 +581,26 @@ def check_group_category(name, group_name):
     as dictated in the dicts above."""
     for regex, actions in group_regex.items():
         if regex.search(group_name):
-            log.debug('Matched group regex {0}...'.format(regex.pattern))
             for action in actions:
                 if action in parent_category_regex.keys():
                     category = check_parent_category(name, action)
                     if category:
-                        log.debug('Found category: {:d}!'.format(category))
                         return category
                 elif action in category_regex.keys():
-                    log.debug('Reached end of list with a single cat {:d}...'.format(action))
                     return action
 
 
 def check_parent_category(name, parent_category):
     """Check the release against a single parent category, which will
     call appropriate sub-category checks."""
-    log.debug('Checking parent category: {:d}'.format(parent_category))
 
     for test, actions in parent_category_regex[parent_category].items():
-        log.debug('Checking parent test (this might be blank): {0}'.format(test.pattern))
-
         if test.search(name):
             for category in actions:
                 if category in category_regex:
                     if check_single_category(name, category):
                         return category
                 else:
-                    log.debug('Category has no regex tests, assigning: {:d}'.format(category))
                     return category
 
     return False
@@ -607,7 +608,6 @@ def check_parent_category(name, parent_category):
 
 def check_single_category(name, category):
     """Check release against a single category."""
-    log.debug('Checking single category {0}...'.format(category))
 
     for regex in category_regex[category]:
         if isinstance(regex, collections.Mapping):

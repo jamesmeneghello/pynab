@@ -37,7 +37,6 @@ def get(nfo_id):
 
 def process(limit=5, category=0):
     """Process releases for NFO parts and download them."""
-    log.info('Checking for NFO segments...')
 
     with Server() as server:
         query = {'nfo': None}
@@ -45,7 +44,6 @@ def process(limit=5, category=0):
             query['category._id'] = int(category)
 
         for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-            log.debug('Checking for NFO in {}...'.format(release['search_name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
             if nzb:
@@ -76,13 +74,23 @@ def process(limit=5, category=0):
                                         'nfo': nfo_file
                                     }
                                 })
-                                log.info('Grabbed and saved NFO for: {}'.format(release['name']))
+
+                                log.info('[{}] - [{}] - nfo added'.format(
+                                    release['_id'],
+                                    release['search_name']
+                                ))
                                 break
                         else:
-                            log.debug('Error retrieving NFO.')
+                            log.warning('[{}] - [{}] - nfo unavailable'.format(
+                                release['_id'],
+                                release['search_name']
+                            ))
                             continue
                 else:
-                    log.debug('No NFOs found in this release.')
+                    log.warning('[{}] - [{}] - no nfo in release'.format(
+                        release['_id'],
+                        release['search_name']
+                    ))
                     db.releases.update({'_id': release['_id']}, {
                         '$set': {
                             'nfo': False

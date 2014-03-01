@@ -61,7 +61,7 @@ def daemonize(pidfile):
 
 
 def main():
-    log.info('Starting update...')
+    log.info('starting update...')
 
     # print MP log as well
     multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
@@ -95,10 +95,10 @@ def main():
 
             # wait for the configured amount of time between cycles
             update_wait = config.scan.get('update_wait', 300)
-            log.info('Sleeping for {:d} seconds...'.format(update_wait))
+            log.info('sleeping for {:d} seconds...'.format(update_wait))
             time.sleep(update_wait)
         else:
-            log.info('No groups active, cancelling start.py...')
+            log.info('no groups active, cancelling start.py...')
             break
         
         

@@ -30,7 +30,6 @@ def strip_req(release):
         if result:
             result_dict = result.groupdict()
             if 'name' in result_dict and 'reqid' in result_dict:
-                log.info('Found request {}, storing req_id and renaming...'.format(result_dict['name']))
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
                         'search_name': result_dict['name'],
@@ -42,31 +41,24 @@ def strip_req(release):
 
 def names_from_nfos(release):
     """Attempt to grab a release name from its NFO."""
-    log.debug('Parsing NFO for release details in: {}'.format(release['search_name']))
     nfo = pynab.nfos.get(release['nfo']).decode('ascii', 'ignore')
     if nfo:
         return pynab.nfos.attempt_parse(nfo)
     else:
-        log.debug('NFO not available for release: {}'.format(release['search_name']))
         return []
 
 
 def names_from_files(release):
     """Attempt to grab a release name from filenames inside the release."""
-    log.debug('Parsing files for release details in: {}'.format(release['search_name']))
     if release['files']['names']:
         potential_names = []
         for file in release['files']['names']:
-            log.debug('Checking file name: {}'.format(file))
-
             name = pynab.rars.attempt_parse(file)
-
             if name:
                 potential_names.append(name)
 
         return potential_names
     else:
-        log.debug('File list was empty for release: {}'.format(release['search_name']))
         return []
 
 
@@ -83,9 +75,6 @@ def discover_name(release):
     if len(potential_names) > 1:
         old_category = release['category']['_id']
         calculated_old_category = pynab.categories.determine_category(release['search_name'])
-
-        log.debug('Release Name: {}'.format(release['search_name']))
-        log.debug('Old Category: {:d} Recalculated Old Category: {:d}'.format(old_category, calculated_old_category))
 
         for name in potential_names:
             new_category = pynab.categories.determine_category(name)
@@ -105,7 +94,14 @@ def discover_name(release):
                         search_name = name
                         category_id = new_category
 
-                        log.debug('Found new name for {}: {} with category {:d}'.format(release['search_name'], search_name, category_id))
+                        log.info('[{}] - [{}] - rename: {} ({} -> {} -> {})'.format(
+                            release['_id'],
+                            release['search_name'],
+                            search_name,
+                            old_category,
+                            calculated_old_category,
+                            category_id
+                        ))
 
                         return search_name, category_id
                     else:
@@ -115,7 +111,10 @@ def discover_name(release):
                 # the old name was apparently fine
                 return True, False
 
-    log.debug('No potential names found for release.')
+    log.info('[{}] - [{}] - no rename'.format(
+        release['_id'],
+        release['search_name']
+    ))
     return None, None
 
 
@@ -133,8 +132,11 @@ def process():
     for 100% completion and will create NZBs/releases for
     each complete release. Will also categorise releases,
     and delete old binaries."""
-    log.info('Processing complete binaries and generating releases...')
-    start = time.clock()
+
+    binary_count = 0
+    added_count = 0
+
+    start = time.time()
 
     # mapreduce isn't really supposed to be run in real-time
     # then again, processing releases isn't a real-time op
@@ -173,6 +175,7 @@ def process():
     # returns a list of _ids, so we need to get each binary
     for result in db.binaries.inline_map_reduce(mapper, reducer):
         if result['value']:
+            binary_count += 1
             binary = db.binaries.find_one({'_id': result['_id']})
 
             # check to make sure we have over the configured minimum files
@@ -201,10 +204,10 @@ def process():
                                                                                                 part['subject'], regex.I):
                         zip_count += 1
 
-                log.debug('Binary {} has {} rars and {} rar_parts.'.format(binary['name'], len(rars), rar_count))
-
                 if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    log.debug('Binary does not have the minimum required archives.')
+                    log.info('[{}] - binary: removed (less than minimum archives)'.format(
+                        binary['name']
+                    ))
                     db.binaries.remove({'_id': binary['_id']})
                     continue
 
@@ -231,7 +234,13 @@ def process():
                 # create the nzb, store it in GridFS and link it here
                 nzb, nzb_size = pynab.nzbs.create(gid, clean_name, binary)
                 if nzb:
-                    log.debug('Adding release: {0}'.format(clean_name))
+                    added_count += 1
+
+                    log.debug('[{}] - binary: added release ({} rars, {} rarparts)'.format(
+                        binary['name'],
+                        len(rars),
+                        rar_count
+                    ))
 
                     db.releases.update(
                         {
@@ -275,5 +284,9 @@ def process():
                 # delete processed binaries
                 db.binaries.remove({'_id': binary['_id']})
 
-    end = time.clock()
-    log.info('Time elapsed: {:.2f}s'.format(end - start))
+    end = time.time()
+    log.info('binary: added {} out of {} binaries in {:.2f}s'.format(
+        added_count,
+        binary_count,
+        end - start
+    ))
