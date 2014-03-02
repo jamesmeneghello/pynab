@@ -49,7 +49,7 @@ def process(limit=100, online=True):
             ]
         })
 
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(25):
         method = ''
 
         show = parse_show(release['search_name'])
