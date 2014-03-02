@@ -12,7 +12,7 @@ from pynab import log
 def rename_bad_releases(category):
     count = 0
     s_count = 0
-    for release in db.releases.find({'category._id': int(category), '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
+    for release in db.releases.find({'category._id': int(category), 'unwanted': {'$ne': True}, '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
         count += 1
         name, category_id = pynab.releases.discover_name(release)
 
