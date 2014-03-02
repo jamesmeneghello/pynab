@@ -11,4 +11,4 @@ roman
 regex
 lxml
 daemonize
-
+colorlog
