@@ -48,7 +48,7 @@ def process_release(release, online=True):
                 }
             })
         elif not imdb and online:
-            log.info('[{}] - [{}] - imdb not found: online'.format(
+            log.warning('[{}] - [{}] - imdb not found: online'.format(
                 release['_id'],
                 release['search_name']
             ))
@@ -60,12 +60,12 @@ def process_release(release, online=True):
                 }
             })
         else:
-            log.info('[{}] - [{}] - imdb not found: local'.format(
+            log.warning('[{}] - [{}] - imdb not found: local'.format(
                 release['_id'],
                 release['search_name']
             ))
     else:
-        log.info('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
+        log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
             release['_id'],
             release['search_name']
         ))
@@ -113,7 +113,7 @@ def search(name, year):
     try:
         data = r.json()
     except:
-        log.error('There was a problem accessing the IMDB API page.')
+        log.critical('There was a problem accessing the IMDB API page.')
         return None
 
     if 'Search' in data:

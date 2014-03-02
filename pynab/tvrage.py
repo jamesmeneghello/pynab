@@ -117,7 +117,7 @@ def process(limit=100, online=True):
                     'no show found (local)'
                 ))
         else:
-            log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+            log.error('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
                     release['_id'],
                     release['search_name'],
                     'no suitable regex for show name'
@@ -158,7 +158,7 @@ def search_lxml(show, content):
     try:
         tree = etree.fromstring(content)
     except:
-        log.error('Problem parsing XML with lxml')
+        log.critical('Problem parsing XML with lxml')
         return None
 
     matches = defaultdict(list)
