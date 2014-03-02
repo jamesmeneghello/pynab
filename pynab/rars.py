@@ -59,6 +59,9 @@ def attempt_parse(file):
         elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', gen_s, regex.I):
             name = match.match_obj.group(1)
 
+    if not name:
+        name = file
+
     return name
 
 

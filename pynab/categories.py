@@ -277,11 +277,14 @@ parent_category_regex = {
          ]),
         (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
+        ]),
+        (regex.compile('', regex.I), [
+            CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_ANIME, CAT_TV_OTHER
         ])
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
         (regex.compile('', regex.I), [
-            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_HD, CAT_MOVIE_BLURAY
+            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
         ]),
         (regex.compile('xvid', regex.I), [
             CAT_MOVIE_OTHER
@@ -404,7 +407,10 @@ category_regex = {
         regex.compile('1080|720', regex.I)
     ],
     CAT_TV_SD: [
-        regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
+        regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|WEBRIP|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
+    ],
+    CAT_TV_ANIME: [
+        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF/FFFpeeps|GG|GotWoot?/GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku/Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]', regex.I)
     ],
     CAT_MOVIE_FOREIGN: [
         regex.compile(
@@ -422,7 +428,8 @@ category_regex = {
         {
             regex.compile('(divx|xvid|(\.| )r5(\.| ))', regex.I): True,
             regex.compile('(720|1080)', regex.I): False,
-        }
+        },
+        regex.compile('[\.\-\ ]BeyondHD', regex.I)
     ],
     CAT_MOVIE_3D: [
         {
@@ -551,13 +558,19 @@ def get_category_name(id):
 def determine_category(name, group_name=''):
     """Categorise release based on release name and group name."""
 
+    category = ''
+
     if is_hashed(name):
         category = CAT_MISC_OTHER
     else:
-        category = check_group_category(name, group_name)
-        if not category:
-            for parent_category in parent_category_regex.keys():
-                category = check_parent_category(name, parent_category)
+        if group_name:
+            category = check_group_category(name, group_name)
+
+    if not category:
+        for parent_category in parent_category_regex.keys():
+            category = check_parent_category(name, parent_category)
+            if category:
+                break
 
     if not category:
         category = CAT_MISC_OTHER

@@ -89,8 +89,10 @@ def discover_name(release):
                     # ignore this name, since it's apparently gibberish
                     continue
                 else:
-                    if (math.floor(new_category / 1000) * 1000) == (math.floor(old_category / 1000) * 1000):
+                    if (math.floor(new_category / 1000) * 1000) == (math.floor(old_category / 1000) * 1000)\
+                            or (math.floor(old_category / 1000) * 1000) == pynab.categories.CAT_PARENT_MISC:
                         # if they're the same parent, use the new category
+                        # or, if the old category was misc>other, fix it
                         search_name = name
                         category_id = new_category
 
@@ -109,9 +111,13 @@ def discover_name(release):
                         continue
             else:
                 # the old name was apparently fine
+                log.info('release: [{}] - [{}] - old name was fine'.format(
+                    release['_id'],
+                    release['search_name']
+                ))
                 return True, False
 
-    log.info('release: [{}] - [{}] - no rename'.format(
+    log.info('release: [{}] - [{}] - no good name candidates'.format(
         release['_id'],
         release['search_name']
     ))
