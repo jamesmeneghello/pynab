@@ -34,6 +34,11 @@ def serve_static(path):
     return bottle.static_file(path, root='./webui/dist/fonts/')
 
 
+@app.get('/bower_components/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/bower_components/')
+
+
 @app.get('/api')
 def api():
     log.debug('Handling request for {0}.'.format(request.fullpath))
