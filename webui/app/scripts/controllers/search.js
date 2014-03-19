@@ -59,6 +59,10 @@ angular.module('pynabWebuiApp')
 				} else {
 					var results = response.data.rss.channel.item;
 
+                    if (!(results instanceof Array)) {
+                        results = [results];
+                    }
+
                     $scope.searchResults = [];
                     angular.forEach(results, function(obj) {
                         obj.pubDate = moment(obj.pubDate, "ddd, DD MMM YYYY HH:mm:ss ZZ").toDate();
