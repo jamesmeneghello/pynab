@@ -82,7 +82,7 @@ A release is only categorised here on no-match if the array ends on a subcategor
 """
 group_regex = {
     regex.compile('alt\.binaries\.0day', regex.I): [
-        CAT_PARENT_PC, CAT_PC_0DAY
+        CAT_PARENT_BOOK, CAT_PARENT_PC, CAT_PC_0DAY
     ],
     regex.compile('alt\.binaries\.ath', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_MUSIC,
@@ -91,19 +91,19 @@ group_regex = {
     regex.compile('alt\.binaries\.b4e', regex.I): [
         CAT_PARENT_PC, CAT_PARENT_BOOK
     ],
-    regex.compile('alt\.binaries\..*?audiobook.*?', regex.I): [
+    regex.compile('alt\.binaries\..*?audiobook', regex.I): [
         CAT_MUSIC_AUDIOBOOK
     ],
     regex.compile('lossless|flac', regex.I): [
         CAT_MUSIC_LOSSLESS
     ],
-    regex.compile('alt\.binaries\.sounds.*?|alt\.binaries\.mp3.*?|alt\.binaries.*?\.mp3', regex.I): [
+    regex.compile('alt\.binaries\.sounds|alt\.binaries\.mp3|alt\.binaries\.mp3', regex.I): [
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
     regex.compile('alt\.binaries\.console.ps3', regex.I): [
         CAT_PARENT_GAME, CAT_GAME_PS3
     ],
-    regex.compile('alt\.binaries\.games\.xbox*', regex.I): [
+    regex.compile('alt\.binaries\.games\.xbox', regex.I): [
         CAT_PARENT_GAME, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
     regex.compile('alt\.binaries\.games$', regex.I): [
@@ -112,34 +112,34 @@ group_regex = {
     regex.compile('alt\.binaries\.games\.wii', regex.I): [
         CAT_PARENT_GAME
     ],
-    regex.compile('alt\.binaries\.dvd.*?', regex.I): [
+    regex.compile('alt\.binaries\.dvd', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_PC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
-    regex.compile('alt\.binaries\.hdtv*|alt\.binaries\.x264|alt\.binaries\.tv$', regex.I): [
+    regex.compile('alt\.binaries\.hdtv|alt\.binaries\.x264|alt\.binaries\.tv$', regex.I): [
         CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
     ],
     regex.compile('alt\.binaries\.nospam\.cheerleaders', regex.I): [
         CAT_PARENT_MUSIC, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE
     ],
-    regex.compile('alt\.binaries\.classic\.tv.*?', regex.I): [
+    regex.compile('alt\.binaries\.classic\.tv', regex.I): [
         CAT_PARENT_TV, CAT_TV_OTHER
     ],
-    regex.compile('alt\.binaries\.multimedia', regex.I): [
+    regex.compile('alt\.binaries\.multimedia$', regex.I): [
         CAT_PARENT_MOVIE, CAT_PARENT_TV
     ],
-    regex.compile('alt\.binaries\.multimedia\.anime(\.highspeed)?', regex.I): [
+    regex.compile('alt\.binaries\.multimedia\.anime', regex.I): [
         CAT_TV_ANIME
     ],
     regex.compile('alt\.binaries\.anime', regex.I): [
         CAT_TV_ANIME
     ],
-    regex.compile('alt\.binaries\.e(-|)book*?', regex.I): [
+    regex.compile('alt\.binaries\.e(-|)book', regex.I): [
         CAT_PARENT_BOOK, CAT_BOOK_EBOOK
     ],
-    regex.compile('alt\.binaries\.comics.*?', regex.I): [
+    regex.compile('alt\.binaries\.comics', regex.I): [
         CAT_BOOK_COMICS
     ],
-    regex.compile('alt\.binaries\.cores.*?', regex.I): [
+    regex.compile('alt\.binaries\.cores', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_TV,
         CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
@@ -176,7 +176,7 @@ group_regex = {
         CAT_TV_OTHER
     ],
     regex.compile('alt\.binaries\.documentaries', regex.I): [
-        CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_MISC_OTHER
+        CAT_TV_DOCU
     ],
     regex.compile('alt\.binaries\.drummers', regex.I): [
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_TV, CAT_PARENT_MOVIE
@@ -198,7 +198,7 @@ group_regex = {
         CAT_PARENT_BOOK, CAT_PARENT_XXX, CAT_PARENT_PC, CAT_PARENT_MUSIC, CAT_PARENT_GAME, CAT_PARENT_TV,
         CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
-    regex.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports.*?', regex.I): [
+    regex.compile('alt\.binaries\.mma|alt\.binaries\.multimedia\.sports', regex.I): [
         CAT_TV_SPORT
     ],
     regex.compile('alt\.binaries\.b4e$', regex.I): [
@@ -241,7 +241,10 @@ group_regex = {
     regex.compile('dk\.binaer\.musik', regex.I): [
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
-    regex.compile('alt\.binaries\.(teevee|multimedia|tv|tvseries).*?', regex.I): [
+    regex.compile('alt\.binaries\.(teevee|tv|tvseries)', regex.I): [
+        CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_XXX, CAT_MISC_OTHER
+    ],
+    regex.compile('alt\.binaries\.multimedia', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
         CAT_MISC_OTHER
     ],
@@ -274,17 +277,20 @@ parent_category_regex = {
             '( S\d{1,2} |\.S\d{2}\.|\.S\d{2}|s\d{1,2}e\d{1,2}|(\.| |\b|\-)EP\d{1,2}\.|\.E\d{1,2}\.|special.*?HDTV|HDTV.*?special|PDTV|\.\d{3}\.DVDrip|History( |\.|\-)Channel|trollhd|trollsd|HDTV.*?BTL|C4TV|WEB DL|web\.dl|WWE|season \d{1,2}|(?!collectors).*?series|\.TV\.|\.dtv\.|UFC|TNA|staffel|episode|special\.\d{4})',
             regex.I), [
              CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_OTHER
-         ]),
+        ]),
         (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
-        ])
+        ]),
+        (regex.compile('\[([0-9A-F]{8})\]$', regex.I), [
+            CAT_TV_ANIME
+        ]),
+        (regex.compile('(SD|HD|PD)TV', regex.I), [
+            CAT_TV_HD, CAT_TV_SD
+        ]),
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
-        (regex.compile('', regex.I), [
-            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
-        ]),
-        (regex.compile('xvid', regex.I), [
-            CAT_MOVIE_OTHER
+        (regex.compile('[-._ ]AVC|[-._ ]|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|BR|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|Untouched|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
+            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD, CAT_MOVIE_OTHER
         ])
     ]),
     CAT_PARENT_PC: collections.OrderedDict([
@@ -295,7 +301,7 @@ parent_category_regex = {
     ]),
     CAT_PARENT_XXX: collections.OrderedDict([
         (regex.compile(
-            '(\.JAV\.| JAV |\.Jav\.|Girls.*?Gone.*?Wild|\-MotTto|-Nukleotide|XXX|PORNOLATiON|SWE6RUS|swe6|SWE6|NYMPHO|DETOXATiON|DivXfacTory|TESORO|STARLETS|xxx|XxX|PORNORIP|PornoRip)',
+            '(XXX|Porn|PORNOLATiON|SWE6RUS|masturbation|masturebate|lesbian|Imageset|Squirt|Transsexual|a\.b\.erotica|pictures\.erotica\.anime|cumming|ClubSeventeen|Errotica|Erotica|EroticaX|nymph|sexontv|My_Stepfather_Made_Me|slut|\bwhore\b)',
             regex.I), [
              CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID, CAT_XXX_OTHER
          ]),
@@ -398,7 +404,8 @@ category_regex = {
             regex.I),
         regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)((\b|_)(Science.Channel|National.geographi|History.Chanel|Colossal|Discovery.travel|Planet.Science|Animal.Planet|Discovery.Sci|Regents|Discovery.World|Discovery.truth|Discovery.body|Dispatches|Biography|The.Investigator|Private.Life|Footballs.Greatest|Most.Terrifying)(\b|_))',
-            regex.I)
+            regex.I),
+        regex.compile('Documentary', regex.I),
     ],
     CAT_TV_HD: [
         regex.compile('1080|720', regex.I)
@@ -407,7 +414,7 @@ category_regex = {
         regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|WEBRIP|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
     ],
     CAT_TV_ANIME: [
-        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF/FFFpeeps|GG|GotWoot?/GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku/Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]', regex.I)
+        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF|FFFpeeps|GG|GotWoot?|GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku|Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]|\[[0-9A-Z]{8}\]$', regex.I)
     ],
     CAT_MOVIE_FOREIGN: [
         regex.compile(
@@ -435,7 +442,7 @@ category_regex = {
         }
     ],
     CAT_MOVIE_HD: [
-        regex.compile('x264|wmvhd|web\-dl|XvidHD|BRRIP|HDRIP|HDDVD|bddvd|BDRIP|webscr', regex.I)
+        regex.compile('x264|AVC|VC\-?1|wmvhd|web\-dl|XvidHD|BRRIP|HDRIP|HDDVD|bddvd|BDRIP|webscr|720p|1080p', regex.I)
     ],
     CAT_MOVIE_BLURAY: [
         regex.compile('bluray|bd?25|bd?50|blu-ray|VC1|VC\-1|AVC|BDREMUX', regex.I)
@@ -572,7 +579,8 @@ def determine_category(name, group_name=''):
     if not category:
         category = CAT_MISC_OTHER
 
-    log.info('category: [{}]: {} ({})'.format(
+    log.info('category: ({}) [{}]: {} ({})'.format(
+        group_name,
         name,
         get_category_name(category),
         category
@@ -590,7 +598,7 @@ def check_group_category(name, group_name):
     take appropriate action - match against categories
     as dictated in the dicts above."""
     for regex, actions in group_regex.items():
-        if regex.search(group_name):
+        if regex.match(group_name):
             for action in actions:
                 if action in parent_category_regex.keys():
                     category = check_parent_category(name, action)
@@ -605,7 +613,7 @@ def check_parent_category(name, parent_category):
     call appropriate sub-category checks."""
 
     for test, actions in parent_category_regex[parent_category].items():
-        if test.search(name):
+        if test.search(name) is not None:
             for category in actions:
                 if category in category_regex:
                     if check_single_category(name, category):
@@ -625,9 +633,9 @@ def check_single_category(name, category):
                 return True
         elif isinstance(regex, tuple):
             (r, ret) = regex
-            if r.search(name):
+            if r.search(name) is not None:
                 return ret
         else:
-            if regex.search(name):
+            if regex.search(name) is not None:
                 return True
     return False

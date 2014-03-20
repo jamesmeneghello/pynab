@@ -32,7 +32,6 @@ def fix_uncategorised():
 
         category_id = pynab.categories.determine_category(release['name'], release['group']['name'])
         if category_id:
-            log.info('Found category: {:d}'.format(category_id))
             category = db.categories.find_one({'_id': category_id})
             # if this isn't a parent category, add those details as well
             if 'parent_id' in category:
