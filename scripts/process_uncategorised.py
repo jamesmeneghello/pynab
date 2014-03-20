@@ -30,7 +30,7 @@ def fix_uncategorised():
             log.error('Release had no group! Think about deleting releases without groups.')
             continue
 
-        category_id = pynab.categories.determine_category(release['name'], release['group']['name'])
+        category_id = pynab.categories.determine_category(release['search_name'], release['group']['name'])
         if category_id:
             category = db.categories.find_one({'_id': category_id})
             # if this isn't a parent category, add those details as well
