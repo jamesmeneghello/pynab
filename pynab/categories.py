@@ -277,9 +277,6 @@ parent_category_regex = {
          ]),
         (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
-        ]),
-        (regex.compile('', regex.I), [
-            CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_ANIME, CAT_TV_OTHER
         ])
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
