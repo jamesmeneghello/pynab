@@ -244,7 +244,7 @@ group_regex = {
     regex.compile('alt\.binaries\.(teevee|tv|tvseries)', regex.I): [
         CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_XXX, CAT_MISC_OTHER
     ],
-    regex.compile('alt\.binaries\.multimedia', regex.I): [
+    regex.compile('alt\.binaries\.multimedia$', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
         CAT_MISC_OTHER
     ],
@@ -414,7 +414,7 @@ category_regex = {
         regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|WEBRIP|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
     ],
     CAT_TV_ANIME: [
-        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF|FFFpeeps|GG|GotWoot?|GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku|Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]|\[[0-9A-Z]{8}\]$', regex.I)
+        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|a4e|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Darksouls-Subs|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF|FFFpeeps|GG|GotWoot?|GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku|Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]|\[[0-9A-Z]{8}\]$', regex.I)
     ],
     CAT_MOVIE_FOREIGN: [
         regex.compile(
@@ -626,6 +626,8 @@ def check_parent_category(name, parent_category):
 
 def check_single_category(name, category):
     """Check release against a single category."""
+
+    log.info('checking {}'.format(category))
 
     for regex in category_regex[category]:
         if isinstance(regex, collections.Mapping):
