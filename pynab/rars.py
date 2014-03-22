@@ -174,8 +174,12 @@ def check_release_files(server, group_name, nzb):
 
     for rar in nzb['rars']:
         messages = []
+        if not rar['segments']:
+            continue
+
         if not isinstance(rar['segments']['segment'], list):
             rar['segments']['segment'] = [rar['segments']['segment'], ]
+
         for s in rar['segments']['segment']:
             messages.append(s['#text'])
             break
@@ -205,8 +209,7 @@ def check_release_files(server, group_name, nzb):
 
 
 def process(limit=20, category=0):
-    """Processes release rarfiles to check for passwords and filecounts. Optionally
-    deletes passworded releases."""
+    """Processes release rarfiles to check for passwords and filecounts."""
 
     with Server() as server:
         query = {'passworded': None}
@@ -245,10 +248,3 @@ def process(limit=20, category=0):
                     'passworded': 'unknown'
                 }
             })
-
-    if config.postprocess.get('delete_passworded', True):
-        if config.postprocess.get('delete_potentially_passworded', True):
-            query = {'passworded': {'$in': [True, 'potentially']}}
-        else:
-            query = {'passworded': True}
-        db.releases.remove(query)

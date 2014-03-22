@@ -44,15 +44,27 @@ if __name__ == '__main__':
     # print MP log as well
     multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
 
-    # take care of REQ releases first
-    for release in db.releases.find({'search_name': {'$regex': 'req', '$options': '-i'}}):
-        pynab.releases.strip_req(release)
-
     # start with a quick post-process
     log.info('starting with a quick post-process to clear out the cruft that\'s available locally...')
     scripts.quick_postprocess.local_postprocess()
 
     while True:
+        # take care of REQ releases first
+        for release in db.releases.find({'search_name': {'$regex': 'req', '$options': '-i'}}):
+            pynab.releases.strip_req(release)
+
+        # delete passworded releases first so we don't bother processing them
+        if config.postprocess.get('delete_passworded', True):
+            if config.postprocess.get('delete_potentially_passworded', True):
+                query = {'passworded': {'$in': [True, 'potentially']}}
+            else:
+                query = {'passworded': True}
+            db.releases.remove(query)
+
+        # delete any nzbs that don't have an associated release
+        # and delete any releases that don't have an nzb
+
+
         # grab and append tvrage data to tv releases
         tvrage_p = None
         if config.postprocess.get('process_tvrage', True):
