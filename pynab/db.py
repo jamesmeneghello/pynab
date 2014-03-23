@@ -1,11 +1,25 @@
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
-
+from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
+from contextlib import contextmanager
 import config
 
 Base = declarative_base()
-db = create_engine('postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre))
+engine = create_engine('postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre))
+Session = scoped_session(sessionmaker(bind=engine))
+
+
+@contextmanager
+def db_session():
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 class Release(Base):
@@ -149,7 +163,8 @@ class Regex(Base):
     ordinal = Column(Integer)
 
     # don't reference this, we don't need it
-    # and it'd hammer performance
+    # and it'd hammer performance, plus it's
+    # sometimes regex
     group_name = Column(String)
 
 

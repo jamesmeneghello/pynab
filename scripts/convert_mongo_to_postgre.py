@@ -2,13 +2,12 @@ import os
 import sys
 import pymongo
 import gridfs
-import sqlalchemy.orm
 import datetime
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import config
-from pynab.db import db, Base
+from pynab.db import engine, Base, db_session
 import pynab.db
 
 
@@ -17,15 +16,22 @@ def mongo_connect():
 
 
 if __name__ == '__main__':
+    print('Welcome to Pynab.')
+    print('-----------------')
+    print()
+    print('Please ensure that you have copied and renamed config.sample.py to config.py before proceeding.')
+    print()
+    print('This script is destructive. Ensure that the database credentials and settings are correct.')
+    print('The supplied database really should be empty, but it\'ll just drop anything it wants to overwrite.')
+    print()
+    input('To continue, press enter. To exit, press ctrl-c.')
+
     mongo = mongo_connect()
     fs = gridfs.GridFS(mongo)
-    postgre = sqlalchemy.orm.sessionmaker(bind=db)()
 
-    recreate = True
-
-    if recreate:
-        Base.metadata.drop_all(db)
-        Base.metadata.create_all(db)
+    with db_session() as postgre:
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
 
         print('Copying blacklists...')
         for blacklist in mongo.blacklists.find():
@@ -198,13 +204,7 @@ if __name__ == '__main__':
             if 'req_id' in release:
                 release.pop('req_id')
 
-            import pprint
-            #pprint.pprint(release)
             r = pynab.db.Release(**release)
             postgre.add(r)
             postgre.flush()
-
-        postgre.commit()
-
-
 
