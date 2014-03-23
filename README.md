@@ -6,7 +6,7 @@ Any time you pull master and it updates, re-copy the sample config and put your 
 pynab
 =====
 
-Pynab is a rewrite of Newznab, using Python and MongoDB. Complexity is way down,
+Pynab is a rewrite of Newznab, using Python and PostgreSQL. Complexity is way down,
 consisting of (currently) ~4,000 SLoC, compared to Newznab's ~104,000 lines of
 php/template. Performance and reliability are significantly improved, as is
 maintainability and a noted reduction in the sheer terror I experienced upon
@@ -47,10 +47,6 @@ In development:
 Technical Differences to Newznab
 ================================
 
-- Uses a document-based storage engine rather than a relational storage engine like MySQL
-  - Adherence to schema isn't strict, so migrations are easy
-  - Once releases are built, only one query is required to retrieve all related information (no gigantic joins)
-  - Significantly faster than MySQL
 - Collates binaries at a part-level rather than segment
   - No more tables of 80,000,000 parts that take 40 years to process and several centuries to delete
   - Smaller DB size, since there's no overhead of storing 80,000,000 parts (more like 200-300k)
@@ -99,15 +95,7 @@ Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodes
 
 ### Ubuntu 13.04/13.10 ###
 
-Install mongodb-10gen by following the instructions here:
-http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
-For all other server operating systems, follow the instructions provided by MongoDB.
-
-Text-Search must be enabled. Follow:
-http://docs.mongodb.org/manual/tutorial/enable-text-search/
-Note that you can also edit mongodb.conf to include:
-
-    setParameter = textSearchEnabled=true
+Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
 
 You also need to install Python 3.3, associated packages and pip3:
 

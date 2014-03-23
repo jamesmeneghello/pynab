@@ -12,3 +12,4 @@ regex
 lxml
 daemonize
 colorlog
+sqlalchemy
