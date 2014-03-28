@@ -1,12 +1,36 @@
-from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint
+from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 from contextlib import contextmanager
 import config
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import time
+from pynab import log
+
 Base = declarative_base()
 engine = create_engine('postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre))
 Session = scoped_session(sessionmaker(bind=engine))
+
+class Queries:
+    pass
+
+_q = Queries()
+_q.total = 0
+
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    context._query_start_time = time.time()
+    log.debug("Start Query: %s" % statement)
+
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    total = time.time() - context._query_start_time
+    _q.total += 1
+    log.debug("Query Complete!")
+    log.debug("Total Time: %f" % total)
+    log.debug("Total Queries: %d" % _q.total)
 
 
 @contextmanager
@@ -18,8 +42,6 @@ def db_session():
     except:
         session.rollback()
         raise
-    finally:
-        session.close()
 
 
 class Release(Base):
@@ -37,7 +59,7 @@ class Release(Base):
     status = Column(Integer)
     grabs = Column(Integer)
 
-    passworded = Column(Integer)
+    passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE'), default='UNKNOWN')
 
     group_id = Column(Integer, ForeignKey('groups.id'))
     group = relationship('Group', backref=backref('releases'))
@@ -111,7 +133,7 @@ class Binary(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String)
+    name = Column(String, index=True)
     total_parts = Column(Integer)
 
     posted = Column(DateTime)
@@ -123,6 +145,8 @@ class Binary(Base):
     regex_id = Column(Integer, ForeignKey('regexes.id'))
     regex = relationship('Regex', backref=backref('binaries'))
 
+    parts = relationship('Part', cascade='all, delete-orphan', passive_deletes=True)
+
 
 # it's unlikely these will ever be used in sqlalchemy
 # for performance reasons, but keep them to create tables etc
@@ -131,12 +155,20 @@ class Part(Base):
 
     id = Column(Integer, primary_key=True)
 
-    subject = Column(String)
-    segment = Column(Integer)
+    subject = Column(String, index=True)
     total_segments = Column(Integer)
 
-    binary_id = Column(Integer, ForeignKey('binaries.id'))
-    binary = relationship('Binary', backref=backref('parts'))
+    posted = Column(DateTime)
+    posted_by = Column(String)
+
+    xref = Column(String)
+    group_name = Column(String)
+
+    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'))
+
+    segments = relationship('Segment', cascade='all, delete-orphan', passive_deletes=True)
+
+    #__table_args__ = (UniqueConstraint(subject),)
 
 
 # likewise
@@ -149,8 +181,10 @@ class Segment(Base):
     size = Column(Integer)
     message_id = Column(String)
 
-    part_id = Column(Integer, ForeignKey('parts.id'))
-    part = relationship('Part', backref=backref('segments'))
+    part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'))
+
+
+    #__table_args__ = (UniqueConstraint(part_id, segment),)
 
 
 class Regex(Base):
@@ -174,7 +208,7 @@ class Blacklist(Base):
     id = Column(Integer, primary_key=True)
 
     description = Column(String)
-    group_name = Column(String)
+    group_name = Column(String, index=True)
     regex = Column(Text, unique=True)
     status = Column(Boolean, default=False)
 

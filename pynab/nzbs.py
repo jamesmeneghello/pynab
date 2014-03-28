@@ -12,7 +12,7 @@ import xmltodict
 from mako.template import Template
 from mako import exceptions
 
-from pynab.db import fs, db
+from pynab.db import db_session, NZB, Category
 from pynab import log, root_dir
 import pynab
 
@@ -25,10 +25,10 @@ par_vol_regex = 'vol\d+\+'
 zip_regex = '\.zip(?!\.)'
 
 
-def get_nzb_dict(nzb_id):
+def get_nzb_dict(nzb):
     """Returns a JSON-like Python dict of NZB contents, including extra information
     such as a list of any nfos/rars that the NZB references."""
-    data = xmltodict.parse(gzip.decompress(fs.get(nzb_id).read()))
+    data = xmltodict.parse(gzip.decompress(nzb.data))
 
     nfos = []
     rars = []
@@ -67,24 +67,30 @@ def get_nzb_dict(nzb_id):
     return data
 
 
-def create(gid, name, binary):
+def create(name, category_id, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
-    if binary['category_id']:
-        category = db.categories.find_one({'id': binary['category_id']})
-    else:
-        category = None
 
-    xml = ''
-    try:
-        tpl = Template(filename=os.path.join(root_dir, 'templates/nzb.mako'))
-        xml = tpl.render(version=pynab.__version__, name=name, category=category, binary=binary)
-    except:
-        log.error('nzb: failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
-        return None
+    with db_session() as db:
+        category = db.query(Category).filter(Category.id==category_id).one()
+        category_name = category.name
 
-    data = gzip.compress(xml.encode('utf-8'))
-    return fs.put(data, filename='.'.join([gid, 'nzb', 'gz'])), sys.getsizeof(data, 0)
+        xml = ''
+        try:
+            tpl = Template(filename=os.path.join(root_dir, 'templates/nzb.mako'))
+            xml = tpl.render(version=pynab.__version__, name=name, category=category_name, binary=binary)
+        except:
+            log.error('nzb: failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
+            return None
+
+        data = gzip.compress(xml.encode('utf-8'))
+
+        nzb = NZB()
+        nzb.data = data
+        db.add(nzb)
+        db.commit()
+
+        return nzb.id
 
 
 def import_nzb(filepath, quick=True):

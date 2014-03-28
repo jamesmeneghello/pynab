@@ -81,7 +81,7 @@ Requirements
 ------------
 
 - Python 3.3 or higher (might work on 3.2)
-- MongoDB 2.4.x or higher
+- PostgreSQL 9.3 or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
 I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both should work.

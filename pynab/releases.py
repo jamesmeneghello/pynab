@@ -6,16 +6,13 @@ import regex
 import math
 
 import pytz
-from bson.code import Code
 
 from pynab import log
-from pynab.db import db
-import config
-import pynab.nzbs
+from pynab.db import db_session, engine, Binary, Part, Release, Group
 import pynab.categories
-import pynab.nfos
-import pynab.util
-import pynab.rars
+import pynab.nzbs
+from sqlalchemy.orm import *
+import config
 
 
 def strip_req(release):
@@ -144,45 +141,42 @@ def process():
 
     start = time.time()
 
-    # mapreduce isn't really supposed to be run in real-time
-    # then again, processing releases isn't a real-time op
-    mapper = Code("""
-        function() {
-            var complete = true;
-            var total_segments = 0;
-            var available_segments = 0;
+    with db_session() as db:
 
-            parts_length = Object.keys(this.parts).length;
+        binary_query = """
+        SELECT
+            binaries.id
+        FROM binaries
+            INNER JOIN (
+                    SELECT
+                        parts.id, parts.binary_id, parts.total_segments
+                    FROM parts
+                        INNER JOIN segments ON parts.id = segments.part_id
+                    GROUP BY parts.id
+                    HAVING count(segments.id) >= parts.total_segments
+                ) as parts
+                ON binaries.id = parts.binary_id
+        GROUP BY binaries.id
+        HAVING count(parts.id) >= binaries.total_parts
+        """
 
-            // we should have at least one segment from each part
-            if (parts_length >= this.total_parts) {
-                for (var key in this.parts) {
-                    segments_length = Object.keys(this.parts[key].segments).length;
-                    available_segments += segments_length;
+        completed_binaries = engine.execute(binary_query).fetchall()
 
-                    total_segments += this.parts[key].total_segments;
-                    if (segments_length < this.parts[key].total_segments) {
-                        complete = false
-                    }
-                }
-            } else {
-                complete = false
-            }
-            var completion = available_segments / parseFloat(total_segments) * 100.0;
-            if (complete || completion >= """ + str(config.postprocess.get('min_completion', 99)) + """)
-                emit(this._id, completion)
+        binaries = db.query(Binary).options(
+            subqueryload('parts'),
+            subqueryload('parts.segments'),
+            Load(Part).load_only(Part.id, Part.subject, Part.segments),
+        ).filter(Binary.id.in_([b[0] for b in completed_binaries])).all()
 
-        }
-    """)
-
-    # no reduce needed, since we're returning single values
-    reducer = Code("""function(key, values){}""")
-
-    # returns a list of _ids, so we need to get each binary
-    for result in db.binaries.inline_map_reduce(mapper, reducer):
-        if result['value']:
+        # returns a list of _ids, so we need to get each binary
+        for binary in binaries:
             binary_count += 1
-            binary = db.binaries.find_one({'_id': result['_id']})
+
+            release = Release()
+            release.name = binary.name
+            release.posted = binary.posted
+            release.posted_by = binary.posted_by
+            release.grabs = 0
 
             # check to make sure we have over the configured minimum files
             nfos = []
@@ -192,103 +186,59 @@ def process():
             par_count = 0
             zip_count = 0
 
-            if 'parts' in binary:
-                for number, part in binary['parts'].items():
-                    if regex.search(pynab.nzbs.rar_part_regex, part['subject'], regex.I):
-                        rar_count += 1
-                    if regex.search(pynab.nzbs.nfo_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part['subject'], regex.I):
-                        nfos.append(part)
-                    if regex.search(pynab.nzbs.rar_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part['subject'], regex.I):
-                        rars.append(part)
-                    if regex.search(pynab.nzbs.par2_regex, part['subject'], regex.I):
-                        par_count += 1
-                        if not regex.search(pynab.nzbs.par_vol_regex, part['subject'], regex.I):
-                            pars.append(part)
-                    if regex.search(pynab.nzbs.zip_regex, part['subject'], regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part['subject'], regex.I):
-                        zip_count += 1
+            for part in binary.parts:
+                if regex.search(pynab.nzbs.rar_part_regex, part.subject, regex.I):
+                    rar_count += 1
+                if regex.search(pynab.nzbs.nfo_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject, regex.I):
+                    nfos.append(part)
+                if regex.search(pynab.nzbs.rar_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject, regex.I):
+                    rars.append(part)
+                if regex.search(pynab.nzbs.par2_regex, part.subject, regex.I):
+                    par_count += 1
+                    if not regex.search(pynab.nzbs.par_vol_regex, part.subject, regex.I):
+                        pars.append(part)
+                if regex.search(pynab.nzbs.zip_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject, regex.I):
+                    zip_count += 1
 
-                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    log.info('release: [{}] - removed (less than minimum archives)'.format(
-                        binary['name']
-                    ))
-                    db.binaries.remove({'_id': binary['_id']})
-                    continue
+            if rar_count + zip_count < config.postprocess.get('min_archives', 1):
+                log.info('release: [{}] - removed (less than minimum archives)'.format(
+                    binary.name
+                ))
+                db.delete(binary)
+                continue
 
-                # generate a gid, not useful since we're storing in GridFS
-                gid = hashlib.md5(uuid.uuid1().bytes).hexdigest()
+            # clean the name for searches
+            release.search_name = clean_release_name(binary.name)
 
-                # clean the name for searches
-                clean_name = clean_release_name(binary['name'])
+            # assign the release group
+            release.group = db.query(Group).filter(Group.name==binary.group_name).one()
 
-                # if the regex used to generate the binary gave a category, use that
-                category = None
-                if binary['category_id']:
-                    category = db.categories.find_one({'_id': binary['category_id']})
+            # give the release a category
+            release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
 
-                # otherwise, categorise it with our giant regex blob
-                if not category:
-                    id = pynab.categories.determine_category(binary['name'], binary['group_name'])
-                    category = db.categories.find_one({'_id': id})
+            # create the nzb, store it in GridFS and link it here
+            release.nzb_id = pynab.nzbs.create(release.search_name, release.category_id, binary)
 
-                # if this isn't a parent category, add those details as well
-                if 'parent_id' in category:
-                    category['parent'] = db.categories.find_one({'_id': category['parent_id']})
+            if release.nzb_id:
+                added_count += 1
 
-                # create the nzb, store it in GridFS and link it here
-                nzb, nzb_size = pynab.nzbs.create(gid, clean_name, binary)
-                if nzb:
-                    added_count += 1
+                log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
+                    release.search_name,
+                    len(rars),
+                    rar_count
+                ))
 
-                    log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
-                        binary['name'],
-                        len(rars),
-                        rar_count
-                    ))
-
-                    db.releases.update(
-                        {
-                            'search_name': binary['name'],
-                            'posted': binary['posted']
-                        },
-                        {
-                            '$setOnInsert': {
-                                'id': gid,
-                                'added': pytz.utc.localize(datetime.datetime.now()),
-                                'size': None,
-                                'spotnab_id': None,
-                                'completion': None,
-                                'grabs': 0,
-                                'passworded': None,
-                                'file_count': None,
-                                'tvrage': None,
-                                'tvdb': None,
-                                'imdb': None,
-                                'nfo': None,
-                                'tv': None,
-                            },
-                            '$set': {
-                                'name': clean_name,
-                                'search_name': clean_name,
-                                'total_parts': binary['total_parts'],
-                                'posted': binary['posted'],
-                                'posted_by': binary['posted_by'],
-                                'status': 1,
-                                'updated': pytz.utc.localize(datetime.datetime.now()),
-                                'group': db.groups.find_one({'name': binary['group_name']}, {'name': 1}),
-                                'regex': db.regexes.find_one({'_id': binary['regex_id']}),
-                                'category': category,
-                                'nzb': nzb,
-                                'nzb_size': nzb_size
-                            }
-                        },
-                        upsert=True
-                    )
+                # save the release
+                db.add(release)
 
                 # delete processed binaries
-                db.binaries.remove({'_id': binary['_id']})
+                # re-add the binary to the session
+                db.delete(binary)
+
+                db.flush()
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(

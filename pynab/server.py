@@ -8,6 +8,7 @@ import dateutil.parser
 import pytz
 
 from pynab import log
+from pynab.db import db_session, Blacklist
 import pynab.parts
 import pynab.yenc
 import config
@@ -97,6 +98,10 @@ class Server:
         messages = {}
         ignored = 0
         received = []
+
+        with db_session() as db:
+            blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+
         for (id, overview) in overviews:
             # keep track of which messages we received so we can
             # optionally check for ones we missed later
@@ -122,9 +127,9 @@ class Server:
             if int(segment_number) > 0 and int(total_segments) > 0:
                 # strip the segment number off the subject so
                 # we can match binary parts together
-                subject = overview['subject'].replace(
+                subject = nntplib.decode_header(overview['subject'].replace(
                     '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
-                ).strip()
+                ).strip()).encode('utf-8', 'replace').decode('latin-1')
 
                 # this is spammy as shit, for obvious reasons
                 #pynab.log.debug('Binary part found: ' + subject)
@@ -145,9 +150,9 @@ class Server:
                     # some subjects/posters have odd encoding, which will break pymongo
                     # so we make sure it doesn't
                     message = {
-                        'subject': nntplib.decode_header(subject).encode('utf-8', 'surrogateescape').decode('latin-1'),
+                        'subject': subject,
                         'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'surrogateescape').decode(
+                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode(
                             'latin-1'),
                         'group_name': group_name,
                         'xref': overview['xref'],
@@ -163,7 +168,7 @@ class Server:
 
         # instead of checking every single individual segment, package them first
         # so we typically only end up checking the blacklist for ~150 parts instead of thousands
-        blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name)]
+        blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name, blacklists)]
         blacklisted_parts = len(blacklist)
         total_parts = len(messages)
         for k in blacklist:

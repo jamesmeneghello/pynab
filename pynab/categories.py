@@ -1,7 +1,6 @@
 import regex
 import collections
 from pynab import log
-from pynab.db import db
 
 # category codes
 # these are stored in the db, as well
@@ -551,14 +550,6 @@ category_regex = {
     ]
 }
 
-
-def get_category_name(id):
-    category = db.categories.find_one({'_id': id})
-    parent_category = db.categories.find_one({'_id': category['parent_id']})
-
-    return '{} > {}'.format(parent_category['name'], category['name'])
-
-
 def determine_category(name, group_name=''):
     """Categorise release based on release name and group name."""
 
@@ -579,10 +570,9 @@ def determine_category(name, group_name=''):
     if not category:
         category = CAT_MISC_OTHER
 
-    log.info('category: ({}) [{}]: {} ({})'.format(
+    log.info('category: ({}) [{}]: {}'.format(
         group_name,
         name,
-        get_category_name(category),
         category
     ))
     return category

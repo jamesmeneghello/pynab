@@ -53,6 +53,7 @@ if __name__ == '__main__':
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
 
+    """
     print('Copying TV data into db...')
     with open('db/initial/tvshows.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
@@ -70,6 +71,7 @@ if __name__ == '__main__':
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
+    """
 
     if config.postprocess.get('regex_url'):
         print('Updating regex...')
