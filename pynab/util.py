@@ -20,29 +20,28 @@ class Match(object):
 
 def update_blacklist():
     """Check for Blacklist update and load them into db."""
-    with db_session() as db:
-        blacklist_url = config.postprocess.get('blacklist_url')
-        if blacklist_url:
-            response = requests.get(blacklist_url)
-            lines = response.text.splitlines()
+    blacklist_url = config.postprocess.get('blacklist_url')
+    if blacklist_url:
+        response = requests.get(blacklist_url)
+        lines = response.text.splitlines()
 
-            blacklists = []
-            for line in lines:
-                elements = line.split('\t\t')
-                if len(elements) == 4:
-                    blacklists.append({
-                        'group_name': elements[0],
-                        'regex': elements[1],
-                        'description': elements[3],
-                        'status': False
-                    })
+        blacklists = []
+        for line in lines:
+            elements = line.split('\t\t')
+            if len(elements) == 4:
+                blacklists.append({
+                    'group_name': elements[0],
+                    'regex': elements[1],
+                    'description': elements[3],
+                    'status': False
+                })
 
-            engine.execute(Blacklist.__table__.insert(), blacklists)
+        engine.execute(Blacklist.__table__.insert(), blacklists)
 
-            return True
-        else:
-            log.error('No blacklist update url in config.')
-            return False
+        return True
+    else:
+        log.error('No blacklist update url in config.')
+        return False
 
 
 def update_regex():
