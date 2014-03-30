@@ -1,34 +1,58 @@
 import gzip
-import sys
 import os
-import xml.etree.cElementTree as cet
-import hashlib
-import uuid
 import datetime
 import regex
 
 import pytz
-import xmltodict
 from mako.template import Template
 from mako import exceptions
 
-from pynab.db import db_session, NZB, Category
+from lxml import etree
+from xml.etree import cElementTree as cet
+
+from pynab.db import db_session, NZB, Category, Release, Group
 from pynab import log, root_dir
 import pynab
 
-nfo_regex = '[ "\(\[].*?\.(nfo|ofn)[ "\)\]]'
-rar_regex = '.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]'
-rar_part_regex = '\.(rar|r\d{2,3})(?!\.)'
-metadata_regex = '\.(par2|vol\d+\+|sfv|nzb)'
-par2_regex = '\.par2(?!\.)'
-par_vol_regex = 'vol\d+\+'
-zip_regex = '\.zip(?!\.)'
+XPATH_FILE = etree.XPath('file/@subject')
+XPATH_SEGMENT = etree.XPath('segments/segment')
+
+nfo_regex = regex.compile('[ "\(\[].*?\.(nfo|ofn)[ "\)\]]', regex.I)
+rar_regex = regex.compile('.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]', regex.I)
+rar_part_regex = regex.compile('\.(rar|r\d{2,3})(?!\.)', regex.I)
+metadata_regex = regex.compile('\.(par2|vol\d+\+|sfv|nzb)', regex.I)
+par2_regex = regex.compile('\.par2(?!\.)', regex.I)
+par_vol_regex = regex.compile('vol\d+\+', regex.I)
+zip_regex = regex.compile('\.zip(?!\.)', regex.I)
 
 
-def get_nzb_dict(nzb):
+def filexml_to_dict(element):
+    segments = []
+    for segment in XPATH_SEGMENT(element):
+        s = {
+            'size': segment.get('bytes'),
+            'segment': segment.get('number'),
+            'message_id': segment.text
+        }
+        segments.append(s)
+
+    return {
+        'posted_by': element.get('poster'),
+        'posted': element.get('date'),
+        'subject': element.get('subject'),
+        'segments': segments
+    }
+
+
+def get_nzb_details(nzb):
     """Returns a JSON-like Python dict of NZB contents, including extra information
     such as a list of any nfos/rars that the NZB references."""
-    data = xmltodict.parse(gzip.decompress(nzb.data))
+
+    try:
+        tree = etree.fromstring(gzip.decompress(nzb.data))
+    except:
+        log.critical('Problem parsing XML with lxml')
+        return None
 
     nfos = []
     rars = []
@@ -37,34 +61,28 @@ def get_nzb_dict(nzb):
     par_count = 0
     zip_count = 0
 
-    if 'file' not in data['nzb']:
-        return None
-
-    if not isinstance(data['nzb']['file'], list):
-        data['nzb']['file'] = [data['nzb']['file'], ]
-
-    for part in data['nzb']['file']:
-        if regex.search(rar_part_regex, part['@subject'], regex.I):
+    for file_subject in XPATH_FILE(tree):
+        if rar_part_regex.search(file_subject):
             rar_count += 1
-        if regex.search(nfo_regex, part['@subject'], regex.I) and not regex.search(metadata_regex, part['@subject'], regex.I):
-            nfos.append(part)
-        if regex.search(rar_regex, part['@subject'], regex.I) and not regex.search(metadata_regex, part['@subject'], regex.I):
-            rars.append(part)
-        if regex.search(par2_regex, part['@subject'], regex.I):
+        if nfo_regex.search(file_subject) and not metadata_regex.search(file_subject):
+            nfos.append(filexml_to_dict(file_subject.getparent()))
+        if rar_regex.search(file_subject) and not metadata_regex.search(file_subject):
+            rars.append(filexml_to_dict(file_subject.getparent()))
+        if par2_regex.search(file_subject):
             par_count += 1
-            if not regex.search(par_vol_regex, part['@subject'], regex.I):
-                pars.append(part)
-        if regex.search(zip_regex, part['@subject'], regex.I) and not regex.search(metadata_regex, part['@subject'], regex.I):
+            if not par_vol_regex.search(file_subject):
+                pars.append(filexml_to_dict(file_subject.getparent()))
+        if zip_regex.search(file_subject) and not metadata_regex.search(file_subject):
             zip_count += 1
 
-    data['nfos'] = nfos
-    data['rars'] = rars
-    data['pars'] = pars
-    data['rar_count'] = rar_count
-    data['par_count'] = par_count
-    data['zip_count'] = zip_count
-
-    return data
+    return {
+        'nfos': nfos,
+        'rars': rars,
+        'pars': pars,
+        'rar_count': rar_count,
+        'par_count': par_count,
+        'zip_count': zip_count
+    }
 
 
 def create(name, category_id, binary):
@@ -123,59 +141,51 @@ def import_nzb(filepath, quick=True):
             return False
 
         # check that it doesn't exist first
-        r = db.releases.find_one({'name': release['name']})
-        if not r:
-            release['id'] = hashlib.md5(uuid.uuid1().bytes).hexdigest()
-            release['search_name'] = release['name']
+        with db_session() as db:
+            r = db.query(Release).filter(Release.name==release['name']).one()
+            if not r:
+                r = Release()
+                r.name = release['name']
+                r.search_name = release['name']
 
-            release['status'] = 2
+                r.posted = release['posted']
+                r.posted_by = release['posted_by']
 
-            if 'posted' in release:
-                release['posted'] = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
-            else:
-                release['posted'] = None
-
-            if 'category' in release:
-                parent, child = release['category'].split(' > ')
-
-                parent_category = db.categories.find_one({'name': parent})
-                if parent_category:
-                    child_category = db.categories.find_one({'name': child, 'parent_id': parent_category['_id']})
-
-                    if child_category:
-                        release['category'] = child_category
-                        release['category']['parent'] = parent_category
-                    else:
-                        release['category'] = None
+                if 'posted' in release:
+                    r.posted = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
                 else:
-                    release['category'] = None
+                    r.posted = None
+
+                if 'category' in release:
+                    parent, child = release['category'].split(' > ')
+
+                    category = db.query(Category).filter(Category.name==parent).filter(Category.name==child).one()
+                    if category:
+                        release.category = category
+                    else:
+                        release.category = None
+                else:
+                    r.category = None
+
+                # make sure the release belongs to a group we have in our db
+                if 'group_name' in release:
+                    group = db.query(Group).filter(Group.name==release['group_name']).one()
+                    if not group:
+                        log.error('nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
+                        return False
+                    release.group = group
+
+                # rebuild the nzb, gzipped
+                f.seek(0)
+                nzb = NZB()
+                nzb.data = gzip.compress(f.read().encode('utf-8'))
+                r.nzb = nzb
+
+                db.merge(r)
+                f.close()
+
+                return True
             else:
-                release['category'] = None
-
-            # make sure the release belongs to a group we have in our db
-            if 'group_name' in release:
-                group = db.groups.find_one({'name': release['group_name']}, {'name': 1})
-                if not group:
-                    log.error('nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
-                    return False
-                release['group'] = group
-                del release['group_name']
-
-            # rebuild the nzb, gzipped
-            f.seek(0)
-            data = gzip.compress(f.read().encode('utf-8'))
-            release['nzb'] = fs.put(data, filename='.'.join([release['id'], 'nzb', 'gz']))
-            release['nzb_size'] = sys.getsizeof(data, 0)
-
-            try:
-                db.releases.insert(release)
-            except:
-                log.error('nzb: problem saving release: {0}'.format(release))
+                log.error('nzb: release already exists: {0}'.format(release['name']))
                 return False
-            f.close()
-
-            return True
-        else:
-            log.error('nzb: release already exists: {0}'.format(release['name']))
-            return False
 
