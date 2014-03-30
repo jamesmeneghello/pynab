@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 
-from pynab.db import db
+from pynab.db import db_session, User
 from pynab import log
 
 
@@ -11,12 +11,12 @@ def create(email):
 
     api_key = hashlib.md5(uuid.uuid4().bytes).hexdigest()
 
-    user = {
-        'email': email,
-        'api_key': api_key,
-        'grabs': 0
-    }
+    with db_session() as db:
+        user = User()
+        user.email = email
+        user.api_key = api_key
+        user.grabs = 0
 
-    db.users.update({'email': email}, user, upsert=True)
+        db.merge(user)
 
     return api_key
