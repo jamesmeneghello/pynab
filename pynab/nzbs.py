@@ -87,10 +87,7 @@ def create(name, category_id, binary):
 
         nzb = NZB()
         nzb.data = data
-        db.add(nzb)
-        db.commit()
-
-        return nzb.id
+        return nzb
 
 
 def import_nzb(filepath, quick=True):

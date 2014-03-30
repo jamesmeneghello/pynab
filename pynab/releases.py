@@ -1,11 +1,6 @@
-import datetime
 import time
-import hashlib
-import uuid
 import regex
 import math
-
-import pytz
 
 from pynab import log
 from pynab.db import db_session, engine, Binary, Part, Release, Group
@@ -13,27 +8,6 @@ import pynab.categories
 import pynab.nzbs
 from sqlalchemy.orm import *
 import config
-
-
-def strip_req(release):
-    """Strips REQ IDs out of releases and cleans them up so they can be properly matched
-    in post-processing."""
-    regexes = [
-        regex.compile('^a\.b\.mmEFNet - REQ (?P<reqid>.+) - (?P<name>.*)', regex.I)
-    ]
-
-    for r in regexes:
-        result = r.search(release['search_name'])
-        if result:
-            result_dict = result.groupdict()
-            if 'name' in result_dict and 'reqid' in result_dict:
-                db.releases.update({'_id': release['_id']}, {
-                    '$set': {
-                        'search_name': result_dict['name'],
-                        'req_id': result_dict['reqid']
-                    }
-                })
-                return
 
 
 def names_from_nfos(release):
@@ -53,7 +27,6 @@ def names_from_files(release):
             name = pynab.rars.attempt_parse(file)
             if name:
                 potential_names.append(name)
-
         return potential_names
     else:
         return []
@@ -127,7 +100,7 @@ def clean_release_name(name):
     chars = ['#', '@', '$', '%', '^', '§', '¨', '©', 'Ö']
     for c in chars:
         name = name.replace(c, '')
-    return name.replace('_', ' ')
+    return name.replace('_', ' ').replace('.', ' ').replace('-', ' ')
 
 
 def process():
@@ -220,9 +193,9 @@ def process():
             release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
 
             # create the nzb, store it in GridFS and link it here
-            release.nzb_id = pynab.nzbs.create(release.search_name, release.category_id, binary)
+            nzb = pynab.nzbs.create(release.search_name, release.category_id, binary)
 
-            if release.nzb_id:
+            if nzb:
                 added_count += 1
 
                 log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
@@ -230,6 +203,8 @@ def process():
                     len(rars),
                     rar_count
                 ))
+
+                release.nzb = nzb
 
                 # save the release
                 db.add(release)
