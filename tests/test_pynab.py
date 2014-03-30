@@ -9,20 +9,12 @@ Tests for `pynab` module.
 """
 
 import unittest
-import pprint
+from pprint import pformat
 
 from pynab.server import Server
-from pynab.db import db
-import pynab.binaries
-import pynab.releases
+from pynab.db import db_session
 import pynab.parts
-import pynab.categories
-import pynab.groups
-import pynab.nzbs
-import pynab.tvrage
-import pynab.imdb
-import pynab.rars
-import pynab.nfos
+from pynab import log
 
 
 class TestPynab(unittest.TestCase):
@@ -40,66 +32,52 @@ class TestPynab(unittest.TestCase):
 
     def test_fetch_headers(self):
         self.test_connect()
-        groups = ['alt.binaries.teevee', 'alt.binaries.e-book', 'alt.binaries.moovee']
+        groups = ['alt.binaries.teevee']
         for group in groups:
             (_, _, first, last, _) = self.server.connection.group(group)
-            for x in range(0, 20000, 10000):
-                y = x + 10000 - 1
+            for x in range(0, 40000, 20000):
+                y = x + 20000 - 1
                 parts = self.server.scan(group, last - y, last - x)
                 pynab.parts.save_all(parts)
 
+    def test_group_update(self):
+        import pynab.groups
+        pynab.groups.update('alt.binaries.teevee')
+
     def test_process_binaries(self):
+        import pynab.binaries
         pynab.binaries.process()
 
     def test_process_releases(self):
+        import pynab.releases
         pynab.releases.process()
 
-    def test_all(self):
-        self.test_fetch_headers()
-        self.test_process_binaries()
-        self.test_process_releases()
+    def test_update_blacklist(self):
+        import pynab.util
+        pynab.util.update_blacklist()
 
-    def test_print_binaries(self):
-        pprint.pprint([b for b in db.binaries.find()])
+    def test_update_regex(self):
+        import pynab.util
+        pynab.util.update_regex()
 
-    def test_day_to_post(self):
-        self.test_connect()
-        self.server.day_to_post('alt.binaries.teevee', 5)
+    def test_search_releases(self):
+        from sqlalchemy_searchable import search
+        from pynab.db import Release
 
-    def test_group_update(self):
-        pynab.groups.update('alt.binaries.teevee')
+        with db_session() as db:
+            q = db.query(Release)
+            q = search(q, 'engaged e06')
+            print(q.first().search_name)
 
-    def test_group_backfill(self):
-        pynab.groups.backfill('alt.binaries.teevee')
+    def test_nzb_parse(self):
+        import pynab.nzbs
+        from pynab.db import NZB
 
-    def test_tvrage_process(self):
-        pynab.tvrage.process(100)
+        with db_session() as db:
+            nzb = db.query(NZB).filter(NZB.id==1).one()
+            import pprint
+            pprint.pprint(pynab.nzbs.get_nzb_details(nzb))
 
-    def test_omdb_search(self):
-        print(pynab.imdb.search('South Park Bigger Longer Uncut', '1999'))
-
-    def test_omdb_get_details(self):
-        print(pynab.imdb.get_details('tt1285016'))
-
-    def test_nzb_get(self):
-        release = db.releases.find_one()
-        pprint.pprint(pynab.nzbs.get_nzb_dict(release['nzb']))
-
-    def test_rar_process(self):
-        pynab.rars.process(5)
-
-    def test_nfo_process(self):
-        pynab.nfos.process(5)
-
-    def test_compress(self):
-        server = Server()
-        server.connect()
-        server.scan('alt.binaries.teevee', 563011234, 563031234)
-
-    def test_uncompress(self):
-        server = Server()
-        server.connect(False)
-        server.scan('alt.binaries.teevee', 563011234, 563031234)
 
     def tearDown(self):
         try:
