@@ -30,7 +30,7 @@ if __name__ == '__main__':
     with open('db/initial/users.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
-            engine.execute(User.__table__.insert(), )
+            engine.execute(User.__table__.insert(), data)
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
