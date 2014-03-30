@@ -18,44 +18,39 @@
         % for release in releases:
             <%
                 if sys.version_info >= (3,3):
-                    added_date = release['added'].timestamp()
-                    posted_date = release['posted'].timestamp()
+                    added_date = release.added.timestamp()
+                    posted_date = release.posted.timestamp()
                 else:
-                    added_date = int(release['added'].strftime("%s"))
-                    posted_date = int(release['posted'].strftime("%s"))
+                    added_date = int(release.added.strftime("%s"))
+                    posted_date = int(release.posted.strftime("%s"))
             %>
 
             <item>
-                <title>${release['search_name']}</title>
-                <guid isPermaLink="true">${get_link('/details/' + release['id'])}</guid>
-                <link>${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}</link>
+                <title>${release.search_name}</title>
+                <guid isPermaLink="true">${get_link('/details/' + str(release.id))}</guid>
+                <link>${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}</link>
                 <pubDate>${utils.formatdate(added_date)}</pubDate>
-                % if 'parent_id' in release['category']:
-                    <category>${release['category']['parent']['name']} &gt; ${release['category']['name']}</category>
+                % if release.category.parent_id:
+                    <category>${release.category.parent.name} &gt; ${release.category.name}</category>
                 % else:
-                    <category>${release['category']['name']}</category>
+                    <category>${release.category.name}</category>
                 % endif
-                <description>${release['search_name']}</description>
+                <description>${release.search_name}</description>
                 <posted>${utils.formatdate(posted_date)}</posted>
-                <group>${release['group']['name']}</group>
-                <enclosure url="${get_link('/api')}?t=g&amp;guid=${release['id']}&amp;apikey=${api_key}"
-                           length="${release['nzb_size']}"
+                <group>${release.group.name}</group>
+                <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}"
                            type="application/x-nzb"/>
-                <newznab:attr name="category" value="${release['category']['_id']}"/>
-                % if 'parent_id' in release['category']:
-                    <newznab:attr name="category" value="${release['category']['parent_id']}"/>
-                % endif
-                % if release.get('files'):
-                    <size>${release['files']['size']}</size>
-                    <files>${release['files']['count']}</files>
+                <newznab:attr name="category" value="${release.category.id}"/>
+                % if release.category.parent_id:
+                    <newznab:attr name="category" value="${release.category.parent_id}"/>
                 % endif
                 % if detail:
-                    <newznab:attr name="poster" value="${release['posted_by']}"/>
+                    <newznab:attr name="poster" value="${release.posted_by}"/>
                     <newznab:attr name="posted" value="${posted_date}"/>
-                    <newznab:attr name="grabs" value="${release['grabs']}"/>
-                    <newznab:attr name="group" value="${release['group']['name']}"/>
+                    <newznab:attr name="grabs" value="${release.grabs}"/>
+                    <newznab:attr name="group" value="${release.group.name}"/>
                 % endif
-                <newznab:attr name="guid" value="${release['id']}"/>
+                <newznab:attr name="guid" value="${release.id}"/>
             </item>
         % endfor
 

@@ -13,16 +13,20 @@ Base = declarative_base()
 engine = create_engine('postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre))
 Session = scoped_session(sessionmaker(bind=engine))
 
+
+# --- debug info ---
 class Queries:
     pass
 
 _q = Queries()
 _q.total = 0
 
+
 @event.listens_for(Engine, "before_cursor_execute")
 def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
     context._query_start_time = time.time()
     log.debug("Start Query: %s" % statement)
+
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
@@ -31,6 +35,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
     log.debug("Query Complete!")
     log.debug("Total Time: %f" % total)
     log.debug("Total Queries: %d" % _q.total)
+# -------------------
 
 
 @contextmanager
@@ -57,9 +62,9 @@ class Release(Base):
     posted_by = Column(String)
 
     status = Column(Integer)
-    grabs = Column(Integer)
+    grabs = Column(Integer, default=0)
 
-    passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE'), default='UNKNOWN')
+    passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE', name='enum_passworded'), default='UNKNOWN')
 
     group_id = Column(Integer, ForeignKey('groups.id'))
     group = relationship('Group', backref=backref('releases'))
@@ -220,6 +225,7 @@ class Category(Base):
     name = Column(String)
 
     parent_id = Column(Integer, ForeignKey('categories.id'))
+    parent = relationship('Category', remote_side=[id])
     children = relationship('Category')
 
 

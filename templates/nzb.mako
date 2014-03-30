@@ -7,32 +7,29 @@
 <nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
     <head>
         % if category:
-            <meta type="category">${category['name'] | x}</meta>
+            <meta type="category">${category | x}</meta>
         % endif
         <meta type="name">${name | x}</meta>
     </head>
 
-    % for pkey, part in sorted(binary['parts'].items()):
+    % for part in binary.parts:
     <%
         if sys.version_info >= (3,3):
-            timestamp = '{:.0f}'.format(part['posted'].replace(tzinfo=pytz.utc).timestamp())
+            timestamp = '{:.0f}'.format(part.posted.replace(tzinfo=pytz.utc).timestamp())
         else:
-            timestamp = '{:.0f}'.format(int(part['posted'].replace(tzinfo=pytz.utc).strftime("%s")))
-        subject = '{0} (1/{1:d})'.format(part['subject'], part['total_segments'])
+            timestamp = '{:.0f}'.format(int(part.posted.replace(tzinfo=pytz.utc).strftime("%s")))
+        subject = '{0} (1/{1:d})'.format(part.subject, part.total_segments)
     %>
-        <file poster="${part['posted_by'] | x}" date="${timestamp | x}" subject="${subject | x}">
+        <file poster="${part.posted_by | x}" date="${timestamp | x}" subject="${subject | x}">
             <groups>
-                % for group in binaries.parse_xref(binary['xref']):
+                % for group in binaries.parse_xref(binary.xref):
                     <group>${group}</group>
                 % endfor
             </groups>
 
             <segments>
-                % for skey, segment in sorted(part['segments'].items()):
-                <%
-                    uskey = '{:d}'.format(int(skey))
-                %>
-                    <segment bytes="${segment['size']}" number="${uskey}">${segment['message_id'] | x}</segment>
+                % for segment in part.segments:
+                    <segment bytes="${segment.size}" number="${segment.segment}">${segment.message_id | x}</segment>
                 % endfor
             </segments>
         </file>
