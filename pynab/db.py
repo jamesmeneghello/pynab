@@ -150,7 +150,7 @@ class Binary(Base):
     regex_id = Column(Integer, ForeignKey('regexes.id'))
     regex = relationship('Regex', backref=backref('binaries'))
 
-    parts = relationship('Part', cascade='all, delete-orphan', passive_deletes=True)
+    parts = relationship('Part', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
 
 
 # it's unlikely these will ever be used in sqlalchemy
@@ -171,7 +171,7 @@ class Part(Base):
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'))
 
-    segments = relationship('Segment', cascade='all, delete-orphan', passive_deletes=True)
+    segments = relationship('Segment', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Segment.segment)")
 
     #__table_args__ = (UniqueConstraint(subject),)
 
