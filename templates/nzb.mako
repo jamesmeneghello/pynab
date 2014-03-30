@@ -4,7 +4,7 @@
         import pytz, sys
         from pynab import binaries
     %>
-<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+<nzb>
     <head>
         % if category:
             <meta type="category">${category | x}</meta>
