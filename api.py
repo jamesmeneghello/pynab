@@ -1,9 +1,10 @@
 import json
-
+import argparse
 import regex
 import bottle
 from bottle import request, response
 import xmltodict
+import traceback
 
 from pynab import log
 import pynab.api
@@ -33,6 +34,11 @@ def serve_static(path):
     return bottle.static_file(path, root='./webui/dist/fonts/')
 
 
+@app.get('/bower_components/:path#.+#')
+def serve_static(path):
+    return bottle.static_file(path, root='./webui/dist/bower_components/')
+
+
 @app.get('/api')
 def api():
     log.debug('Handling request for {0}.'.format(request.fullpath))
@@ -57,13 +63,13 @@ def api():
 @app.get('/')
 @app.get('/index.html')
 def index():
-    if config.site['webui']:
+    if config.api.get('webui'): # disabled by default ? not really useful for a single user install
         raise bottle.static_file('index.html', root='./webui/dist')
 
 
 @app.get('/favicon.ico')
 def index():
-    if config.site['webui']:
+    if config.api.get('webui'):
         raise bottle.static_file('favicon.ico', root='./webui/dist')
 
 
@@ -108,5 +114,34 @@ def get_link(route=''):
     return url
 
 
+def daemonize(pidfile):
+    try:
+        import traceback
+        from daemonize import Daemonize
+        daemon = Daemonize(app='pynab', pid=pidfile, action=main)
+        daemon.start()
+    except SystemExit:
+        raise
+    except:
+        log.critical(traceback.format_exc())
+
+
+def main():
+    bottle.run(app=app, host=config.api.get('api_host', '0.0.0.0'), port=config.api.get('api_port', 8080))
+    
+
 if __name__ == '__main__':
-    bottle.run(app=app, host=config.site.get('api_host', '0.0.0.0'), port=config.site.get('api_port', 8080))
+    argparser = argparse.ArgumentParser(description="Pynab main indexer script")
+    argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
+    argparser.add_argument('-p', '--pid-file', help='pid file (when -d)')
+
+    args = argparser.parse_args()
+
+    if args.daemonize:
+        pidfile = args.pid_file or config.api.get('api_pid_file')
+        if not pidfile:
+            log.error("A pid file is required to run as a daemon, please supply one either in the config file '{}' or as argument".format(config.__file__))
+        else:
+            daemonize(pidfile)
+    else:
+        main()

@@ -21,8 +21,10 @@ def create_indexes():
     db.categories.ensure_index('parent_id', pymongo.ASCENDING)
 
     # regexes
-    db.regexes.ensure_index('group_name', pymongo.ASCENDING)
-    db.regexes.ensure_index('category_id', pymongo.ASCENDING)
+    db.regexes.ensure_index([
+        ('ordinal', pymongo.ASCENDING),
+        ('group_name', pymongo.ASCENDING)
+    ], background=True)
 
     # groups
     db.groups.ensure_index('name', pymongo.ASCENDING)
@@ -46,6 +48,11 @@ def create_indexes():
     # imdb
     db.imdb.ensure_index('_id', pymongo.ASCENDING)
     db.imdb.ensure_index('name', pymongo.ASCENDING)
+    db.imdb.ensure_index([
+        ('name', pymongo.ASCENDING),
+        ('year', pymongo.ASCENDING)
+    ], background=True)
+
 
     # binaries
     db.binaries.ensure_index('name', pymongo.ASCENDING, background=True)
@@ -60,6 +67,7 @@ def create_indexes():
     db.releases.ensure_index('id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('name', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('category._id', pymongo.ASCENDING, background=True)
+    db.releases.ensure_index('category', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('rage._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('imdb._id', pymongo.ASCENDING, background=True)
     db.releases.ensure_index('tvdb._id', pymongo.ASCENDING, background=True)
@@ -89,8 +97,10 @@ def create_indexes():
                                  ('tvrage._id', pymongo.ASCENDING),
                                  ('category._id', pymongo.ASCENDING)
                              ], background=True)
-    db.releases.ensure_index('passworded', pymongo.ASCENDING, background=True)
-    #TODO: add sparse indexes related to postproc
+    db.releases.ensure_index([
+                                 ('passworded', pymongo.ASCENDING),
+                                 ('posted', pymongo.DESCENDING),
+                             ], background=True)
 
 
 if __name__ == '__main__':

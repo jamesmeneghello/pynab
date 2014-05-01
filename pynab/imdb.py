@@ -16,13 +16,12 @@ OMDB_DETAIL_URL = 'http://www.omdbapi.com/?i='
 
 
 def process_release(release, online=True):
-    log.info('Processing Movie information for movie {}.'.format(release['search_name']))
     name, year = parse_movie(release['search_name'])
     if name and year:
-        log.debug('Parsed as {} {}'.format(name, year))
+        method = 'local'
         imdb = db.imdb.find_one({'name': clean_name(name), 'year': year})
         if not imdb and online:
-            log.info('Movie not found in local IMDB DB, searching online...')
+            method = 'online'
             movie = search(clean_name(name), year)
             if movie and movie['Type'] == 'movie':
                 db.imdb.update(
@@ -38,14 +37,21 @@ def process_release(release, online=True):
                 imdb = db.imdb.find_one({'_id': movie['imdbID']})
 
         if imdb:
-            log.info('IMDB match found, appending IMDB ID to release.')
+            log.info('[{}] - [{}] - imdb added: {}'.format(
+                release['_id'],
+                release['search_name'],
+                method
+            ))
             db.releases.update({'_id': release['_id']}, {
                 '$set': {
                     'imdb': imdb
                 }
             })
         elif not imdb and online:
-            log.warning('Could not find IMDB data to associate with release {}.'.format(release['search_name']))
+            log.warning('[{}] - [{}] - imdb not found: online'.format(
+                release['_id'],
+                release['search_name']
+            ))
             db.releases.update({'_id': release['_id']}, {
                 '$set': {
                     'imdb': {
@@ -54,9 +60,15 @@ def process_release(release, online=True):
                 }
             })
         else:
-            log.warning('Could not find local IMDB data to associate with release {}.'.format(release['search_name']))
+            log.warning('[{}] - [{}] - imdb not found: local'.format(
+                release['_id'],
+                release['search_name']
+            ))
     else:
-        log.warning('Could not parse name for movie data: {}.'.format(release['search_name']))
+        log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
+            release['_id'],
+            release['search_name']
+        ))
         db.releases.update({'_id': release['_id']}, {
             '$set': {
                 'imdb': {
@@ -68,9 +80,7 @@ def process_release(release, online=True):
 
 def process(limit=100, online=True):
     """Process movies without imdb data and append said data."""
-    log.info('Processing movies to add IMDB data...')
-
-    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
+    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     query = {
         'imdb._id': {'$exists': False},
@@ -91,7 +101,6 @@ def process(limit=100, online=True):
 
 def search(name, year):
     """Search OMDB for a movie and return the IMDB ID."""
-    log.info('Searching for movie: {}'.format(name))
 
     # if we managed to parse the year from the name
     # include it, since it'll narrow results
@@ -104,7 +113,7 @@ def search(name, year):
     try:
         data = r.json()
     except:
-        log.debug('There was a problem accessing the API page.')
+        log.critical('There was a problem accessing the IMDB API page.')
         return None
 
     if 'Search' in data:
@@ -112,12 +121,10 @@ def search(name, year):
             # doublecheck, but the api should've searched properly
             ratio = difflib.SequenceMatcher(None, clean_name(name), clean_name(movie['Title'])).ratio()
             if ratio > 0.8 and year == movie['Year'] and movie['Type'] == 'movie':
-                log.info('OMDB movie match found: {}'.format(movie['Title']))
                 return movie
 
 
 def get_details(id):
-    log.info('Retrieving movie details for {}...'.format(id))
     r = requests.get(OMDB_DETAIL_URL + id)
     data = r.json()
 

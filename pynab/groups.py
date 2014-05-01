@@ -4,11 +4,11 @@ from pynab.server import Server
 from pynab import parts
 import config
 
-MESSAGE_LIMIT = config.site['message_scan_limit']
+MESSAGE_LIMIT = config.scan.get('message_scan_limit', 20000)
 
 
 def backfill(group_name, date=None):
-    log.info('{}: Backfilling group...'.format(group_name))
+    log.info('group: {}: backfilling group'.format(group_name))
 
     server = Server()
     _, count, first, last, _ = server.group(group_name)
@@ -16,33 +16,26 @@ def backfill(group_name, date=None):
     if date:
         target_article = server.day_to_post(group_name, server.days_old(date))
     else:
-        target_article = server.day_to_post(group_name, config.site['backfill_days'])
+        target_article = server.day_to_post(group_name, config.scan.get('backfill_days', 10))
 
     group = db.groups.find_one({'name': group_name})
     if group:
         # if the group hasn't been updated before, quit
         if not group['first']:
-            log.error('{}: Need to run a normal update prior to backfilling group.'.format(group_name))
+            log.error('group: {}: run a normal update prior to backfilling'.format(group_name))
             if server.connection:
                 server.connection.quit()
             return False
 
-        log.info('{0}: Server has {1:d} - {2:d} or ~{3:d} days.'
-        .format(group_name, first, last, server.days_old(server.post_date(group_name, first)))
-        )
-
         # if the first article we have is lower than the target
         if target_article >= group['first']:
-            log.info('{}: Nothing to do, we already have the target post.'.format(group_name))
+            log.info('group: {}: Nothing to do, we already have the target post.'.format(group_name))
             if server.connection:
                 server.connection.quit()
             return True
 
         # or if the target is below the server's first
         if target_article < first:
-            log.warning(
-                '{}: Backfill target is older than the server\'s retention. Setting target to the first possible article.'.format(
-                    group_name))
             target_article = first
 
         total = group['first'] - target_article
@@ -67,12 +60,12 @@ def backfill(group_name, date=None):
                                      })
                     retries = 0
                 else:
-                    log.error('{}: Failed while saving parts.'.format(group_name))
+                    log.error('group: {}: failed while saving parts'.format(group_name))
                     if server.connection:
                         server.connection.quit()
                     return False
             else:
-                    log.error('Problem updating group - trying again...')
+                    log.error('group: {}: problem updating group - trying again'.format(group_name))
                     retries += 1
                     # keep trying the same block 3 times, then skip
                     if retries <= 3:
@@ -88,14 +81,14 @@ def backfill(group_name, date=None):
                 if target_article > start:
                     start = target_article
     else:
-        log.error('{}: Group doesn\'t exist in db.'.format(group_name))
+        log.error('group: {}: group doesn\'t exist in db.'.format(group_name))
         if server.connection:
             server.connection.quit()
         return False
 
 
 def update(group_name):
-    log.info('{}: Updating group...'.format(group_name))
+    log.info('group: {}: updating group'.format(group_name))
 
     server = Server()
     _, count, first, last, _ = server.group(group_name)
@@ -109,7 +102,7 @@ def update(group_name):
 
             # if our last article is newer than the server's, something's wrong
             if last < group['last']:
-                log.error('{}: Server\'s last article {:d} is lower than the local {:d}'.format(group_name, last,
+                log.error('group: {}: last article {:d} on server is older than the local {:d}'.format(group_name, last,
                                                                                                 group['last']))
                 if server.connection:
                     try:
@@ -119,9 +112,9 @@ def update(group_name):
                 return False
         else:
             # otherwise, start from x days old
-            start = server.day_to_post(group_name, config.site['new_group_scan_days'])
+            start = server.day_to_post(group_name, config.scan.get('new_group_scan_days', 5))
             if not start:
-                log.error('{}: Couldn\'t determine a start point for group.'.format(group_name))
+                log.error('group: {}: couldn\'t determine a start point for group'.format(group_name))
                 if server.connection:
                     try:
                         server.connection.quit()
@@ -150,24 +143,22 @@ def update(group_name):
         if start_date and end_date:
             total_date = end_date - start_date
 
-            log.debug('{}: Start: {:d} ({}) End: {:d} ({}) Total: {:d} ({} days, {} hours, {} minutes)'
-                .format(
-                    group_name, start, start_date,
-                    end, end_date,
-                    total, total_date.days, total_date.seconds // 3600, (total_date.seconds // 60) % 60
-                )
-            )
+            log.info('group: {}: pulling {} - {} ({}d, {}h, {}m)'.format(
+                group_name,
+                start, end,
+                total_date.days,
+                total_date.seconds // 3600,
+                (total_date.seconds // 60) % 60
+            ))
         else:
-            log.debug('{}: Group is semi-broken - not all debug output is available. Start: {}, End: {}, Total: {}'
-                .format(group_name, start, end, total)
-            )
+            log.info('group: {}: pulling {} - {}'.format(group_name, start, end))
 
         if total > 0:
             if not group['last']:
-                log.info('{}: Starting new group with {:d} days and {:d} new parts.'
-                .format(group_name, config.site['new_group_scan_days'], total))
+                log.info('group: {}: starting new group with {:d} days and {:d} new parts'
+                    .format(group_name, config.scan.get('new_group_scan_days', 5), total))
             else:
-                log.info('{}: Group has {:d} new parts.'.format(group_name, total))
+                log.info('group: {}: group has {:d} new parts.'.format(group_name, total))
 
             retries = 0
             # until we're finished, loop
@@ -192,7 +183,7 @@ def update(group_name):
                                          })
                         retries = 0
                     else:
-                        log.error('{}: Failed while saving parts.'.format(group_name))
+                        log.error('group: {}: failed while saving parts'.format(group_name))
                         if server.connection:
                             try:
                                 server.connection.quit()
@@ -209,14 +200,13 @@ def update(group_name):
                     return True
                 else:
                     start = end + 1
-                    log.info('{}: {:d} messages to go for this group.'.format(group_name, last - end))
         else:
-            log.info('{}: No new records for group.'.format(group_name))
+            log.info('group: {}: no new messages'.format(group_name))
             if server.connection:
                 server.connection.quit()
             return True
     else:
-        log.error('{}: No such group exists in the db.'.format(group_name))
+        log.error('group: {}: no group in db'.format(group_name))
         if server.connection:
             server.connection.quit()
         return False

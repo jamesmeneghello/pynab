@@ -5,8 +5,8 @@
     %>
 <rss version="2.0" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
 <channel>
-        <title>${config.site['title']}</title>
-        <description>${config.site['description']}</description>
+        <title>${config.api.get('title', 'pynab')}</title>
+        <description>${config.api.get('description', '')}</description>
     <link>${get_link('')}</link>
 
     % if search:

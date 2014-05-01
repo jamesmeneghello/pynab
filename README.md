@@ -347,7 +347,7 @@ To build the webui from source, first modify the config to include your indexer 
 
     > cd webui/app/scripts
     > vim config.js
-    > [add host url]
+    > [add host url and port]
 
 Then initiate the build:
 

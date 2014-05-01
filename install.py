@@ -83,7 +83,7 @@ if __name__ == '__main__':
             print('Problem inserting data into MongoDB.')
             sys.exit(0)
 
-    if config.site['regex_url']:
+    if config.postprocess.get('regex_url'):
         print('Updating regex...')
         pynab.util.update_regex()
     else:
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         print('If you don\'t have one, buy a Newznab+ license or find your own regexes.')
         print('You won\'t be able to build releases without appropriate regexes.')
 
-    if config.site['blacklist_url']:
+    if config.postprocess.get('blacklist_url'):
         print('Updating binary blacklist...')
         pynab.util.update_blacklist()
     else:

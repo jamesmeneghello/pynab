@@ -10,8 +10,10 @@ from pynab import log
 
 
 def rename_bad_releases(category):
-    for release in db.releases.find({'category._id': int(category), '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
-        log.debug('Finding name for {}...'.format(release['search_name']))
+    count = 0
+    s_count = 0
+    for release in db.releases.find({'category._id': int(category), 'unwanted': {'$ne': True}, '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
+        count += 1
         name, category_id = pynab.releases.discover_name(release)
 
         if name and not category_id:
@@ -19,10 +21,7 @@ def rename_bad_releases(category):
             pass
         elif name and category_id:
             # we found a new name!
-            log.info('Renaming {} ({:d}) to {} ({:d})...'.format(
-                release['search_name'], release['category']['_id'],
-                name, category_id
-            ))
+            s_count += 1
 
             category = db.categories.find_one({'_id': category_id})
             category['parent'] = db.categories.find_one({'_id': category['parent_id']})
@@ -38,7 +37,7 @@ def rename_bad_releases(category):
 
         else:
             # bad release!
-            log.debug('Noting unwanted release {} ({:d})...'.format(
+            log.info('Noting unwanted release {} ({:d})...'.format(
                 release['search_name'], release['category']['_id'],
             ))
 
@@ -49,6 +48,9 @@ def rename_bad_releases(category):
                     }
                 }
             )
+
+    log.info('rename: successfully renamed {} of {} releases'.format(s_count, count))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''

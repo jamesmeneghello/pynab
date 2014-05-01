@@ -1,7 +1,7 @@
 import logging
 
-site = {
-    # general site settings
+api = {
+    # api settings
     # ---------------------
 
     # title: shows on the rss feed, can be whatever
@@ -19,11 +19,8 @@ site = {
     # your administrator email (shows on rss feed)
     'email': '',
 
-	# enable web interface
-	'webui': True,
-
-    # api settings
-    # ------------
+    # enable web interface
+    'webui': True,
 
     # result_limit: maximum search results for rss feeds
     # make sure there's no quotes around it
@@ -41,6 +38,12 @@ site = {
     # usually 8080
     'api_port': 8080,
 
+    # pid_file: process file for the api, if daemonized
+    # make sure it's writable, leave blank for nginx
+    'pid_file': ''
+}
+
+scan = {
     # scanning settings
     # -----------------
 
@@ -70,6 +73,13 @@ site = {
     # set this to 3 days or so, don't set it to 0
     'dead_binary_age': 3,
 
+    # pid_file: process file for the scanner, if daemonized
+    # make sure it's writable, leave blank for nginx
+    'pid_file': ''
+
+}
+
+postprocess = {
     # release processing settings
     # ---------------------------
 
@@ -85,9 +95,6 @@ site = {
 
     # 100% completion resulted in about 11,000 unmatched releases after 4 weeks over 6 groups
     # lowering that to 99% built an extra 3,500 releases
-
-    # postprocessing settings
-    # -----------------------
 
     # postprocess_wait: time to sleep between postprocess.py loops
     # setting this to 0 may be horrible to online APIs, but if you've got a good
@@ -131,20 +138,7 @@ site = {
     # so if we can't find a match for some movie, wait 7 days before trying that movie again
     # there's really no benefit to setting this low - anywhere from a week to several months is fine
     'fetch_blacklist_duration': 7,
-
-    # logging settings
-    # ----------------
-    # logging_file: a filepath or None to go to stdout
-    'logging_file': None,
-
-    # logging.x where DEBUG, INFO, WARNING, ERROR, etc
-    # generally, debug if something goes wrong, info for normal usage
-    'logging_level': logging.DEBUG,
-
-    # max_log_size: maximum size of logfiles before they get rotated
-    # number, in bytes (this is 50mb)
-    'max_log_size': 50*1024*1024,
-
+    
     # regex update settings
     # ---------------------
 
@@ -158,7 +152,22 @@ site = {
     # generally leave alone
     'blacklist_url': 'https://raw.github.com/kevinlekiller/Newznab-Blacklist/master/New/blacklists.txt',
 
+}
 
+log = {
+    # logging settings
+    # ----------------
+    # logging_file: a filepath or None to go to stdout
+    'logging_file': None,
+
+    # logging.x where DEBUG, INFO, WARNING, ERROR, etc
+    # generally, debug if something goes wrong, info for normal usage
+    'logging_level': logging.DEBUG,
+
+    # max_log_size: maximum size of logfiles before they get rotated
+    # number, in bytes (this is 50mb)
+    'max_log_size': 50*1024*1024,
+    
 }
 
 # mongodb config

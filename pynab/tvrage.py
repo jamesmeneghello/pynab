@@ -32,9 +32,8 @@ RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
 
 def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
-    log.info('Processing TV episodes to add TVRage data...')
 
-    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.site['fetch_blacklist_duration'])
+    expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     query = {
         'tvrage._id': {'$exists': False},
@@ -50,8 +49,9 @@ def process(limit=100, online=True):
             ]
         })
 
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-        log.info('Processing TV/Rage information for show {}.'.format(release['search_name']))
+    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(25):
+        method = ''
+
         show = parse_show(release['search_name'])
         if show:
             db.releases.update({'_id': release['_id']}, {
@@ -64,10 +64,12 @@ def process(limit=100, online=True):
             if not rage and 'and' in show['clean_name']:
                 rage = db.tvrage.find_one({'name': show['clean_name'].replace(' and ', ' & ')})
 
-            if not rage and online:
-                log.info('Show not found in local TvRage DB, searching online...')
+            if rage:
+                method = 'local'
+            elif not rage and online:
                 rage_data = search(show)
                 if rage_data:
+                    method = 'online'
                     db.tvrage.update(
                         {'_id': int(rage_data['showid'])},
                         {
@@ -83,14 +85,24 @@ def process(limit=100, online=True):
                 time.sleep(1)
 
             if rage:
-                log.info('TVRage match found, appending TVRage ID to release.')
+                log.info('tvrage: [{}] - [{}] - tvrage added: {}'.format(
+                    release['_id'],
+                    release['search_name'],
+                    method
+                ))
+
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
                         'tvrage': rage
                     }
                 })
             elif not rage and online:
-                log.warning('Could not find TVRage data to associate with release {}.'.format(release['search_name']))
+                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                    release['_id'],
+                    release['search_name'],
+                    'no show found (online)'
+                ))
+
                 db.releases.update({'_id': release['_id']}, {
                     '$set': {
                         'tvrage': {
@@ -99,9 +111,17 @@ def process(limit=100, online=True):
                     }
                 })
             else:
-                log.warning('Could not find local TVRage data to associate with release {}.'.format(release['search_name']))
+                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                    release['_id'],
+                    release['search_name'],
+                    'no show found (local)'
+                ))
         else:
-            log.warning('Could not parse name for TV data: {}.'.format(release['search_name']))
+            log.error('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                    release['_id'],
+                    release['search_name'],
+                    'no suitable regex for show name'
+                ))
             db.releases.update({'_id': release['_id']}, {
                 '$set': {
                     'tvrage': {
@@ -115,8 +135,8 @@ def search(show):
     """Search TVRage's online API for show data."""
     try:
         r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
-    except:
-        log.error('Problem retrieving TVRage XML. The API is probably down.')
+    except Exception as e:
+        log.error(e)
         return None
     
     content = r.content
@@ -138,7 +158,7 @@ def search_lxml(show, content):
     try:
         tree = etree.fromstring(content)
     except:
-        log.error('Problem parsing XML with lxml')
+        log.critical('Problem parsing XML with lxml')
         return None
 
     matches = defaultdict(list)
@@ -147,7 +167,6 @@ def search_lxml(show, content):
         for name in extract_names(xml_show):
             ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(name)).ratio() * 100)
             if ratio == 100:
-                log.debug('Found 100% xml_match: {}'.format(name))
                 return xmltodict.parse(etree.tostring(xml_show))['show']
             matches[ratio].append(xml_show)
                 
@@ -155,16 +174,11 @@ def search_lxml(show, content):
     for ratio, xml_matches in sorted(matches.items(), reverse=True):
         for xml_match in xml_matches:
             if ratio >= 80:
-                log.debug('Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
                 return xmltodict.parse(etree.tostring(xml_match))['show']
             elif 80 > ratio > 60:
                 if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
-                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)):
-                        log.debug('Found {:d}% xml_match: {}'.format(ratio, XPATH_NAME(xml_match)[0]))
+                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)[0]):
                         return xmltodict.parse(etree.tostring(xml_match))['show']
-
-    ratio, highests = sorted(matches.items(), reverse=True)[0]
-    log.warning('No TVRage match found for {}, highest match was {}%.'.format(show['clean_name'], ratio))
 
 
 def clean_name(name):
@@ -174,6 +188,7 @@ def clean_name(name):
     name = regex.sub('[._\-]', ' ', name)
     name = regex.sub('[\':!"#*’,()?]', '', name)
     name = regex.sub('\s{2,}', ' ', name)
+    name = regex.sub('\[.*?\]', '', name)
 
     replace_chars = {
         '$': 's',
@@ -183,6 +198,9 @@ def clean_name(name):
 
     for k, v in replace_chars.items():
         name = name.replace(k, v)
+
+    pattern = regex.compile(r'\b(hdtv|dvd|divx|xvid|mpeg2|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+)\b', regex.I)
+    name = pattern.sub('', name)
 
     return name.lower()
 
@@ -297,8 +315,6 @@ def parse_show(search_name):
             'season': int(match.match_obj.group(2)),
             'episode': 'all'
         }
-    else:
-        log.error('No regex match.')
 
     if 'name' in show and show['name']:
         # check for country code or name (Biggest Loser Australia etc)
@@ -335,7 +351,6 @@ def parse_show(search_name):
 
         return show
 
-    log.error('Could not determine show info from search_name: {}'.format(search_name))
     return False
 
 

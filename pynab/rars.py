@@ -59,6 +59,9 @@ def attempt_parse(file):
         elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', gen_s, regex.I):
             name = match.match_obj.group(1)
 
+    if not name:
+        name = file
+
     return name
 
 
@@ -100,7 +103,6 @@ def get_rar_info(server, group_name, messages):
         try:
             files = check_rar(t.name)
         except lib.rar.BadRarFile:
-            log.debug('Deleting temp files...')
             os.remove(t.name)
             return None
 
@@ -120,48 +122,48 @@ def get_rar_info(server, group_name, messages):
                 'files.names': [r.filename for r in files]
             }
 
-            # make a tempdir to extract rar to
-            tmp_dir = tempfile.mkdtemp()
-            log.debug('Creating temp directory: {}...'.format(tmp_dir))
-            exe = [
-                '"{}"'.format(config.site['unrar_path']),
-                'e', '-ai', '-ep', '-r', '-kb',
-                '-c-', '-id', '-p-', '-y', '-inul',
-                '"{}"'.format(t.name),
-                '"{}"'.format(tmp_dir)
-            ]
-
-            try:
-                subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
-            except subprocess.CalledProcessError as cpe:
-                log.debug('Archive had issues while extracting: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
-                log.debug('Not to worry, it\'s probably a multi-volume rar (most are).')
-                log.debug(info)
-
-            inner_passwords = []
-            for file in files:
-                fpath = os.path.join(tmp_dir, file.filename)
+            unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
+            if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
+                log.error('rar: skipping archive decompression because unrar_path is not set or incorrect')
+                log.error('rar: if the rar is not password protected, but contains an inner archive that is, we will not know')
+            else:
+                # make a tempdir to extract rar to
+                tmp_dir = tempfile.mkdtemp()
+                exe = [
+                    '"{}"'.format(unrar_path),
+                    'e', '-ai', '-ep', '-r', '-kb',
+                    '-c-', '-id', '-p-', '-y', '-inul',
+                    '"{}"'.format(t.name),
+                    '"{}"'.format(tmp_dir)
+                ]
+    
                 try:
-                    inner_files = check_rar(fpath)
-                except lib.rar.BadRarFile:
-                    log.debug('Inner file {} wasn\'t a RAR archive.'.format(file.filename))
-                    continue
+                    subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
+                except subprocess.CalledProcessError as cpe:
+                    log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
 
-                if inner_files:
-                    inner_passwords += [r.is_encrypted for r in inner_files]
-                else:
-                    passworded = True
-                    break
+                inner_passwords = []
+                for file in files:
+                    fpath = os.path.join(tmp_dir, file.filename)
+                    try:
+                        inner_files = check_rar(fpath)
+                    except lib.rar.BadRarFile:
+                        continue
+    
+                    if inner_files:
+                        inner_passwords += [r.is_encrypted for r in inner_files]
+                    else:
+                        passworded = True
+                        break
+    
+                if not passworded:
+                    passworded = any(inner_passwords)
 
-            if not passworded:
-                passworded = any(inner_passwords)
-
-            log.debug('Deleting temp files...')
-            os.remove(t.name)
-            shutil.rmtree(tmp_dir)
+                os.remove(t.name)
+                shutil.rmtree(tmp_dir)
         else:
-            log.debug('Archive was encrypted or passworded.')
             passworded = True
+            os.remove(t.name)
 
         info['passworded'] = passworded
 
@@ -173,8 +175,12 @@ def check_release_files(server, group_name, nzb):
 
     for rar in nzb['rars']:
         messages = []
+        if not rar['segments']:
+            continue
+
         if not isinstance(rar['segments']['segment'], list):
             rar['segments']['segment'] = [rar['segments']['segment'], ]
+
         for s in rar['segments']['segment']:
             messages.append(s['#text'])
             break
@@ -204,22 +210,22 @@ def check_release_files(server, group_name, nzb):
 
 
 def process(limit=20, category=0):
-    """Processes release rarfiles to check for passwords and filecounts. Optionally
-    deletes passworded releases."""
-    log.info('Checking for passworded releases and deleting them if appropriate...')
+    """Processes release rarfiles to check for passwords and filecounts."""
 
     with Server() as server:
         query = {'passworded': None}
         if category:
             query['category._id'] = int(category)
         for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-            log.debug('Processing rar part for {}...'.format(release['name']))
             nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
 
             if nzb and 'rars' in nzb:
                 info = check_release_files(server, release['group']['name'], nzb)
                 if info:
-                    log.info('Adding file data to release: {}'.format(release['name']))
+                    log.info('[{}] - [{}] - file info: added'.format(
+                        release['_id'],
+                        release['search_name']
+                    ))
                     db.releases.update({'_id': release['_id']}, {
                         '$set': {
                             'files.count': info['files.count'],
@@ -231,7 +237,10 @@ def process(limit=20, category=0):
 
                     continue
 
-            log.debug('No RARs in release, blacklisting...')
+            log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
+                release['_id'],
+                release['search_name']
+            ))
             db.releases.update({'_id': release['_id']}, {
                 '$set': {
                     'files.count': 0,
@@ -240,11 +249,3 @@ def process(limit=20, category=0):
                     'passworded': 'unknown'
                 }
             })
-
-    if config.site['delete_passworded']:
-        log.info('Deleting passworded releases...')
-        if config.site['delete_potentially_passworded']:
-            query = {'passworded': {'$in': [True, 'potentially']}}
-        else:
-            query = {'passworded': True}
-        db.releases.remove(query)

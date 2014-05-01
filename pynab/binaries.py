@@ -36,7 +36,6 @@ def save(binary):
     --
     Note: Much quicker. Hooray!
     """
-    log.debug('Saving to binary: ' + binary['name'])
 
     existing_binary = db.binaries.find_one({'name': binary['name']})
     try:
@@ -61,7 +60,7 @@ def save(binary):
                 'parts': binary['parts']
             })
     except:
-        log.error('Binary was too large to fit in DB!')
+        log.error('binary: binary was too large to fit in DB!')
 
 
 def save_and_clear(binaries=None, parts=None):
@@ -72,12 +71,10 @@ def save_and_clear(binaries=None, parts=None):
     Turns out MySQL kinda sucks at deleting lots
     of shit. If we need more speed, move the parts
     away and drop the temporary table instead."""
-    log.info('Saving discovered binaries...')
     for binary in binaries.values():
         save(binary)
 
     if parts:
-        log.info('Removing parts that were either packaged or terrible...')
         db.parts.remove({'_id': {'$in': parts}})
 
 
@@ -86,14 +83,12 @@ def process():
     based on regex in DB. Copies parts/segments across
     to the binary document. Keeps a list of parts that
     were processed for deletion."""
-    log.info('Starting to process parts and build binaries...')
-    start = time.clock()
+
+    start = time.time()
 
     binaries = {}
     orphan_binaries = []
     processed_parts = []
-    chunk_count = 1
-    approx_chunks = db.parts.count() / CHUNK_SIZE
 
     # new optimisation: if we only have parts from a couple of groups,
     # we don't want to process the regex for every single one.
@@ -119,14 +114,12 @@ def process():
             try:
                 result = regex.search(r, part['subject'], regex_flags)
             except:
-                log.error('Broken regex detected. _id: {:d}, removing...'.format(reg['_id']))
+                log.error('binary: broken regex detected. _id: {:d}, removing...'.format(reg['_id']))
                 db.regexes.remove({'_id': reg['_id']})
                 continue
 
             match = result.groupdict() if result else None
             if match:
-                log.debug('Matched part {} to {}.'.format(part['subject'], reg['regex']))
-
                 # remove whitespace in dict values
                 try:
                     match = {k: v.strip() for k, v in match.items()}
@@ -195,10 +188,6 @@ def process():
 
         # save and delete stuff in chunks
         if len(processed_parts) >= CHUNK_SIZE:
-            log.info('Processing chunk {0:d} of approx {1:.1f} with {2:d} parts...'
-            .format(chunk_count, approx_chunks, CHUNK_SIZE)
-            )
-            chunk_count += 1
             save_and_clear(binaries, processed_parts)
             processed_parts = []
             binaries = {}
@@ -206,8 +195,11 @@ def process():
     # clear off whatever's left
     save_and_clear(binaries, processed_parts)
 
-    end = time.clock()
-    log.info('Time elapsed: {:.2f}s'.format(end - start))
+    end = time.time()
+
+    log.info('binary: processed {} parts in {:.2f}s'
+        .format(db.parts.count(), end - start)
+    )
 
 
 def parse_xref(xref):

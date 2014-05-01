@@ -42,7 +42,6 @@ def save(part):
 
 def save_all(parts):
     """Save a set of parts to the DB, in a batch if possible."""
-    log.info('Saving collected segments and parts...')
 
     # if possible, do a quick batch insert
     # rarely possible!
@@ -57,7 +56,7 @@ def save_all(parts):
                 save(part)
             return True
     except pymongo.errors.PyMongoError as e:
-        log.error('Could not write parts to db: {0}'.format(e))
+        log.error('parts: could not write to db: {0}'.format(e))
         return False
 
 
