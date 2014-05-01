@@ -29,14 +29,13 @@ class Server:
             except Exception as e:
                 pass
 
-
     def group(self, group_name):
         self.connect()
 
         try:
             response, count, first, last, name = self.connection.group(group_name)
-        except nntplib.NNTPError:
-            log.error('server: Problem sending group command to server.')
+        except Exception as e:
+            log.error('server: could not send group command: {}'.format(e))
             return False
 
         return response, count, first, last, name
@@ -55,7 +54,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('server: Could not connect to news server: {}'.format(e))
+                log.error('server: could not connect to news server: {}'.format(e))
                 return False
 
         return True

@@ -34,6 +34,8 @@ def save(binaries):
             if not existing_binary:
                 binary_inserts.append(binary)
 
+        # this could be optimised slightly with COPY but it's not really worth it
+        # there's usually only a hundred or so rows
         engine.execute(Binary.__table__.insert(), binary_inserts)
 
         existing_binaries = dict(
