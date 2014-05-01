@@ -122,9 +122,9 @@ class Server:
             if int(segment_number) > 0 and int(total_segments) > 0:
                 # strip the segment number off the subject so
                 # we can match binary parts together
-                subject = overview['subject'].replace(
+                subject = nntplib.decode_header(overview['subject'].replace(
                     '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
-                ).strip()
+                ).strip()).encode('utf-8', 'replace').decode('latin-1')
 
                 # this is spammy as shit, for obvious reasons
                 #pynab.log.debug('Binary part found: ' + subject)
@@ -145,9 +145,9 @@ class Server:
                     # some subjects/posters have odd encoding, which will break pymongo
                     # so we make sure it doesn't
                     message = {
-                        'subject': nntplib.decode_header(subject).encode('utf-8', 'surrogateescape').decode('latin-1'),
+                        'subject': subject,
                         'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'surrogateescape').decode(
+                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode(
                             'latin-1'),
                         'group_name': group_name,
                         'xref': overview['xref'],
