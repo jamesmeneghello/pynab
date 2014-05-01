@@ -3,7 +3,7 @@
 
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 import logging
 import config
@@ -11,7 +11,7 @@ import logging.handlers
 import os
 import colorlog
 import inspect
-
+import sys
 
 log = logging.getLogger(__name__)
 log.setLevel(config.log.get('logging_level', logging.DEBUG))
