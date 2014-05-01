@@ -163,6 +163,7 @@ def get_rar_info(server, group_name, messages):
                 shutil.rmtree(tmp_dir)
         else:
             passworded = True
+            os.remove(t.name)
 
         info['passworded'] = passworded
 
