@@ -3,11 +3,10 @@ import os
 import regex
 import shutil
 import subprocess
-import pymongo
 
 import lib.rar
 from pynab import log
-from pynab.db import db
+from pynab.db import db_session, Release, Group, File, MetaBlack
 import pynab.nzbs
 import pynab.releases
 import pynab.util
@@ -81,6 +80,7 @@ def check_rar(filename):
         if any([r.is_encrypted for r in rar.infolist()]):
             return False
         else:
+            #TODO: doublecheck return from this for names
             return rar.infolist()
     else:
         # probably an encrypted rar!
@@ -106,21 +106,12 @@ def get_rar_info(server, group_name, messages):
             os.remove(t.name)
             return None
 
-        # build a summary to return
-
-        info = {
-            'files.count': 0,
-            'files.size': 0,
-            'files.names': []
-        }
+        # build a list of files to return
+        info = []
 
         passworded = False
         if files:
-            info = {
-                'files.count': len(files),
-                'files.size': sum([r.file_size for r in files]),
-                'files.names': [r.filename for r in files]
-            }
+            info = [{'size': r.file_size, 'name': r.filename} for r in files]
 
             unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
             if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
@@ -164,9 +155,7 @@ def get_rar_info(server, group_name, messages):
         else:
             passworded = True
 
-        info['passworded'] = passworded
-
-        return info
+        return passworded, info
 
 
 def check_release_files(server, group_name, nzb):
@@ -177,33 +166,29 @@ def check_release_files(server, group_name, nzb):
         if not rar['segments']:
             continue
 
-        if not isinstance(rar['segments']['segment'], list):
-            rar['segments']['segment'] = [rar['segments']['segment'], ]
-
-        for s in rar['segments']['segment']:
-            messages.append(s['#text'])
+        for s in rar['segments']:
+            messages.append(s['message_id'])
             break
 
         if messages:
-            info = get_rar_info(server, group_name, messages)
+            passworded, info = get_rar_info(server, group_name, messages)
 
-            if info and not info['passworded']:
-                passworded = False
-                for file in info['files.names']:
-                    result = MAYBE_PASSWORDED_REGEX.search(file)
+            if info and not passworded:
+                for file in info:
+                    result = MAYBE_PASSWORDED_REGEX.search(file['name'])
                     if result:
-                        passworded = 'potentially'
+                        passworded = 'MAYBE'
                         break
 
-                    result = PASSWORDED_REGEX.search(file)
+                    result = PASSWORDED_REGEX.search(file['name'])
                     if result:
-                        passworded = True
+                        passworded = 'YES'
                         break
 
-                if passworded:
-                    info['passworded'] = passworded
+            if not passworded:
+                passworded = 'NO'
 
-            return info
+            return passworded, info
 
     return None
 
@@ -212,39 +197,35 @@ def process(limit=20, category=0):
     """Processes release rarfiles to check for passwords and filecounts."""
 
     with Server() as server:
-        query = {'passworded': None}
-        if category:
-            query['category._id'] = int(category)
-        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-            nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
+        with db_session() as db:
+            query = db.query(Release).join(Group).filter(Release.passworded=='UNKNOWN')
+            if category:
+                query = query.filter(Release.category_id==int(category))
 
-            if nzb and 'rars' in nzb:
-                info = check_release_files(server, release['group']['name'], nzb)
-                if info:
-                    log.info('[{}] - [{}] - file info: added'.format(
-                        release['_id'],
-                        release['search_name']
-                    ))
-                    db.releases.update({'_id': release['_id']}, {
-                        '$set': {
-                            'files.count': info['files.count'],
-                            'files.size': info['files.size'],
-                            'files.names': info['files.names'],
-                            'passworded': info['passworded']
-                        }
-                    })
+            for release in query.order_by(Release.posted.desc()).limit(limit):
+                nzb = pynab.nzbs.get_nzb_details(release.nzb)
 
-                    continue
+                if nzb and 'rars' in nzb:
+                    passworded, info = check_release_files(server, release.group.name, nzb)
+                    if info:
+                        log.info('[{}] - [{}] - file info: added'.format(
+                            release.id,
+                            release.search_name
+                        ))
+                        release.passworded = passworded
 
-            log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
-                release['_id'],
-                release['search_name']
-            ))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'files.count': 0,
-                    'files.size': 0,
-                    'files.names': [],
-                    'passworded': 'unknown'
-                }
-            })
+                        for file in info:
+                            f = File(name=file['name'], size=file['size'])
+                            f.release = release
+                            db.add(f)
+
+                        db.add(release)
+                        continue
+
+                log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
+                    release.id,
+                    release.search_name
+                ))
+                mb = MetaBlack(status='IMPOSSIBLE')
+                mb.release = release
+                db.add(mb)
