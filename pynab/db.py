@@ -77,20 +77,38 @@ class Release(Base):
 
     tvshow_id = Column(Integer, ForeignKey('tvshows.id'))
     tvshow = relationship('TvShow', backref=backref('releases'))
+    tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id'))
 
     movie_id = Column(String, ForeignKey('movies.id'))
     movie = relationship('Movie', backref=backref('releases'))
+    movie_metablack_id = Column(Integer, ForeignKey('metablack.id'))
 
     nzb_id = Column(Integer, ForeignKey('nzbs.id'))
     nzb = relationship('NZB', backref=backref('release', uselist=False))
+    nzb_metablack_id = Column(Integer, ForeignKey('metablack.id'))
 
     nfo_id = Column(Integer, ForeignKey('nfos.id'))
     nfo = relationship('NFO', backref=backref('release', uselist=False))
+    nfo_metablack_id = Column(Integer, ForeignKey('metablack.id'))
 
     episode_id = Column(Integer, ForeignKey('episodes.id'))
     episode = relationship('Episode', backref=backref('releases'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
+
+
+class MetaBlack(Base):
+    __tablename__ = 'metablack'
+
+    id = Column(Integer, primary_key=True)
+
+    status = Column(Enum('ATTEMPTED', 'IMPOSSIBLE', name='enum_metablack_status'), default='ATTEMPTED')
+    time = Column(DateTime, default=func.now())
+
+    tvshow = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
+    movie = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
+    nfo = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
+    nzb = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.nzb_metablack_id])
 
 
 class Episode(Base):
