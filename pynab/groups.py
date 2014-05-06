@@ -1,5 +1,5 @@
 from pynab import log
-from pynab.db import db_session, engine, Group
+from pynab.db import db_session, Group
 from pynab.server import Server
 import pynab.parts
 import config

@@ -149,6 +149,7 @@ def process():
             release.name = binary.name
             release.posted = binary.posted
             release.posted_by = binary.posted_by
+            release.regex_id = binary.regex_id
             release.grabs = 0
 
             # check to make sure we have over the configured minimum files
@@ -160,20 +161,20 @@ def process():
             zip_count = 0
 
             for part in binary.parts:
-                if regex.search(pynab.nzbs.rar_part_regex, part.subject, regex.I):
+                if regex.search(pynab.nzbs.rar_part_regex, part.subject):
                     rar_count += 1
-                if regex.search(pynab.nzbs.nfo_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                            part.subject, regex.I):
+                if regex.search(pynab.nzbs.nfo_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject):
                     nfos.append(part)
-                if regex.search(pynab.nzbs.rar_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                            part.subject, regex.I):
+                if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject):
                     rars.append(part)
-                if regex.search(pynab.nzbs.par2_regex, part.subject, regex.I):
+                if regex.search(pynab.nzbs.par2_regex, part.subject):
                     par_count += 1
-                    if not regex.search(pynab.nzbs.par_vol_regex, part.subject, regex.I):
+                    if not regex.search(pynab.nzbs.par_vol_regex, part.subject):
                         pars.append(part)
-                if regex.search(pynab.nzbs.zip_regex, part.subject, regex.I) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                            part.subject, regex.I):
+                if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                            part.subject):
                     zip_count += 1
 
             if rar_count + zip_count < config.postprocess.get('min_archives', 1):
