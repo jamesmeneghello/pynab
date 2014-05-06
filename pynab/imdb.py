@@ -6,7 +6,7 @@ import pymongo
 import requests
 import pytz
 
-from pynab.db import db
+from pynab.db import db_session, Release, Movie, MetaBlack, Category
 from pynab import log
 import config
 
@@ -16,87 +16,70 @@ OMDB_DETAIL_URL = 'http://www.omdbapi.com/?i='
 
 
 def process_release(release, online=True):
-    name, year = parse_movie(release['search_name'])
-    if name and year:
-        method = 'local'
-        imdb = db.imdb.find_one({'name': clean_name(name), 'year': year})
-        if not imdb and online:
-            method = 'online'
-            movie = search(clean_name(name), year)
-            if movie and movie['Type'] == 'movie':
-                db.imdb.update(
-                    {'_id': movie['imdbID']},
-                    {
-                        '$set': {
-                            'name': movie['Title'],
-                            'year': movie['Year']
-                        }
-                    },
-                    upsert=True
-                )
-                imdb = db.imdb.find_one({'_id': movie['imdbID']})
+    with db_session() as db:
+        name, year = parse_movie(release.search_name)
+        if name and year:
+            method = 'local'
+            imdb = db.query(Movie).filter(Movie.name==clean_name(name)).filter(Movie.year==year).first()
+            if not imdb and online:
+                method = 'online'
+                movie = search(clean_name(name), year)
+                if movie and movie['Type'] == 'movie':
+                    imdb = db.query(Movie).filter(Movie.id==movie['imdbID']).first()
+                    if not imdb:
+                        imdb = Movie()
+                        imdb.id = movie['imdbID']
+                        imdb.name = movie['Title']
+                        imdb.year = movie['Year']
+                        db.add(imdb)
+            if imdb:
+                log.info('[{}] - [{}] - imdb added: {}'.format(
+                    release.id,
+                    release.search_name,
+                    method
+                ))
+                release.movie = imdb
+                release.movie_metablack_id = None
+                db.add(release)
+            elif not imdb and online:
+                log.warning('[{}] - [{}] - imdb not found: online'.format(
+                    release.id,
+                    release.search_name
+                ))
 
-        if imdb:
-            log.info('[{}] - [{}] - imdb added: {}'.format(
-                release['_id'],
-                release['search_name'],
-                method
-            ))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'imdb': imdb
-                }
-            })
-        elif not imdb and online:
-            log.warning('[{}] - [{}] - imdb not found: online'.format(
-                release['_id'],
-                release['search_name']
-            ))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'imdb': {
-                        'attempted': datetime.datetime.now(pytz.utc)
-                    }
-                }
-            })
+                mb = MetaBlack(status='ATTEMPTED')
+                mb.movie = release
+                db.add(mb)
+            else:
+                log.warning('[{}] - [{}] - imdb not found: local'.format(
+                    release.id,
+                    release.search_name
+                ))
         else:
-            log.warning('[{}] - [{}] - imdb not found: local'.format(
-                release['_id'],
-                release['search_name']
+            log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
+                release.id,
+                release.search_name
             ))
-    else:
-        log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
-            release['_id'],
-            release['search_name']
-        ))
-        db.releases.update({'_id': release['_id']}, {
-            '$set': {
-                'imdb': {
-                    'possible': False
-                }
-            }
-        })
+            mb = MetaBlack(status='IMPOSSIBLE')
+            mb.movie = release
+            db.add(mb)
 
 
 def process(limit=100, online=True):
     """Process movies without imdb data and append said data."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
-    query = {
-        'imdb._id': {'$exists': False},
-        'category.parent_id': 2000,
-    }
+    with db_session() as db:
+        # clear expired metablacks
+        db.query(MetaBlack).filter(MetaBlack.movie!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
-    if online:
-        query.update({
-            'imdb.possible': {'$exists': False},
-            '$or': [
-                {'imdb.attempted': {'$exists': False}},
-                {'imdb.attempted': {'$lte': expiry}}
-            ]
-        })
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-        process_release(release, online)
+        query = db.query(Release).filter(Release.movie==None).join(Category).filter(Category.parent_id==2000)
+
+        if online:
+            query = query.filter(Release.movie_metablack_id==None)
+
+        for release in query.all():
+            process_release(release, online)
 
 
 def search(name, year):
