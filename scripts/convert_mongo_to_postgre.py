@@ -74,7 +74,6 @@ if __name__ == '__main__':
 
         postgre.commit()
 
-        """
         print('Copying movies...')
         for movie in mongo.imdb.find():
             movie['id'] = movie['_id']
@@ -86,7 +85,6 @@ if __name__ == '__main__':
             postgre.add(m)
 
         postgre.commit()
-        """
 
         print('Copying groups...')
         for group in mongo.groups.find():
