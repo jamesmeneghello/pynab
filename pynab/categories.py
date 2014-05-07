@@ -617,8 +617,6 @@ def check_parent_category(name, parent_category):
 def check_single_category(name, category):
     """Check release against a single category."""
 
-    log.info('checking {}'.format(category))
-
     for regex in category_regex[category]:
         if isinstance(regex, collections.Mapping):
             if all(bool(expr.search(name)) == expected for expr, expected in regex.items()):
