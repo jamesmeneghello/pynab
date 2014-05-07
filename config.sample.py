@@ -201,7 +201,7 @@ news = {
 
 # used in convert_mongo_to_postgre.py
 # mongodb config
-db = {
+mongo = {
     # hostname: usually 'localhost'
     'host': '',
 
