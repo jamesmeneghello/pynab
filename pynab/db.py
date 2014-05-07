@@ -85,7 +85,8 @@ class Release(Base):
 
     nzb_id = Column(Integer, ForeignKey('nzbs.id'))
     nzb = relationship('NZB', backref=backref('release', uselist=False))
-    nzb_metablack_id = Column(Integer, ForeignKey('metablack.id'))
+
+    rar_metablack_id = Column(Integer, ForeignKey('metablack.id'))
 
     nfo_id = Column(Integer, ForeignKey('nfos.id'))
     nfo = relationship('NFO', backref=backref('release', uselist=False))
@@ -108,7 +109,7 @@ class MetaBlack(Base):
     tvshow = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
     movie = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
     nfo = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
-    nzb = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.nzb_metablack_id])
+    rar = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.rar_metablack_id])
 
 
 class Episode(Base):
@@ -116,16 +117,16 @@ class Episode(Base):
 
     id = Column(Integer, primary_key=True)
 
+    tvshow_id = Column(Integer, ForeignKey('tvshows.id'))
+    tvshow = relationship('TvShow', backref=backref('episodes'))
+
     season = Column(String(10))
     episode = Column(String(20))
-    name = Column(String)
     series_full = Column(String)
-    clean_name = Column(String)
     air_date = Column(String(16))
     year = Column(String(8))
-    country = Column(String(30))
 
-    __table_args__ = (UniqueConstraint(clean_name, series_full),)
+    __table_args__ = (UniqueConstraint(tvshow_id, series_full),)
 
 
 class File(Base):
@@ -206,7 +207,6 @@ class Segment(Base):
 
     part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'))
 
-
     #__table_args__ = (UniqueConstraint(part_id, segment),)
 
 
@@ -286,3 +286,4 @@ class TvShow(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    country = Column(String(5))
