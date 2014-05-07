@@ -47,8 +47,7 @@ def process_release(release, online=True):
                     release.search_name
                 ))
 
-                mb = MetaBlack(status='ATTEMPTED')
-                mb.movie = release
+                mb = MetaBlack(status='ATTEMPTED', movie=release)
                 db.add(mb)
             else:
                 log.warning('[{}] - [{}] - imdb not found: local'.format(
@@ -63,6 +62,7 @@ def process_release(release, online=True):
             mb = MetaBlack(status='IMPOSSIBLE')
             mb.movie = release
             db.add(mb)
+        db.commit()
 
 
 def process(limit=100, online=True):
@@ -78,7 +78,7 @@ def process(limit=100, online=True):
         if online:
             query = query.filter(Release.movie_metablack_id==None)
 
-        for release in query.all():
+        for release in query.order_by(Release.posted.desc()).limit(limit):
             process_release(release, online)
 
 
