@@ -63,8 +63,11 @@ def process(limit=50, category=0):
                             if article:
                                 data = gzip.compress(article.encode('utf-8'))
                                 nfo = NFO(data=data)
-                                nfo.release = release
                                 db.add(nfo)
+
+                                release.nfo = nfo
+                                release.nfo_metablack_id = None
+                                db.add(release)
 
                                 log.info('nfo: [{}] - [{}] - nfo added'.format(
                                     release.id,
@@ -78,6 +81,6 @@ def process(limit=50, category=0):
                             release.id,
                             release.search_name
                         ))
-                        mb = MetaBlack(status='IMPOSSIBLE')
-                        mb.nfo = release
+                        mb = MetaBlack(nfo=release, status='IMPOSSIBLE')
                         db.add(mb)
+                db.commit()

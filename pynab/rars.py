@@ -219,6 +219,7 @@ def process(limit=20, category=0):
                             f.release = release
                             db.add(f)
 
+                        release.rar_metablack_id = None
                         db.add(release)
                         continue
 
@@ -226,6 +227,6 @@ def process(limit=20, category=0):
                     release.id,
                     release.search_name
                 ))
-                mb = MetaBlack(status='IMPOSSIBLE')
-                mb.release = release
+                mb = MetaBlack(rar=release, status='IMPOSSIBLE')
                 db.add(mb)
+            db.commit()
