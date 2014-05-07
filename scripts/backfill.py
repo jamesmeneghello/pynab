@@ -7,7 +7,7 @@ import pytz
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import pynab.groups
-from pynab.db import db
+from pynab.db import db_session, Group
 
 parser = argparse.ArgumentParser(description='''
 Backfill:
@@ -21,20 +21,21 @@ parser.add_argument('-d', '--date', nargs='?', help='Date to backfill to (leave 
 
 args = parser.parse_args()
 
-if args.group:
-    group = db.groups.find_one({'name': args.group})
-    if group:
-        if not args.date:
-            args.date = None
-        if pynab.groups.backfill(group['name'], pytz.utc.localize(dateutil.parser.parse(args.date))):
-            print('Group {0} successfully backfilled!'.format(group['name']))
+with db_session() as db:
+    if args.group:
+        group = db.query(Group).filter(Group.name==args.group).first()
+        if group:
+            if not args.date:
+                args.date = None
+            if pynab.groups.backfill(group.name, pytz.utc.localize(dateutil.parser.parse(args.date))):
+                print('Group {0} successfully backfilled!'.format(group.name))
+            else:
+                print('Problem backfilling group {0}.'.format(group.name))
         else:
-            print('Problem backfilling group {0}.'.format(group['name']))
+            print('No group called {0} exists in the db.'.format(args.group))
     else:
-        print('No group called {0} exists in the db.'.format(args.group))
-else:
-    for group in db.groups.find({'active': 1}):
-        if pynab.groups.backfill(group['name']):
-            print('Group {0} successfully backfilled!'.format(group['name']))
-        else:
-            print('Problem backfilling group {0}.'.format(group['name']))
+        for group in db.query(Group).filter(Group.active==True).all():
+            if pynab.groups.backfill(group.name):
+                print('Group {0} successfully backfilled!'.format(group.name))
+            else:
+                print('Problem backfilling group {0}.'.format(group.name))
