@@ -9,8 +9,13 @@ from sqlalchemy.engine import Engine
 import time
 from pynab import log
 
+
+def sqlalchemy_url():
+    return 'postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre)
+
+
 Base = declarative_base()
-engine = create_engine('postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre))
+engine = create_engine(sqlalchemy_url())
 Session = scoped_session(sessionmaker(bind=engine))
 
 
