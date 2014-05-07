@@ -6,13 +6,15 @@ from pynab import log
 from pynab.db import db_session, engine, Binary, Part, Release, Group
 import pynab.categories
 import pynab.nzbs
+import pynab.rars
+import pynab.nfos
 from sqlalchemy.orm import *
 import config
 
 
 def names_from_nfos(release):
     """Attempt to grab a release name from its NFO."""
-    nfo = pynab.nfos.get(release['nfo']).decode('ascii', 'ignore')
+    nfo = pynab.nfos.get(release.nfo).decode('ascii', 'ignore')
     if nfo:
         return pynab.nfos.attempt_parse(nfo)
     else:
@@ -21,10 +23,10 @@ def names_from_nfos(release):
 
 def names_from_files(release):
     """Attempt to grab a release name from filenames inside the release."""
-    if release['files']['names']:
+    if release.files:
         potential_names = []
-        for file in release['files']['names']:
-            name = pynab.rars.attempt_parse(file)
+        for file in release.files:
+            name = pynab.rars.attempt_parse(file.name)
             if name:
                 potential_names.append(name)
         return potential_names
@@ -34,17 +36,17 @@ def names_from_files(release):
 
 def discover_name(release):
     """Attempts to fix a release name by nfo or filelist."""
-    potential_names = [release['search_name'],]
+    potential_names = [release.search_name, ]
 
-    if 'files' in release:
+    if release.files:
         potential_names += names_from_files(release)
 
-    if release['nfo']:
+    if release.nfo:
         potential_names += names_from_nfos(release)
 
     if len(potential_names) > 1:
-        old_category = release['category']['_id']
-        calculated_old_category = pynab.categories.determine_category(release['search_name'])
+        old_category = release.category_id
+        calculated_old_category = pynab.categories.determine_category(release.search_name)
 
         for name in potential_names:
             new_category = pynab.categories.determine_category(name)
@@ -67,8 +69,8 @@ def discover_name(release):
                         category_id = new_category
 
                         log.info('release: [{}] - [{}] - rename: {} ({} -> {} -> {})'.format(
-                            release['_id'],
-                            release['search_name'],
+                            release.id,
+                            release.search_name,
                             search_name,
                             old_category,
                             calculated_old_category,
@@ -82,14 +84,14 @@ def discover_name(release):
             else:
                 # the old name was apparently fine
                 log.info('release: [{}] - [{}] - old name was fine'.format(
-                    release['_id'],
-                    release['search_name']
+                    release.id,
+                    release.search_name
                 ))
                 return True, False
 
     log.info('release: [{}] - [{}] - no good name candidates'.format(
-        release['_id'],
-        release['search_name']
+        release.id,
+        release.search_name
     ))
     return None, None
 
@@ -109,6 +111,8 @@ def process():
     each complete release. Will also categorise releases,
     and delete old binaries."""
 
+    #TODO: optimise query usage in this, it's using like 10-15 per release
+
     binary_count = 0
     added_count = 0
 
@@ -117,20 +121,20 @@ def process():
     with db_session() as db:
 
         binary_query = """
-        SELECT
-            binaries.id
-        FROM binaries
-            INNER JOIN (
-                    SELECT
-                        parts.id, parts.binary_id, parts.total_segments
-                    FROM parts
-                        INNER JOIN segments ON parts.id = segments.part_id
-                    GROUP BY parts.id
-                    HAVING count(segments.id) >= parts.total_segments
-                ) as parts
-                ON binaries.id = parts.binary_id
-        GROUP BY binaries.id
-        HAVING count(parts.id) >= binaries.total_parts
+            SELECT
+                binaries.id
+            FROM binaries
+                INNER JOIN (
+                        SELECT
+                            parts.id, parts.binary_id, parts.total_segments
+                        FROM parts
+                            INNER JOIN segments ON parts.id = segments.part_id
+                        GROUP BY parts.id
+                        HAVING count(segments.id) >= parts.total_segments
+                    ) as parts
+                    ON binaries.id = parts.binary_id
+            GROUP BY binaries.id
+            HAVING count(parts.id) >= binaries.total_parts
         """
 
         completed_binaries = engine.execute(binary_query).fetchall()
