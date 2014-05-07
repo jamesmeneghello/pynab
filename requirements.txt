@@ -14,3 +14,4 @@ daemonize
 colorlog
 sqlalchemy
 alembic
+psycopg2
