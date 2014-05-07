@@ -7,7 +7,7 @@ import datetime
 import traceback
 
 from pynab import log, log_descriptor
-from pynab.db import db
+from pynab.db import db_session, Group, Binary
 
 import pynab.groups
 import pynab.binaries
@@ -67,39 +67,40 @@ def main():
     multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
 
     while True:
-        active_groups = [group['name'] for group in db.groups.find({'active': 1})]
-        if active_groups:
-            # if maxtasksperchild is more than 1, everything breaks
-            # they're long processes usually, so no problem having one task per child
-            pool = multiprocessing.Pool(processes=config.scan.get('update_threads', 4), maxtasksperchild=1)
-            result = pool.map_async(update, active_groups)
-            try:
-                result.get()
-            except Exception as e:
-                mp_error(e)
+        # refresh the db session each iteration, just in case
+        with db_session() as db:
+            active_groups = [group['name'] for group in db.query(Group).filter(Group.active==True).all()]
+            if active_groups:
+                # if maxtasksperchild is more than 1, everything breaks
+                # they're long processes usually, so no problem having one task per child
+                pool = multiprocessing.Pool(processes=config.scan.get('update_threads', 4), maxtasksperchild=1)
+                result = pool.map_async(update, active_groups)
+                try:
+                    result.get()
+                except Exception as e:
+                    mp_error(e)
 
-            pool.terminate()
-            pool.join()
+                pool.terminate()
+                pool.join()
 
-            # process binaries
-            # TODO: benchmark threading for this - i suspect it won't do much (mongo table lock)
-            pynab.binaries.process()
+                # process binaries
+                pynab.binaries.process()
 
-            # process releases
-            # TODO: likewise
-            pynab.releases.process()
+                # process releases
+                pynab.releases.process()
 
-            # clean up dead binaries
-            dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
-            db.binaries.remove({'posted': {'$lte': dead_time}})
+                # clean up dead binaries
+                dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+                db.query(Binary).filter(Binary.posted<=dead_time).delete()
+            else:
+                log.info('no groups active, cancelling start.py...')
+                break
 
-            # wait for the configured amount of time between cycles
-            update_wait = config.scan.get('update_wait', 300)
-            log.info('sleeping for {:d} seconds...'.format(update_wait))
-            time.sleep(update_wait)
-        else:
-            log.info('no groups active, cancelling start.py...')
-            break
+        # wait for the configured amount of time between cycles
+        update_wait = config.scan.get('update_wait', 300)
+        log.info('sleeping for {:d} seconds...'.format(update_wait))
+        time.sleep(update_wait)
+
         
         
 if __name__ == '__main__':
