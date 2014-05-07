@@ -65,6 +65,7 @@ class Release(Base):
     grabs = Column(Integer, default=0)
 
     passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE', name='enum_passworded'), default='UNKNOWN')
+    unwanted = Column(Boolean, default=False)
 
     group_id = Column(Integer, ForeignKey('groups.id'))
     group = relationship('Group', backref=backref('releases'))
