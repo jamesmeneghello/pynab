@@ -1,8 +1,3 @@
-NOTE
-====
-
-Any time you pull master and it updates, re-copy the sample config and put your details in.
-
 pynab
 =====
 
@@ -47,10 +42,6 @@ In development:
 Technical Differences to Newznab
 ================================
 
-- Collates binaries at a part-level rather than segment
-  - No more tables of 80,000,000 parts that take 40 years to process and several centuries to delete
-  - Smaller DB size, since there's no overhead of storing 80,000,000 parts (more like 200-300k)
-  - We can afford to keep binaries for much longer (clear them out once a week or so)
 - NZBs are imported whole
   - Bulk imports of 50gb of nzb.gzs now take hours to process, not weeks
   - No more importing in batches of 100 - just point it at a directory of 600,000 NZBs and let it process
@@ -69,7 +60,7 @@ Technical Differences to Newznab
 - General optimisations
   - Several operations have been much-streamlined to prevent wasteful, un-necessary regex processing
   - No language wars, but Python is generally quicker than PHP (and will be moreso when PyPy supports 3.3)
-  - More to come, features before optimisation
+  - General (significant) database speed improvements
 
 
 Instructions
@@ -132,7 +123,7 @@ You can also import a regex dump or create your own.
     things, newznab conversion will just copy - but better to be safe.
 
 Pynab can transfer some data across from Newznab - notably your groups (and settings),
-any regexes, blacklists, categories and TVRage/IMDB/TVDB data, as well as user details
+any regexes, blacklists, categories and TVRage/IMDB data, as well as user details
 and current API keys. This means that your users should only experience downtime for a
 short period, and don't have to regenerate their API keys. Hate your users? No problem,
 they won't even notice the difference and you don't even have to tell them.
@@ -140,10 +131,6 @@ they won't even notice the difference and you don't even have to tell them.
 To convert from a Newznab installation, you should first enter the details of your MySQL
 installation into config.py, and read the comment at the top of scripts/convert_from_newznab.py.
 You may need to delete duplicate data in certain tables before running a conversion.
-
-If you want to keep certain collections (maybe your Newznab TVRage table is much smaller than
-the one supplied by this repo?), you can comment the function calls out at the bottom of the
-script.
 
 To run the conversion, first follow the normal installation instructions. Then:
 
@@ -164,6 +151,42 @@ For most Newznab installations, it'll look like this:
     > python3 scripts/import.py /var/www/newznab/nzbfiles
 
 Allow this to finish before starting normal operation.
+
+### Converting from pynab-mongo ###
+
+If you were using pynab-mongo and want to convert your database to the Postgre version,
+there's a script supplied. It's recommended that you side-load the Postgre branch, rather
+than cut over directly:
+
+    # don't bother running install.py first, as we're copying everything from mongo
+    # you will, of course, need postgres installed
+    > cd /var/www
+    > git clone https://github.com/Murodese/pynab.git pynab-postgres
+    > cd /var/www/pynab-postgres
+    > git checkout development-postgres
+    > cp config.sample.py config.py
+    > [edit config.py to add mongo and postgres config]
+    > python3 scripts/convert_mongo_to_postgre.py
+
+The script handles virtually everything, copying all necessary data. For large installations,
+this could take some time - there's no quick way to copy that data across. That said, it's not
+too excessive - for 500k releases, somewhere between 15 minutes to an hour depending on server
+specs. The migration script is unable to handle existing release file data and will need to
+re-retrieve it.
+
+Once this is complete, rename the old folder and replace it with the new, then shut down mongo:
+
+    > sudo service nginx stop # or whatever you're using
+    > mv /var/www/pynab /var/www/pynab.old
+    > mv /var/www/pynab-postgres /var/www/pynab
+    > sudo service nginx start
+    > sudo service mongo stop
+
+You can also optimise your postgres config to use available memory with something like pgTune:
+https://github.com/gregs1104/pgtune
+
+Execution of the indexer works identically to the mongo version - just run start.py and
+postprocess.py.
 
 Operation
 =========
