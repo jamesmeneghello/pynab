@@ -95,11 +95,11 @@ def save_all(parts):
 
         conn = engine.raw_connection()
         cur = conn.cursor()
-        start = time.time()
+        insert_start = time.time()
         cur.copy_from(s, 'segments', columns=ordering)
         conn.commit()
-        end = time.time()
-        log.debug('Time: {:.2f}s'.format(end - start))
+        insert_end = time.time()
+        log.debug('parts: postgres copy time: {:.2f}s'.format(insert_end - insert_start))
 
         #engine.execute(Segment.__table__.insert(), segment_inserts)
 
