@@ -90,7 +90,11 @@ Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/w
 
 You also need to install Python 3.3, associated packages and pip3:
 
-    sudo apt-get install python3 python3-setuptools python3-pip
+    > sudo apt-get install python3 python3-setuptools python3-pip
+
+And a few packages required by psycopg2:
+
+    > sudo apt-get install postgres-server-dev-9.3
 
 ### Universal ###
 
@@ -100,13 +104,22 @@ You also need to install Python 3.3, associated packages and pip3:
     > sudo cp config.sample.py config.py
     > sudo vim config.py [fill in details as appropriate]
     > sudo pip3 install -r requirements.txt
-    > sudo python3 install.py [follow instructions]
-    > sudo chown -R www-data:www-data /var/www/pynab
 
 If you receive an error message related to an old version of distribute while running pip3, you can
 install the new version by typing:
 
     sudo easy_install -U distribute
+
+New installation? As below:
+
+    > sudo python3 install.py [follow instructions]
+
+Migrating from Newznab? Go here: [Converting from Newznab](#converting-from-newznab)
+Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-from-pynab-mongo)
+
+Once done:
+
+    > sudo chown -R www-data:www-data /var/www/pynab
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
