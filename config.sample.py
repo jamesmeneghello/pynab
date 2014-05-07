@@ -170,23 +170,13 @@ log = {
     
 }
 
-# mongodb config
-db = {
-    # hostname: usually 'localhost'
+# postgre server config
+# hopefully self-explanatory
+postgre = {
     'host': '',
-
-    # port: default is 27017
-    # make sure there's no quotes around it
-    'port': 27017,
-
-    # user: username, if auth is enabled
+    'port': 5432,
     'user': '',
-
-    # pass: password, likewise
     'pass': '',
-
-    # db: database name in mongo
-    # pick whatever you want, it'll autocreate it
     'db': 'pynab',
 }
 
@@ -207,6 +197,26 @@ news = {
 
     # ssl: True if you want to use SSL, False if not
     'ssl': True,
+}
+
+# used in convert_mongo_to_postgre.py
+# mongodb config
+db = {
+    # hostname: usually 'localhost'
+    'host': '',
+
+    # port: default is 27017
+    # make sure there's no quotes around it
+    'port': 27017,
+
+    # user: username, if auth is enabled
+    'user': '',
+
+    # pass: password, likewise
+    'pass': '',
+
+    # db: database name in mongo
+    'db': 'pynab',
 }
 
 # only used for convert_from_newznab.py

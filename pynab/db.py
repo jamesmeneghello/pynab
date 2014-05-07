@@ -4,11 +4,6 @@ from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 from contextlib import contextmanager
 import config
 
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import time
-from pynab import log
-
 
 def sqlalchemy_url():
     return 'postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre)
@@ -18,6 +13,13 @@ Base = declarative_base()
 engine = create_engine(sqlalchemy_url())
 Session = scoped_session(sessionmaker(bind=engine))
 
+# enable query debugging
+# very noisy!
+"""
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import time
+from pynab import log
 
 # --- debug info ---
 class Queries:
@@ -41,6 +43,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
     log.debug("Total Time: %f" % total)
     log.debug("Total Queries: %d" % _q.total)
 # -------------------
+"""
 
 
 @contextmanager
