@@ -74,6 +74,7 @@ if __name__ == '__main__':
 
         postgre.commit()
 
+        """
         print('Copying movies...')
         for movie in mongo.imdb.find():
             movie['id'] = movie['_id']
@@ -85,6 +86,7 @@ if __name__ == '__main__':
             postgre.add(m)
 
         postgre.commit()
+        """
 
         print('Copying groups...')
         for group in mongo.groups.find():
@@ -114,7 +116,7 @@ if __name__ == '__main__':
 
         print(mongo.releases.find({'posted': {'$gte': max_age}, 'group._id': {'$in': active_groups}}).count())
 
-        for release in mongo.releases.find({'posted': {'$gte': max_age}, 'group._id': {'$in': active_groups}}):
+        for release in mongo.releases.find({'posted': {'$gte': max_age}, 'group._id': {'$in': active_groups}}).limit(100):
             print('Processing {}...'.format(release['search_name']))
 
             release.pop('_id')
@@ -125,6 +127,7 @@ if __name__ == '__main__':
             release.pop('file_count')
 
             # can't get file data because it's not informative enough
+            # no biggie, we can re-process it
             if 'files' in release:
                 release.pop('files')
 
@@ -137,7 +140,6 @@ if __name__ == '__main__':
                     release['regex'] = r
                 else:
                     release.pop('regex')
-
 
             if 'imdb' in release and release['imdb'] and '_id' in release['imdb']:
                 release['movie'] = postgre.query(pynab.db.Movie).filter(pynab.db.Movie.id==release['imdb']['_id']).first()
@@ -162,18 +164,6 @@ if __name__ == '__main__':
             release.pop('spotnab_id')
             release.pop('total_parts')
 
-            if release['tv']:
-                e = postgre.query(pynab.db.Episode)\
-                    .filter(pynab.db.Episode.clean_name==release['tv']['clean_name'])\
-                    .filter(pynab.db.Episode.series_full==release['tv']['series_full']).first()
-                if not e:
-                    e = pynab.db.Episode(**release['tv'])
-
-                release['episode'] = e
-
-            if 'tv' in release:
-                release.pop('tv')
-
             if 'tvdb' in release:
                 release.pop('tvdb')
 
@@ -182,7 +172,22 @@ if __name__ == '__main__':
                     if '_id' in release['tvrage']:
                         t = postgre.query(pynab.db.TvShow).filter(pynab.db.TvShow.id==release['tvrage']['_id']).first()
                         release['tvshow'] = t
+
+                        if release['tv']:
+                            e = postgre.query(pynab.db.Episode)\
+                                .filter(pynab.db.Episode.tvshow_id==release['tvshow'].id)\
+                                .filter(pynab.db.Episode.series_full==release['tv']['series_full']).first()
+                            if not e:
+                                release['tv'].pop('name')
+                                release['tv'].pop('clean_name')
+                                e = pynab.db.Episode(**release['tv'])
+                                e.tvshow_id = release['tvshow'].id
+
+                            release['episode'] = e
                 release.pop('tvrage')
+
+            if 'tv' in release:
+                release.pop('tv')
 
             if 'updated' in release:
                 release.pop('updated')
@@ -190,13 +195,13 @@ if __name__ == '__main__':
 
             if 'passworded' in release:
                 if release['passworded'] is False:
-                    release['passworded'] = 0
+                    release['passworded'] = 'NO'
                 if release['passworded'] is True:
-                    release['passworded'] = 1
+                    release['passworded'] = 'YES'
                 if release['passworded'] == 'potentially':
-                    release['passworded'] = 2
+                    release['passworded'] = 'MAYBE'
                 if release['passworded'] == 'unknown':
-                    release['passworded'] = 3
+                    release['passworded'] = 'UNKNOWN'
 
             if 'unwanted' in release:
                 release.pop('unwanted')
