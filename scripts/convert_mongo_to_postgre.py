@@ -170,7 +170,6 @@ if __name__ == '__main__':
                     if '_id' in release['tvrage']:
                         t = postgre.query(pynab.db.TvShow).filter(pynab.db.TvShow.id==release['tvrage']['_id']).first()
                         release['tvshow'] = t
-
                         if release['tv']:
                             e = postgre.query(pynab.db.Episode)\
                                 .filter(pynab.db.Episode.tvshow_id==release['tvshow'].id)\
@@ -178,6 +177,11 @@ if __name__ == '__main__':
                             if not e:
                                 release['tv'].pop('name')
                                 release['tv'].pop('clean_name')
+                                if 'country' in release['tv']:
+                                    release['tvshow'].country = release['tv']['country']
+                                    release['tv'].pop('country')
+                                else:
+                                    release['tvshow'].country = 'US'
                                 e = pynab.db.Episode(**release['tv'])
                                 e.tvshow_id = release['tvshow'].id
 
