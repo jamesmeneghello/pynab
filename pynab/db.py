@@ -55,6 +55,8 @@ def db_session():
     except:
         session.rollback()
         raise
+    finally:
+        Session.remove()
 
 
 class Release(Base):
