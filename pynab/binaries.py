@@ -88,7 +88,12 @@ def process():
             all_regex = db.query(Regex).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
             for part in db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None).all():
                 total_processed += 1
-                relevant_regex = [reg if reg.group_name == part.group_name or reg.group_name == '.*' else '' for reg in all_regex]
+
+                relevant_regex = []
+                for reg in all_regex:
+                    if reg.group_name == part.group_name or reg.group_name == '.*':
+                        relevant_regex.append(reg)
+
                 for reg in relevant_regex:
                     # convert php-style regex to python
                     # ie. /(\w+)/i -> (\w+), regex.I
