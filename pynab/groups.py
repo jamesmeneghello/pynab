@@ -168,11 +168,14 @@ def update(group_name):
 
                     status, messages = server.scan(group_name, start, end)
                     if status and messages:
-                        pynab.parts.save_all(messages)
-                        group.last = end
-                        db.merge(group)
-                        db.commit()
-                        retries = 0
+                        if pynab.parts.save_all(messages):
+                            group.last = end
+                            db.merge(group)
+                            db.commit()
+                            retries = 0
+                        else:
+                            log.error('group: {}: problem saving parts to db')
+                            return False
                     elif status and not messages:
                         # there were ignored messages and we didn't get anything to save
                         pass
