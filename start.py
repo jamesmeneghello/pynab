@@ -1,10 +1,8 @@
 import argparse
-import multiprocessing
+import concurrent.futures
 import time
-import logging
 import pytz
 import datetime
-import traceback
 
 from pynab import log, log_descriptor
 from pynab.db import db_session, Group, Binary
@@ -19,12 +17,8 @@ import pynab.imdb
 import config
 
 
-def mp_error(msg, *args):
-    return multiprocessing.get_logger().exception(msg, *args)
-
-
 def update(group_name):
-    pynab.groups.update(group_name)
+    return pynab.groups.update(group_name)
 
 
 def process_tvrage(limit):
@@ -63,25 +57,15 @@ def daemonize(pidfile):
 def main():
     log.info('starting update...')
 
-    # print MP log as well
-    multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
-
     while True:
         # refresh the db session each iteration, just in case
         with db_session() as db:
             active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
             if active_groups:
-                # if maxtasksperchild is more than 1, everything breaks
-                # they're long processes usually, so no problem having one task per child
-                pool = multiprocessing.Pool(processes=config.scan.get('update_threads', 4), maxtasksperchild=1)
-                result = pool.map_async(update, active_groups)
-                try:
-                    result.get()
-                except Exception as e:
-                    mp_error(e)
-
-                pool.terminate()
-                pool.join()
+                with concurrent.futures.ProcessPoolExecutor(config.scan.get('update_threads', None)) as executor:
+                    # if maxtasksperchild is more than 1, everything breaks
+                    # they're long processes usually, so no problem having one task per child
+                    result = executor.map(update, active_groups)
 
                 # process binaries
                 pynab.binaries.process()
@@ -91,7 +75,8 @@ def main():
 
                 # clean up dead binaries
                 dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
-                db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                log.info('start: deleted {} dead binaries'.format(dead_binaries))
             else:
                 log.info('no groups active, cancelling start.py...')
                 break
@@ -101,8 +86,7 @@ def main():
         log.info('sleeping for {:d} seconds...'.format(update_wait))
         time.sleep(update_wait)
 
-        
-        
+
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description="Pynab main indexer script")
     argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
