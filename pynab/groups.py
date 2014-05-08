@@ -127,6 +127,11 @@ def update(group_name):
             # if total > 0, we have new parts
             total = end - start + 1
 
+            # this has been removed, because certain groups (looking at you,
+            # a.b.multimedia and probably boneless as well) are taking far too
+            # long to return a reply and it's literally only used for
+            # informational purposes
+            """
             start_date = server.post_date(group_name, start)
             end_date = server.post_date(group_name, end)
 
@@ -141,7 +146,8 @@ def update(group_name):
                     (total_date.seconds // 60) % 60
                 ))
             else:
-                log.info('group: {}: pulling {} - {}'.format(group_name, start, end))
+            """
+            log.info('group: {}: pulling {} - {}'.format(group_name, start, end))
 
             if total > 0:
                 if not group.last:
@@ -178,6 +184,7 @@ def update(group_name):
                             continue
 
                     if end == last:
+                        log.info('group: {}: update completed'.format(group_name))
                         if server.connection:
                             server.connection.quit()
                         return True
