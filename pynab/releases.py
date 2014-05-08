@@ -147,78 +147,82 @@ def process():
 
             # returns a list of _ids, so we need to get each binary
             for binary in binaries:
-                binary_count += 1
-
-                release = Release()
-                release.name = binary.name
-                release.posted = binary.posted
-                release.posted_by = binary.posted_by
-                release.regex_id = binary.regex_id
-                release.grabs = 0
-
-                # check to make sure we have over the configured minimum files
-                nfos = []
-                rars = []
-                pars = []
-                rar_count = 0
-                par_count = 0
-                zip_count = 0
-
-                for part in binary.parts:
-                    if regex.search(pynab.nzbs.rar_part_regex, part.subject):
-                        rar_count += 1
-                    if regex.search(pynab.nzbs.nfo_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part.subject):
-                        nfos.append(part)
-                    if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part.subject):
-                        rars.append(part)
-                    if regex.search(pynab.nzbs.par2_regex, part.subject):
-                        par_count += 1
-                        if not regex.search(pynab.nzbs.par_vol_regex, part.subject):
-                            pars.append(part)
-                    if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                part.subject):
-                        zip_count += 1
-
-                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    log.info('release: [{}] - removed (less than minimum archives)'.format(
-                        binary.name
-                    ))
+                r = db.query(Release).filter(Release.name==binary.name).filter(Release.posted==binary.posted).first()
+                if r:
                     db.delete(binary)
-                    continue
+                else:
+                    binary_count += 1
 
-                # clean the name for searches
-                release.search_name = clean_release_name(binary.name)
+                    release = Release()
+                    release.name = binary.name
+                    release.posted = binary.posted
+                    release.posted_by = binary.posted_by
+                    release.regex_id = binary.regex_id
+                    release.grabs = 0
 
-                # assign the release group
-                release.group = db.query(Group).filter(Group.name==binary.group_name).one()
+                    # check to make sure we have over the configured minimum files
+                    nfos = []
+                    rars = []
+                    pars = []
+                    rar_count = 0
+                    par_count = 0
+                    zip_count = 0
 
-                # give the release a category
-                release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
+                    for part in binary.parts:
+                        if regex.search(pynab.nzbs.rar_part_regex, part.subject):
+                            rar_count += 1
+                        if regex.search(pynab.nzbs.nfo_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                    part.subject):
+                            nfos.append(part)
+                        if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                    part.subject):
+                            rars.append(part)
+                        if regex.search(pynab.nzbs.par2_regex, part.subject):
+                            par_count += 1
+                            if not regex.search(pynab.nzbs.par_vol_regex, part.subject):
+                                pars.append(part)
+                        if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                    part.subject):
+                            zip_count += 1
 
-                # create the nzb, store it in GridFS and link it here
-                nzb = pynab.nzbs.create(release.search_name, release.category_id, binary)
+                    if rar_count + zip_count < config.postprocess.get('min_archives', 1):
+                        log.info('release: [{}] - removed (less than minimum archives)'.format(
+                            binary.name
+                        ))
+                        db.delete(binary)
+                        continue
 
-                if nzb:
-                    added_count += 1
+                    # clean the name for searches
+                    release.search_name = clean_release_name(binary.name)
 
-                    log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
-                        release.search_name,
-                        len(rars),
-                        rar_count
-                    ))
+                    # assign the release group
+                    release.group = db.query(Group).filter(Group.name==binary.group_name).one()
 
-                    release.nzb = nzb
+                    # give the release a category
+                    release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
 
-                    # save the release
-                    db.add(release)
+                    # create the nzb, store it in GridFS and link it here
+                    nzb = pynab.nzbs.create(release.search_name, release.category_id, binary)
 
-                    # delete processed binaries
-                    # re-add the binary to the session
-                    db.delete(binary)
+                    if nzb:
+                        added_count += 1
 
-                    db.flush()
+                        log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
+                            release.search_name,
+                            len(rars),
+                            rar_count
+                        ))
+
+                        release.nzb = nzb
+
+                        # save the release
+                        db.add(release)
+
+                        # delete processed binaries
+                        # re-add the binary to the session
+                        db.delete(binary)
+
+                        db.flush()
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(
