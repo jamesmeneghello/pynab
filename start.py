@@ -69,7 +69,7 @@ def main():
     while True:
         # refresh the db session each iteration, just in case
         with db_session() as db:
-            active_groups = [group['name'] for group in db.query(Group).filter(Group.active==True).all()]
+            active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
             if active_groups:
                 # if maxtasksperchild is more than 1, everything breaks
                 # they're long processes usually, so no problem having one task per child
