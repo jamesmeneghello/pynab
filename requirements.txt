@@ -12,6 +12,6 @@ regex
 lxml
 daemonize
 colorlog
-sqlalchemy
+sqlalchemy>=0.9
 alembic
 psycopg2
