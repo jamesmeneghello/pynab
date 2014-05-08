@@ -3,6 +3,7 @@ import concurrent.futures
 import time
 import pytz
 import datetime
+import traceback
 
 from pynab import log, log_descriptor
 from pynab.db import db_session, Group, Binary
@@ -18,7 +19,11 @@ import config
 
 
 def update(group_name):
-    return pynab.groups.update(group_name)
+    try:
+        return pynab.groups.update(group_name)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
 
 def process_tvrage(limit):
@@ -65,7 +70,10 @@ def main():
                 with concurrent.futures.ProcessPoolExecutor(config.scan.get('update_threads', None)) as executor:
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
-                    result = executor.map(update, active_groups)
+                    result = [executor.submit(update, active_group) for active_group in active_groups]
+                    #result = executor.map(update, active_groups)
+                    for r in concurrent.futures.as_completed(result):
+                        data = r.result()
 
                 # process binaries
                 pynab.binaries.process()
