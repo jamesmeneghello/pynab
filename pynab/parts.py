@@ -36,19 +36,19 @@ def save_all(parts):
                 for part in part_inserts:
                     for item in ordering:
                         if item == 'posted':
-                            s.write(part[item].replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S') + "\t")
+                            s.write('"' + part[item].replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S').replace('"', '\\"') + '",')
                         elif item == 'xref':
                             # leave off the tab
-                            s.write(part[item])
+                            s.write('"' + part[item].replace('"', '\\"') + '"')
                         else:
-                            s.write(str(part[item]) + "\t")
+                            s.write('"' + str(part[item]).replace('"', '\\"') + '",')
                     s.write("\n")
                 s.seek(0)
 
                 conn = engine.raw_connection()
                 cur = conn.cursor()
                 insert_start = time.time()
-                cur.copy_from(s, 'parts', columns=ordering)
+                cur.copy_expert("COPY parts ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(', '.join(ordering)), s)
                 conn.commit()
                 insert_end = time.time()
                 log.debug('Time: {:.2f}s'.format(insert_end - insert_start))
@@ -78,7 +78,8 @@ def save_all(parts):
                             segment['part_id'] = existing_part.id
                             segment_inserts.append(segment)
                 else:
-                    log.error('i\'ve made a huge mistake')
+                    log.critical('i\'ve made a huge mistake')
+                    return False
 
             if segment_inserts:
                 ordering = ['segment', 'size', 'message_id', 'part_id']
@@ -111,6 +112,8 @@ def save_all(parts):
             len(segment_inserts),
             end - start
         ))
+
+    return True
 
 
 def is_blacklisted(subject, group_name, blacklists):
