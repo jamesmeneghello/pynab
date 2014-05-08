@@ -6,7 +6,7 @@ import pytz
 from pynab.db import db_session, engine, Part, Segment
 from pynab import log
 
-from sqlalchemy.orm import *
+from sqlalchemy.orm import Load, subqueryload
 import psycopg2
 
 
