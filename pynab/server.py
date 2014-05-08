@@ -189,7 +189,13 @@ class Server:
             blacklisted_parts
         ))
 
-        return messages
+        # check to see if we at least got some messages - they might've been ignored
+        if len(received) > 0:
+            status = True
+        else:
+            status = False
+
+        return status, messages
 
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""

@@ -31,7 +31,7 @@ def backfill(group_name, date=None):
 
             # if the first article we have is lower than the target
             if target_article >= group.first:
-                log.info('group: {}: Nothing to do, we already have the target post.'.format(group_name))
+                log.info('group: {}: nothing to do, we already have the target post'.format(group_name))
                 if server.connection:
                     server.connection.quit()
                 return True
@@ -48,12 +48,15 @@ def backfill(group_name, date=None):
 
             retries = 0
             while True:
-                messages = server.scan(group_name, start, end)
+                status, messages = server.scan(group_name, start, end)
 
-                if messages:
+                if status and messages:
                     pynab.parts.save_all(messages)
                     group.first = start
                     db.commit()
+                elif status and not messages:
+                    # there were ignored messages and we didn't get anything to save
+                    pass
                 else:
                     log.error('group: {}: problem updating group - trying again'.format(group_name))
                     retries += 1
@@ -157,13 +160,16 @@ def update(group_name):
                         else:
                             end = start + MESSAGE_LIMIT - 1
 
-                    messages = server.scan(group_name, start, end)
-                    if messages:
+                    status, messages = server.scan(group_name, start, end)
+                    if status and messages:
                         pynab.parts.save_all(messages)
                         group.last = end
                         db.merge(group)
                         db.commit()
                         retries = 0
+                    elif status and not messages:
+                        # there were ignored messages and we didn't get anything to save
+                        pass
                     else:
                         log.error('group: {}: problem updating group - trying again'.format(group_name))
                         retries += 1
