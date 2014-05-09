@@ -67,7 +67,7 @@ def main():
         with db_session() as db:
             active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
             if active_groups:
-                with concurrent.futures.ProcessPoolExecutor(config.scan.get('update_threads', None)) as executor:
+                with concurrent.futures.ThreadPoolExecutor(config.scan.get('update_threads', None)) as executor:
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
                     result = [executor.submit(update, active_group) for active_group in active_groups]
