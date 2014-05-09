@@ -33,6 +33,11 @@ if __name__ == '__main__':
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
 
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        command.stamp(alembic_cfg, "head")
+
         print('Copying blacklists...')
         for blacklist in mongo.blacklists.find():
             blacklist.pop('_id')
