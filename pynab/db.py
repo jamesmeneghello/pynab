@@ -21,6 +21,7 @@ from sqlalchemy.engine import Engine
 import time
 from pynab import log
 
+
 # --- debug info ---
 class Queries:
     pass
@@ -55,8 +56,6 @@ def db_session():
     except:
         session.rollback()
         raise
-    finally:
-        Session.remove()
 
 
 class Release(Base):
@@ -189,6 +188,7 @@ class Part(Base):
     __tablename__ = 'parts'
 
     id = Column(Integer, primary_key=True)
+    hash = Column(BigInteger, index=True)
 
     subject = Column(String, index=True)
     total_segments = Column(Integer)

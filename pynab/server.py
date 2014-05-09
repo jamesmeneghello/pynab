@@ -75,7 +75,7 @@ class Server:
                     else:
                         return None
             except nntplib.NNTPError as nntpe:
-                log.error('server: [{}]: Problem retrieving messages: {}.'.format(group_name, nntpe))
+                log.error('server: [{}]: problem retrieving messages: {}.'.format(group_name, nntpe))
                 return None
 
             return data
@@ -91,8 +91,8 @@ class Server:
             self.connection.group(group_name)
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
-            log.debug('NNTP Error: ' + str(nntpe))
-            return {}
+            log.debug('server: [{}]: nntp error: ' + str(nntpe))
+            return False, None
 
         messages = {}
         ignored = 0
@@ -130,6 +130,11 @@ class Server:
                     '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
                 ).strip()).encode('utf-8', 'replace').decode('latin-1')
 
+                posted_by = nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode('latin-1')
+
+                # generate a hash to perform matching
+                hash = pynab.parts.generate_hash(subject, posted_by, group_name, int(total_segments))
+
                 # this is spammy as shit, for obvious reasons
                 #pynab.log.debug('Binary part found: ' + subject)
 
@@ -137,22 +142,22 @@ class Server:
                 segment = {
                     'message_id': overview['message-id'][1:-1],
                     'segment': int(segment_number),
-                    'size': int(overview[':bytes']),
+                    'size': int(overview[':bytes'])
                 }
 
                 # if we've already got a binary by this name, add this segment
-                if subject in messages:
-                    messages[subject]['segments'][segment_number] = segment
-                    messages[subject]['available_segments'] += 1
+                if hash in messages:
+                    messages[hash]['segments'][segment_number] = segment
+                    messages[hash]['available_segments'] += 1
                 else:
                     # dateutil will parse the date as whatever and convert to UTC
                     # some subjects/posters have odd encoding, which will break pymongo
                     # so we make sure it doesn't
                     message = {
+                        'hash': hash,
                         'subject': subject,
                         'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode(
-                            'latin-1'),
+                        'posted_by': posted_by,
                         'group_name': group_name,
                         'xref': overview['xref'],
                         'total_segments': int(total_segments),
@@ -160,7 +165,7 @@ class Server:
                         'segments': {segment_number: segment, },
                     }
 
-                    messages[subject] = message
+                    messages[hash] = message
             else:
                 # :getout:
                 ignored += 1

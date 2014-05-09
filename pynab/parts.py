@@ -1,6 +1,8 @@
 import regex
 import time
 import io
+import pyhashxx
+import struct
 
 from pynab.db import db_session, engine, Part, Segment
 from pynab import log
@@ -8,29 +10,49 @@ from pynab import log
 from sqlalchemy.orm import Load, subqueryload
 
 
+def generate_hash(subject, posted_by, group_name, total_segments):
+    """Generates a mostly-unique temporary hash for a part."""
+    hash = pyhashxx.hashxx(subject.encode('utf-8'), posted_by.encode('utf-8'),
+                           group_name.encode('utf-8'), struct.pack('I', total_segments)
+    )
+
+    return hash
+
+
 def save_all(parts):
     """Save a set of parts to the DB, in a batch if possible."""
 
     if parts:
         start = time.time()
+        group_name = list(parts.values())[0]['group_name']
 
         with db_session() as db:
+            # this is a little tricky. parts have no uniqueness at all.
+            # no uniqid and the posted dates can change since it's based off the first
+            # segment that we see in that part, which is different for each scan.
+            # what we do is get the next-closest thing (subject+author+group) and
+            # order it by oldest first, so when it's building the dict the newest parts
+            # end on top (which are the most likely to be being saved to).
+
+            # realistically, it shouldn't be a big problem - parts aren't stored in the db
+            # for very long anyway, and they're only a problem while there. saving 500 million
+            # segments to the db is probably not a great idea anyway.
             existing_parts = dict(
-                ((part.subject, part) for part in
-                    db.query(Part.id, Part.subject).filter(Part.subject.in_(parts.keys())).all()
+                ((part.hash, part) for part in
+                    db.query(Part.id, Part.hash).filter(Part.hash.in_(parts.keys())).filter(Part.group_name==group_name).order_by(Part.posted.asc()).all()
                 )
             )
 
             part_inserts = []
-            for subject, part in parts.items():
-                existing_part = existing_parts.get(subject, None)
+            for hash, part in parts.items():
+                existing_part = existing_parts.get(hash, None)
                 if not existing_part:
                     segments = part.pop('segments')
                     part_inserts.append(part)
                     part['segments'] = segments
 
             if part_inserts:
-                ordering = ['subject', 'group_name', 'posted', 'posted_by', 'total_segments', 'xref']
+                ordering = ['hash', 'subject', 'group_name', 'posted', 'posted_by', 'total_segments', 'xref']
 
                 s = io.StringIO()
                 for part in part_inserts:
@@ -56,27 +78,33 @@ def save_all(parts):
                 #engine.execute(Part.__table__.insert(), part_inserts)
 
             existing_parts = dict(
-                ((part.subject, part) for part in
+                ((part.hash, part) for part in
                     db.query(Part)
                     .options(
                         subqueryload('segments'),
-                        Load(Part).load_only(Part.id, Part.subject),
+                        Load(Part).load_only(Part.id, Part.hash),
                         Load(Segment).load_only(Segment.id, Segment.segment)
                     )
-                    .filter(Part.subject.in_(parts.keys()))
+                    .filter(Part.hash.in_(parts.keys()))
+                    .filter(Part.group_name==group_name)
+                    .order_by(Part.posted.asc())
                     .all()
                 )
             )
 
             segment_inserts = []
-            for subject, part in parts.items():
-                existing_part = existing_parts.get(subject, None)
+            for hash, part in parts.items():
+                existing_part = existing_parts.get(hash, None)
                 if existing_part:
                     segments = dict(((s.segment, s) for s in existing_part.segments))
                     for segment_number, segment in part['segments'].items():
                         if int(segment_number) not in segments:
                             segment['part_id'] = existing_part.id
                             segment_inserts.append(segment)
+                        else:
+                            # we hit a duplicate message for a part
+                            # kinda wish people would stop reposting shit constantly
+                            pass
                 else:
                     log.critical('i\'ve made a huge mistake')
                     return False
