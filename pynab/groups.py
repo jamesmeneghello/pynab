@@ -174,13 +174,13 @@ def update(group_name):
                             db.commit()
                             retries = 0
                         else:
-                            log.error('group: {}: problem saving parts to db')
+                            log.error('group: {}: problem saving parts to db'.format(group_name))
                             return False
                     elif status and not messages:
                         # there were ignored messages and we didn't get anything to save
                         pass
                     else:
-                        log.error('group: {}: problem updating group - trying again'.format(group_name))
+                        log.error('group: {}: problem updating group ({}-{}) - trying again'.format(group_name, start, end))
                         retries += 1
                         # keep trying the same block 3 times, then skip
                         if retries <= 3:
