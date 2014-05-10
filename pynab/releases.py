@@ -139,16 +139,15 @@ def process():
             HAVING count(*) >= binaries.total_parts
         """
 
-        completed_binaries = engine.execute(binary_query).fetchall()
-        if completed_binaries:
-            binaries = db.query(Binary).options(
+        for completed_binary in engine.execute(binary_query).fetchall():
+            binary = db.query(Binary).options(
                 subqueryload('parts'),
                 subqueryload('parts.segments'),
                 Load(Part).load_only(Part.id, Part.subject, Part.segments),
-            ).filter(Binary.id.in_([b[0] for b in completed_binaries])).all()
+            ).filter(Binary.id==completed_binary[0]).first()
 
             # returns a list of _ids, so we need to get each binary
-            for binary in binaries:
+            if binary:
                 r = db.query(Release).filter(Release.name==binary.name).filter(Release.posted==binary.posted).first()
                 if r:
                     db.delete(binary)
