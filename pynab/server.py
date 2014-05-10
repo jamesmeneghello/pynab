@@ -91,7 +91,11 @@ class Server:
             self.connection.group(group_name)
             status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
-            log.debug('server: [{}]: nntp error: ' + str(nntpe))
+            log.error('server: [{}]: nntp error: {}'.format(group_name, nntpe))
+            log.error('server: suspected dead nntp connection, restarting')
+            if self.connection:
+                self.connection.quit()
+            self.connect()
             return False, None
 
         messages = {}
