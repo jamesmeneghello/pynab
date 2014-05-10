@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint, Enum
+from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint, Enum, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
 from contextlib import contextmanager
@@ -67,42 +67,42 @@ class Release(Base):
     posted = Column(DateTime)
 
     name = Column(String)
-    search_name = Column(String)
+    search_name = Column(String, index=True)
     posted_by = Column(String)
 
     status = Column(Integer)
     grabs = Column(Integer, default=0)
 
     passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE', name='enum_passworded'), default='UNKNOWN')
-    unwanted = Column(Boolean, default=False)
+    unwanted = Column(Boolean, default=False, index=True)
 
-    group_id = Column(Integer, ForeignKey('groups.id'))
+    group_id = Column(Integer, ForeignKey('groups.id'), index=True)
     group = relationship('Group', backref=backref('releases'))
 
-    category_id = Column(Integer, ForeignKey('categories.id'))
+    category_id = Column(Integer, ForeignKey('categories.id'), index=True)
     category = relationship('Category', backref=backref('releases'))
 
-    regex_id = Column(Integer, ForeignKey('regexes.id'))
+    regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('releases'))
 
-    tvshow_id = Column(Integer, ForeignKey('tvshows.id'))
+    tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
     tvshow = relationship('TvShow', backref=backref('releases'))
-    tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id'))
+    tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
 
-    movie_id = Column(String, ForeignKey('movies.id'))
+    movie_id = Column(String, ForeignKey('movies.id'), index=True)
     movie = relationship('Movie', backref=backref('releases'))
-    movie_metablack_id = Column(Integer, ForeignKey('metablack.id'))
+    movie_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
 
-    nzb_id = Column(Integer, ForeignKey('nzbs.id'))
+    nzb_id = Column(Integer, ForeignKey('nzbs.id'), index=True)
     nzb = relationship('NZB', backref=backref('release', uselist=False))
 
-    rar_metablack_id = Column(Integer, ForeignKey('metablack.id'))
+    rar_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
 
-    nfo_id = Column(Integer, ForeignKey('nfos.id'))
+    nfo_id = Column(Integer, ForeignKey('nfos.id'), index=True)
     nfo = relationship('NFO', backref=backref('release', uselist=False))
-    nfo_metablack_id = Column(Integer, ForeignKey('metablack.id'))
+    nfo_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
 
-    episode_id = Column(Integer, ForeignKey('episodes.id'))
+    episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
@@ -127,7 +127,7 @@ class Episode(Base):
 
     id = Column(Integer, primary_key=True)
 
-    tvshow_id = Column(Integer, ForeignKey('tvshows.id'))
+    tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
     tvshow = relationship('TvShow', backref=backref('episodes'))
 
     season = Column(String(10))
@@ -147,7 +147,7 @@ class File(Base):
     name = Column(String)
     size = Column(BigInteger)
 
-    release_id = Column(Integer, ForeignKey('releases.id'))
+    release_id = Column(Integer, ForeignKey('releases.id'), index=True)
     release = relationship('Release', backref=backref('files'))
 
 
@@ -156,7 +156,7 @@ class Group(Base):
 
     id = Column(Integer, primary_key=True)
 
-    active = Column(Boolean)
+    active = Column(Boolean, index=True)
     first = Column(BigInteger)
     last = Column(BigInteger)
     name = Column(String)
@@ -176,7 +176,9 @@ class Binary(Base):
     xref = Column(String)
     group_name = Column(String)
 
-    regex_id = Column(Integer, ForeignKey('regexes.id'))
+    complete = Column(Boolean, index=True, default=False)
+
+    regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
     parts = relationship('Part', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
@@ -190,16 +192,18 @@ class Part(Base):
     id = Column(Integer, primary_key=True)
     hash = Column(BigInteger, index=True)
 
-    subject = Column(String, index=True)
-    total_segments = Column(Integer)
+    subject = Column(String)
+    total_segments = Column(Integer, index=True)
 
-    posted = Column(DateTime)
+    complete = Column(Boolean, index=True, default=False)
+
+    posted = Column(DateTime, index=True)
     posted_by = Column(String)
 
     xref = Column(String)
-    group_name = Column(String)
+    group_name = Column(String, index=True)
 
-    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'))
+    binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
 
     segments = relationship('Segment', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Segment.segment)")
 
@@ -212,11 +216,11 @@ class Segment(Base):
 
     id = Column(Integer, primary_key=True)
 
-    segment = Column(Integer)
+    segment = Column(Integer, index=True)
     size = Column(Integer)
     message_id = Column(String)
 
-    part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'))
+    part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
     #__table_args__ = (UniqueConstraint(part_id, segment),)
 
@@ -253,7 +257,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
-    parent_id = Column(Integer, ForeignKey('categories.id'))
+    parent_id = Column(Integer, ForeignKey('categories.id'), index=True)
     parent = relationship('Category', remote_side=[id])
     children = relationship('Category')
 
@@ -287,7 +291,7 @@ class Movie(Base):
 
     id = Column(String, primary_key=True)
 
-    name = Column(String)
+    name = Column(String, index=True)
     genre = Column(String)
     year = Column(Integer)
 
