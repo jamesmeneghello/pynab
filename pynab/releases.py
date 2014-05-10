@@ -119,7 +119,6 @@ def process():
     start = time.time()
 
     with db_session() as db:
-
         binary_query = """
             SELECT
                 binaries.id
@@ -132,7 +131,6 @@ def process():
                         GROUP BY parts.id
                         HAVING count(*) >= parts.total_segments
                         ORDER BY parts.posted DESC
-                        LIMIT 100000
                     ) as parts
                     ON binaries.id = parts.binary_id
             GROUP BY binaries.id
