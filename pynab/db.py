@@ -176,8 +176,6 @@ class Binary(Base):
     xref = Column(String)
     group_name = Column(String)
 
-    complete = Column(Boolean, index=True, default=False)
-
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
@@ -194,8 +192,6 @@ class Part(Base):
 
     subject = Column(String)
     total_segments = Column(Integer, index=True)
-
-    complete = Column(Boolean, index=True, default=False)
 
     posted = Column(DateTime, index=True)
     posted_by = Column(String)
