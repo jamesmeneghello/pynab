@@ -130,11 +130,13 @@ def process():
                         FROM parts
                             INNER JOIN segments ON parts.id = segments.part_id
                         GROUP BY parts.id
-                        HAVING count(segments.id) >= parts.total_segments
+                        HAVING count(*) >= parts.total_segments
+                        ORDER BY parts.posted DESC
+                        LIMIT 100000
                     ) as parts
                     ON binaries.id = parts.binary_id
             GROUP BY binaries.id
-            HAVING count(parts.id) >= binaries.total_parts
+            HAVING count(*) >= binaries.total_parts
         """
 
         completed_binaries = engine.execute(binary_query).fetchall()
