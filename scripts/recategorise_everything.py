@@ -12,7 +12,7 @@ def recategorise():
         for release in db.query(Release).join(Group).all():
             category_id = pynab.categories.determine_category(release.search_name, release.group.name)
             release.category_id = category_id
-            db.add(release)
+            db.merge(release)
             i += 1
             # commit every 50k rows
             if i == 50000:
