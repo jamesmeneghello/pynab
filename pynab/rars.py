@@ -157,6 +157,9 @@ def get_rar_info(server, group_name, messages):
 
         return passworded, info
 
+    # couldn't get article
+    return False, None
+
 
 def check_release_files(server, group_name, nzb):
     """Retrieves rar metadata for release files."""
