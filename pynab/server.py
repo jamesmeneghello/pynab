@@ -36,7 +36,7 @@ class Server:
             response, count, first, last, name = self.connection.group(group_name)
         except Exception as e:
             log.error('server: could not send group command: {}'.format(e))
-            return False
+            return None, False, None, None, None
 
         return response, count, first, last, name
 
