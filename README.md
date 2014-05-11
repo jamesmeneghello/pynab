@@ -210,11 +210,10 @@ Operation
 At this point you should manually activate groups to index, and blacklists.
 To kick you off, they look something like this:
 
-    > mongo -u <user> -p <pass>
-    # use pynab [or db name specified in config.py]
-    # db.groups.update({name:'alt.binaries.teevee'},{$set:{'active': 1}}) [this will activate a.b.teevee]
+    > psql -u pynab [or whatever user is specified]
+    # UPDATE groups SET active=TRUE WHERE name='alt.binaries.teevee'; [or something similar]
 
-You can also just use http://www.robomongo.org/, which makes managing it a lot easier.
+You can also just use http://www.pgadmin.org/, which makes managing it a lot easier.
 
 Once desired groups have been activated and new_group_scan_days and backfill_days have been
 set in config.py:
@@ -249,6 +248,13 @@ so that you effectively fill releases in both directions. Because binary and rel
 is atomic, there are no issues running multiple scripts at the same time - you are effectively
 only limited by the number of available NNTP connections, your bandwidth and your available 
 processing power.
+
+Before starting a backfill, you need to change the dead_binary_age config option in config.py.
+If backfilling, set it to 0 - otherwise, leave it on 1-3. This will delete binaries that haven't
+been turned into releases after they're x days old (from time of posting, not time of collection).
+As such, you don't want to delete backfilled binaries.
+
+    > nano config.py [change dead_binary_age to 0]
 
 You can use the backfill scripts as so:
 

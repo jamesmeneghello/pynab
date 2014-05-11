@@ -67,9 +67,10 @@ def main():
                 pynab.releases.process()
 
                 # clean up dead binaries
-                dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
-                dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
-                log.info('start: deleted {} dead binaries'.format(dead_binaries))
+                if config.scan.get('dead_binary_age', 3) != 0:
+                    dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+                    dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                    log.info('start: deleted {} dead binaries'.format(dead_binaries))
             else:
                 log.info('start: no groups active, cancelling start.py...')
                 break
