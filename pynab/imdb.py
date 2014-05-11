@@ -37,7 +37,9 @@ def process(limit=100, online=True):
             name, year = parse_movie(release.search_name)
             if name and year:
                 method = 'local'
-                imdb = db.query(Movie).filter(Movie.name==clean_name(name)).filter(Movie.year==year).first()
+                imdb = db.query(Movie).filter(
+                    Movie.name.ilike('%'.join(clean_name(name).split(' ')))
+                ).filter(Movie.year==year).first()
                 if not imdb and online:
                     method = 'online'
                     movie = search(clean_name(name), year)

@@ -53,7 +53,9 @@ def process(limit=100, online=True):
 
             show = parse_show(release.search_name)
             if show:
-                rage = db.query(TvShow).filter(TvShow.name==show['clean_name']).first()
+                rage = db.query(TvShow).filter(
+                    TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
+                ).first()
                 if not rage and 'and' in show['clean_name']:
                     rage = db.query(TvShow).filter(TvShow.name==show['clean_name'].replace(' and ', ' & ')).first()
 
