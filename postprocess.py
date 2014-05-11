@@ -1,6 +1,6 @@
-import multiprocessing
+import concurrent.futures
 import time
-import logging
+import traceback
 
 from pynab import log
 from pynab.db import db_session, Release
@@ -19,34 +19,43 @@ import scripts.rename_bad_releases
 import config
 
 
-def mp_error(msg, *args):
-    return multiprocessing.get_logger().error(msg, *args)
-
-
 def process_tvrage():
-    pynab.tvrage.process(500)
+    try:
+        return pynab.tvrage.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
 
 def process_nfos():
-    pynab.nfos.process(500)
+    try:
+        return pynab.nfos.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
 
 def process_rars():
-    pynab.rars.process(200)
+    try:
+        return pynab.rars.process(200)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
 
 def process_imdb():
-    pynab.imdb.process(500)
+    try:
+        return pynab.imdb.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
 
 if __name__ == '__main__':
-    log.info('Starting post-processing...')
-
-    # print MP log as well
-    multiprocessing.log_to_stderr().setLevel(logging.DEBUG)
+    log.info('postprocess: starting post-processing...')
 
     # start with a quick post-process
-    log.info('starting with a quick post-process to clear out the cruft that\'s available locally...')
+    log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
     scripts.quick_postprocess.local_postprocess()
 
     while True:
@@ -58,45 +67,33 @@ if __name__ == '__main__':
                     query = query.filter(Release.passworded=='MAYBE')
 
                 query = query.filter(Release.passworded=='YES')
-                query.delete()
+                deleted = query.delete()
+                log.info('postprocess: deleted {} passworded releases'.format(deleted))
 
             # delete any nzbs that don't have an associated release
             # and delete any releases that don't have an nzb
+            #TODO
 
-            # grab and append tvrage data to tv releases
-            tvrage_p = None
-            if config.postprocess.get('process_tvrage', True):
-                tvrage_p = multiprocessing.Process(target=process_tvrage)
-                tvrage_p.start()
+            with concurrent.futures.ThreadPoolExecutor(4) as executor:
+                threads = []
 
-            imdb_p = None
-            if config.postprocess.get('process_imdb', True):
-                imdb_p = multiprocessing.Process(target=process_imdb)
-                imdb_p.start()
+                # grab and append tvrage data to tv releases
+                if config.postprocess.get('process_tvrage', True):
+                    threads.append(executor.submit(process_tvrage))
 
-            # grab and append nfo data to all releases
-            nfo_p = None
-            if config.postprocess.get('process_nfos', True):
-                nfo_p = multiprocessing.Process(target=process_nfos)
-                nfo_p.start()
+                if config.postprocess.get('process_imdb', True):
+                    threads.append(executor.submit(process_imdb))
 
-            # check for passwords, file count and size
-            rar_p = None
-            if config.postprocess.get('process_rars', True):
-                rar_p = multiprocessing.Process(target=process_rars)
-                rar_p.start()
+                # grab and append nfo data to all releases
+                if config.postprocess.get('process_nfos', True):
+                    threads.append(executor.submit(process_nfos))
 
-            if rar_p:
-                rar_p.join()
+                # check for passwords, file count and size
+                if config.postprocess.get('process_rars', True):
+                    threads.append(executor.submit(process_rars))
 
-            if imdb_p:
-                imdb_p.join()
-
-            if tvrage_p:
-                tvrage_p.join()
-
-            if nfo_p:
-                nfo_p.join()
+                for t in concurrent.futures.as_completed(threads):
+                    data = t.result()
 
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)

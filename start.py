@@ -26,22 +26,6 @@ def update(group_name):
         raise Exception
 
 
-def process_tvrage(limit):
-    pynab.tvrage.process(limit)
-
-
-def process_nfos(limit):
-    pynab.nfos.process(limit)
-
-
-def process_rars(limit):
-    pynab.rars.process(limit)
-
-
-def process_imdb(limit):
-    pynab.imdb.process(limit)
-
-
 def daemonize(pidfile):
     try:
         import traceback
