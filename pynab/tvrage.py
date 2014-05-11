@@ -32,6 +32,7 @@ RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
 def process(limit=100, online=True):
     """Processes [limit] releases to add TVRage information."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
+    api_session = requests.Session()
 
     with db_session() as db:
         # clear expired metablacks
@@ -59,7 +60,7 @@ def process(limit=100, online=True):
                 if rage:
                     method = 'local'
                 elif not rage and online:
-                    rage_data = search(show)
+                    rage_data = search(api_session, show)
                     if rage_data:
                         method = 'online'
                         rage = db.query(TvShow).filter(TvShow.id==rage_data['showid']).first()
@@ -119,10 +120,10 @@ def process(limit=100, online=True):
         db.commit()
 
 
-def search(show):
+def search(session, show):
     """Search TVRage's online API for show data."""
     try:
-        r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
+        r = session.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
     except Exception as e:
         log.error(e)
         return None
