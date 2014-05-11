@@ -78,7 +78,12 @@ def process(limit=100, online=True):
         if online:
             query = query.filter(Release.movie_metablack_id==None)
 
-        for release in query.order_by(Release.posted.desc()).limit(limit):
+        if limit:
+            releases = query.order_by(Release.posted.desc()).limit(limit)
+        else:
+            releases = query.order_by(Release.posted.desc()).all()
+
+        for release in releases:
             process_release(release, online)
 
 

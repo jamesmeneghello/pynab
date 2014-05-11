@@ -40,7 +40,12 @@ def process(limit=50, category=0):
             if category:
                 query = query.filter(Release.category_id==int(category))
 
-            for release in query.order_by(Release.posted.desc()).limit(limit):
+            if limit:
+                releases = query.order_by(Release.posted.desc()).limit(limit)
+            else:
+                releases = query.order_by(Release.posted.desc()).all()
+
+            for release in releases:
                 found = False
                 nzb = pynab.nzbs.get_nzb_details(release.nzb)
 

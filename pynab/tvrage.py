@@ -42,7 +42,12 @@ def process(limit=100, online=True):
         if online:
             query = query.filter(Release.tvshow_metablack_id==None)
 
-        for release in query.order_by(Release.posted.desc()).limit(limit):
+        if limit:
+            releases = query.order_by(Release.posted.desc()).limit(limit)
+        else:
+            releases = query.order_by(Release.posted.desc()).all()
+
+        for release in releases:
             method = ''
 
             show = parse_show(release.search_name)
@@ -165,7 +170,7 @@ def search_lxml(show, content):
 
 
 def clean_name(name):
-    """Cleans a show name for searching (against tvrage)."""
+    """Cleans a show name for searching."""
     name = unicodedata.normalize('NFKD', name)
 
     name = regex.sub('[._\-]', ' ', name)
