@@ -38,8 +38,8 @@ def process(limit=100, online=True):
         db.query(MetaBlack).filter(MetaBlack.tvshow!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
         query = db.query(
-            Release.id, Release.search_name, Release.tvshow
-        ).filter(Release.movie==None).join(Category).filter(Category.parent_id==5000)
+            Release.id, Release.search_name
+        ).filter(Release.tvshow==None).join(Category).filter(Category.parent_id==5000)
 
         if online:
             query = query.filter(Release.tvshow_metablack_id==None)

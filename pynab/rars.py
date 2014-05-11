@@ -6,7 +6,7 @@ import subprocess
 
 import lib.rar
 from pynab import log
-from pynab.db import db_session, Release, Group, File, MetaBlack
+from pynab.db import db_session, Release, Group, File, MetaBlack, NZB
 import pynab.nzbs
 import pynab.releases
 import pynab.util
@@ -198,7 +198,7 @@ def process(limit=20, category=0):
 
     with Server() as server:
         with db_session() as db:
-            query = db.query(Release).join(Group).filter(Release.passworded=='UNKNOWN')
+            query = db.query(Release.id, Release.search_name).join(Group).join(NZB).filter(Release.passworded=='UNKNOWN')
             if category:
                 query = query.filter(Release.category_id==int(category))
 
