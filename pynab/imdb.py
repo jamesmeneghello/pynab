@@ -62,7 +62,6 @@ def process_release(release, online=True):
             mb = MetaBlack(status='IMPOSSIBLE')
             mb.movie = release
             db.add(mb)
-        db.commit()
 
 
 def process(limit=100, online=True):
@@ -85,6 +84,8 @@ def process(limit=100, online=True):
 
         for release in releases:
             process_release(release, online)
+
+        db.commit()
 
 
 def search(name, year):

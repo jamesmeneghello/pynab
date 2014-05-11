@@ -37,7 +37,9 @@ def process(limit=100, online=True):
         # clear expired metablacks
         db.query(MetaBlack).filter(MetaBlack.tvshow!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
-        query = db.query(Release).filter(Release.movie==None).join(Category).filter(Category.parent_id==5000)
+        query = db.query(
+            Release.id, Release.search_name, Release.tvshow
+        ).filter(Release.movie==None).join(Category).filter(Category.parent_id==5000)
 
         if online:
             query = query.filter(Release.tvshow_metablack_id==None)
@@ -116,7 +118,7 @@ def process(limit=100, online=True):
                 ))
                 mb = MetaBlack(tvshow=release, status='IMPOSSIBLE')
                 db.add(mb)
-            db.commit()
+        db.commit()
 
 
 def search(show):

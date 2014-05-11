@@ -88,4 +88,4 @@ def process(limit=50, category=0):
                         ))
                         mb = MetaBlack(nfo=release, status='IMPOSSIBLE')
                         db.add(mb)
-                db.commit()
+            db.commit()
