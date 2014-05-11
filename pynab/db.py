@@ -289,12 +289,12 @@ class Movie(Base):
 
     name = Column(String, index=True)
     genre = Column(String)
-    year = Column(Integer)
+    year = Column(Integer, index=True)
 
 
 class TvShow(Base):
     __tablename__ = 'tvshows'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, index=True)
     country = Column(String(5))
