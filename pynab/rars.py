@@ -104,7 +104,7 @@ def get_rar_info(server, group_name, messages):
             files = check_rar(t.name)
         except lib.rar.BadRarFile:
             os.remove(t.name)
-            return None
+            return False, None
 
         # build a list of files to return
         info = []
