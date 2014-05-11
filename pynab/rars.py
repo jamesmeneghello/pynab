@@ -193,7 +193,7 @@ def check_release_files(server, group_name, nzb):
 
             return passworded, info
 
-    return None
+    return False, None
 
 
 def process(limit=20, category=0):
