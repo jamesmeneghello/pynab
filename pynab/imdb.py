@@ -15,55 +15,6 @@ OMDB_SEARCH_URL = 'http://www.omdbapi.com/?s='
 OMDB_DETAIL_URL = 'http://www.omdbapi.com/?i='
 
 
-def process_release(release, online=True):
-    with db_session() as db:
-        name, year = parse_movie(release.search_name)
-        if name and year:
-            method = 'local'
-            imdb = db.query(Movie).filter(Movie.name==clean_name(name)).filter(Movie.year==year).first()
-            if not imdb and online:
-                method = 'online'
-                movie = search(clean_name(name), year)
-                if movie and movie['Type'] == 'movie':
-                    imdb = db.query(Movie).filter(Movie.id==movie['imdbID']).first()
-                    if not imdb:
-                        imdb = Movie()
-                        imdb.id = movie['imdbID']
-                        imdb.name = movie['Title']
-                        imdb.year = movie['Year']
-                        db.add(imdb)
-            if imdb:
-                log.info('[{}] - [{}] - imdb added: {}'.format(
-                    release.id,
-                    release.search_name,
-                    method
-                ))
-                release.movie = imdb
-                release.movie_metablack_id = None
-                db.add(release)
-            elif not imdb and online:
-                log.warning('[{}] - [{}] - imdb not found: online'.format(
-                    release.id,
-                    release.search_name
-                ))
-
-                mb = MetaBlack(status='ATTEMPTED', movie=release)
-                db.add(mb)
-            else:
-                log.warning('[{}] - [{}] - imdb not found: local'.format(
-                    release.id,
-                    release.search_name
-                ))
-        else:
-            log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
-                release.id,
-                release.search_name
-            ))
-            mb = MetaBlack(status='IMPOSSIBLE')
-            mb.movie = release
-            db.add(mb)
-
-
 def process(limit=100, online=True):
     """Process movies without imdb data and append said data."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
@@ -83,7 +34,51 @@ def process(limit=100, online=True):
             releases = query.order_by(Release.posted.desc()).all()
 
         for release in releases:
-            process_release(release, online)
+            name, year = parse_movie(release.search_name)
+            if name and year:
+                method = 'local'
+                imdb = db.query(Movie).filter(Movie.name==clean_name(name)).filter(Movie.year==year).first()
+                if not imdb and online:
+                    method = 'online'
+                    movie = search(clean_name(name), year)
+                    if movie and movie['Type'] == 'movie':
+                        imdb = db.query(Movie).filter(Movie.id==movie['imdbID']).first()
+                        if not imdb:
+                            imdb = Movie()
+                            imdb.id = movie['imdbID']
+                            imdb.name = movie['Title']
+                            imdb.year = movie['Year']
+                            db.add(imdb)
+                if imdb:
+                    log.info('[{}] - [{}] - imdb added: {}'.format(
+                        release.id,
+                        release.search_name,
+                        method
+                    ))
+                    release.movie = imdb
+                    release.movie_metablack_id = None
+                    db.add(release)
+                elif not imdb and online:
+                    log.warning('[{}] - [{}] - imdb not found: online'.format(
+                        release.id,
+                        release.search_name
+                    ))
+
+                    mb = MetaBlack(status='ATTEMPTED', movie=release)
+                    db.add(mb)
+                else:
+                    log.warning('[{}] - [{}] - imdb not found: local'.format(
+                        release.id,
+                        release.search_name
+                    ))
+            else:
+                log.error('[{}] - [{}] - imdb not found: no suitable regex for movie name'.format(
+                    release.id,
+                    release.search_name
+                ))
+                mb = MetaBlack(status='IMPOSSIBLE')
+                mb.movie = release
+                db.add(mb)
 
         db.commit()
 
