@@ -1,9 +1,10 @@
 import concurrent.futures
 import time
 import traceback
+import psycopg2.extensions
 
 from pynab import log
-from pynab.db import db_session, Release
+from pynab.db import db_session, Release, engine
 
 import pynab.groups
 import pynab.binaries
@@ -103,6 +104,19 @@ if __name__ == '__main__':
                 pass
                 #log.info('Deleting bad releases...')
                 # not confident in this yet
+
+            # vacuum the segments, parts and binaries tables
+            log.info('start: vacuuming relevant tables...')
+            conn = engine.connect()
+            conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            conn.execute('VACUUM releases')
+            conn.execute('VACUUM metablack')
+            conn.execute('VACUUM episodes')
+            conn.execute('VACUUM tvshows')
+            conn.execute('VACUUM movies')
+            conn.execute('VACUUM nfos')
+            conn.execute('VACUUM files')
+            conn.close()
 
         # wait for the configured amount of time between cycles
         postprocess_wait = config.postprocess.get('postprocess_wait', 1)

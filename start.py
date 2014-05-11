@@ -4,9 +4,10 @@ import time
 import pytz
 import datetime
 import traceback
+import psycopg2.extensions
 
 from pynab import log, log_descriptor
-from pynab.db import db_session, Group, Binary
+from pynab.db import db_session, Group, Binary, engine
 
 import pynab.groups
 import pynab.binaries
@@ -44,7 +45,7 @@ def daemonize(pidfile):
 
 
 def main():
-    log.info('starting update...')
+    log.info('start: starting update...')
 
     while True:
         # refresh the db session each iteration, just in case
@@ -70,12 +71,21 @@ def main():
                 dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
                 log.info('start: deleted {} dead binaries'.format(dead_binaries))
             else:
-                log.info('no groups active, cancelling start.py...')
+                log.info('start: no groups active, cancelling start.py...')
                 break
+
+            # vacuum the segments, parts and binaries tables
+            log.info('start: vacuuming relevant tables...')
+            conn = engine.connect()
+            conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            conn.execute('VACUUM binaries')
+            conn.execute('VACUUM parts')
+            conn.execute('VACUUM segments')
+            conn.close()
 
         # wait for the configured amount of time between cycles
         update_wait = config.scan.get('update_wait', 300)
-        log.info('sleeping for {:d} seconds...'.format(update_wait))
+        log.info('start: sleeping for {:d} seconds...'.format(update_wait))
         time.sleep(update_wait)
 
 
