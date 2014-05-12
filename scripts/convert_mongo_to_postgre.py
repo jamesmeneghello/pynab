@@ -120,6 +120,10 @@ if __name__ == '__main__':
         print(mongo.releases.find({'posted': {'$gte': max_age}, 'group._id': {'$in': active_groups}}).count())
 
         for release in mongo.releases.find({'posted': {'$gte': max_age}, 'group._id': {'$in': active_groups}}):
+            # before even printing debug info, sanitise the names
+            release['name'] = release['name'].encode('utf-8', 'replace').decode('latin-1')
+            release['search_name'] = release['search_name'].encode('utf-8', 'replace').decode('latin-1')
+
             print('Processing {}...'.format(release['search_name']))
 
             release.pop('_id')
