@@ -230,7 +230,13 @@ def process(limit=20, category=0):
                         release.rar_metablack_id = None
                         db.add(release)
                         continue
-
+                    else:
+                        log.warning('rar: [{}] - [{}] - file info: unable to read rars'.format(
+                            release.id,
+                            release.search_name
+                        ))
+                        mb = MetaBlack(rar=release, status='IMPOSSIBLE')
+                        db.add(mb)
                 log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
                     release.id,
                     release.search_name
