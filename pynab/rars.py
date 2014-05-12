@@ -201,7 +201,7 @@ def process(limit=20, category=0):
 
     with Server() as server:
         with db_session() as db:
-            query = db.query(Release).join(Group).join(NZB).filter(Release.passworded=='UNKNOWN')
+            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()).filter(Release.passworded=='UNKNOWN').filter(Release.rar_metablack_id==None)
             if category:
                 query = query.filter(Release.category_id==int(category))
 
@@ -213,10 +213,10 @@ def process(limit=20, category=0):
             for release in releases:
                 nzb = pynab.nzbs.get_nzb_details(release.nzb)
 
-                if nzb and 'rars' in nzb:
+                if nzb and nzb['rars']:
                     passworded, info = check_release_files(server, release.group.name, nzb)
                     if info:
-                        log.info('[{}] - [{}] - file info: added'.format(
+                        log.info('rar: [{}] - [{}] - file info: added'.format(
                             release.id,
                             release.search_name
                         ))

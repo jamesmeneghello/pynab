@@ -82,7 +82,7 @@ def process(limit=50, category=0):
                                 break
 
                     if not found:
-                        log.warning('nfo: [{}] - [{}] - nfo not available'.format(
+                        log.warning('nfo: [{}] - [{}] - no nfos in release'.format(
                             release.id,
                             release.search_name
                         ))
