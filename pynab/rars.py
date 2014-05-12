@@ -131,7 +131,10 @@ def get_rar_info(server, group_name, messages):
                 try:
                     subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
                 except subprocess.CalledProcessError as cpe:
-                    log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    # almost every rar piece we get will throw an error
+                    # we're only getting the first segment
+                    #log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    pass
 
                 inner_passwords = []
                 for file in files:
@@ -164,35 +167,59 @@ def get_rar_info(server, group_name, messages):
 def check_release_files(server, group_name, nzb):
     """Retrieves rar metadata for release files."""
 
+    # we want to get the highest level of password
+    highest_password = False
+
+    # but also return file info from everything we can get to
+    all_info = []
+
     for rar in nzb['rars']:
-        messages = []
+        # if the rar has no segments, the release is fucked and we should ignore it
         if not rar['segments']:
             continue
 
         for s in rar['segments']:
-            messages.append(s['message_id'])
-            break
+            if s['message_id']:
+                # get the rar info of the first segment of the rarfile
+                # this should be enough to get a file list
+                passworded, info = get_rar_info(server, group_name, [s['message_id']])
 
-        if messages:
-            passworded, info = get_rar_info(server, group_name, messages)
+                # if any file info was returned, add it to the pile
+                if info:
+                    all_info += info
 
-            if info and not passworded:
-                for file in info:
-                    result = MAYBE_PASSWORDED_REGEX.search(file['name'])
-                    if result:
-                        passworded = 'MAYBE'
-                        break
+                # if the rar itself is passworded, skip everything else
+                if passworded:
+                    highest_password = 'YES'
 
-                    result = PASSWORDED_REGEX.search(file['name'])
-                    if result:
-                        passworded = 'YES'
-                        break
+                # if we got file info and we're not yet 100% certain, have a look
+                if info and highest_password != 'YES':
+                    for file in info:
+                        # whether "maybe" releases get deleted or not is a config option
+                        result = MAYBE_PASSWORDED_REGEX.search(file['name'])
+                        if result and (not highest_password or highest_password == 'NO'):
+                            highest_password = 'MAYBE'
+                            break
 
-            if not passworded:
-                passworded = 'NO'
+                        # as is definitely-deleted
+                        result = PASSWORDED_REGEX.search(file['name'])
+                        if result and (not highest_password or highest_password == 'NO' or highest_password == 'MAYBE'):
+                            highest_password = 'YES'
+                            break
 
-            return passworded, info
+                # if we got this far, we got some file info
+                # so we don't want the function to return False, None
+                if not highest_password:
+                    highest_password = 'NO'
 
+                # skip the rest of the segments, we don't want or need them
+                break
+
+    # if we got info from at least one segment, return what we found
+    if highest_password:
+        return highest_password, all_info
+
+    # otherwise, the release was dead
     return False, None
 
 
