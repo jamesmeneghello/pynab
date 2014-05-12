@@ -83,6 +83,10 @@ def get_nzb(dataset=None):
             with db_session() as db:
                 release = db.query(Release).join(NZB).join(Category).filter(Release.id==id).one()
                 if release:
+                    release.grabs += 1
+                    db.merge(release)
+                    db.commit()
+
                     data = release.nzb.data
                     response.set_header('Content-type', 'application/x-nzb')
                     response.set_header('X-DNZB-Name', release.search_name)

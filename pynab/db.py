@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint, Enum, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import select, func
 from contextlib import contextmanager
 import config
 
@@ -106,6 +108,12 @@ class Release(Base):
     episode = relationship('Episode', backref=backref('releases'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
+
+    @hybrid_property
+    def size(self):
+        return select([func.sum(File.size)]).where(File.release_id==self.id).label('size')
+
+
 
 
 class MetaBlack(Base):

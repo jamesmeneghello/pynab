@@ -40,6 +40,8 @@
                 <group>${release.group.name}</group>
                 <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}"
                            type="application/x-nzb"/>
+                <grabs>${release.grabs}</grabs>
+                <size>${release.size}</size>
                 <newznab:attr name="category" value="${release.category.id}"/>
                 % if release.category.parent_id:
                     <newznab:attr name="category" value="${release.category.parent_id}"/>
