@@ -111,9 +111,11 @@ class Release(Base):
 
     @hybrid_property
     def size(self):
-        return select([func.sum(File.size)]).where(File.release_id==self.id).label('size')
+        return sum(file.size for file in self.files)
 
-
+    @size.expression
+    def size(cls):
+        return select([func.sum(File.size)]).where(File.release_id==cls.id).label('size')
 
 
 class MetaBlack(Base):
