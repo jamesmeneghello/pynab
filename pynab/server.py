@@ -93,8 +93,10 @@ class Server:
         except nntplib.NNTPError as nntpe:
             log.error('server: [{}]: nntp error: {}'.format(group_name, nntpe))
             log.error('server: suspected dead nntp connection, restarting')
-            if self.connection:
-                self.connection.quit()
+
+            # don't even quit, because that'll still break
+            # null the connection and restart it
+            self.connection = None
             self.connect()
             return False, None
 
