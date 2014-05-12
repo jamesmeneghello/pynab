@@ -57,9 +57,9 @@ def get_nzb_details(nzb):
     nfos = []
     rars = []
     pars = []
+    zips = []
     rar_count = 0
     par_count = 0
-    zip_count = 0
 
     for file_subject in XPATH_FILE(tree):
         if rar_part_regex.search(file_subject):
@@ -73,15 +73,15 @@ def get_nzb_details(nzb):
             if not par_vol_regex.search(file_subject):
                 pars.append(filexml_to_dict(file_subject.getparent()))
         if zip_regex.search(file_subject) and not metadata_regex.search(file_subject):
-            zip_count += 1
+            zips.append(filexml_to_dict(file_subject.getparent()))
 
     return {
         'nfos': nfos,
         'rars': rars,
         'pars': pars,
+        'zips': zips,
         'rar_count': rar_count,
         'par_count': par_count,
-        'zip_count': zip_count
     }
 
 
