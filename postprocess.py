@@ -102,11 +102,11 @@ if __name__ == '__main__':
 
             if config.postprocess.get('delete_bad_releases', False):
                 log.info('Deleting bad releases...')
-                db.query(Release).join(File).filter(Release.unwanted==True).delete()
+                db.query(Release).filter(Release.unwanted==True).delete()
 
 
             # vacuum the segments, parts and binaries tables
-            log.info('start: vacuuming relevant tables...')
+            log.info('postprocess: vacuuming relevant tables...')
             conn = engine.connect()
             conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
             conn.execute('VACUUM releases')
@@ -119,6 +119,6 @@ if __name__ == '__main__':
             conn.close()
 
         # wait for the configured amount of time between cycles
-        postprocess_wait = config.postprocess.get('postprocess_wait', 1)
+        postprocess_wait = config.postprocess.get('postprocess_wait', 300)
         log.info('sleeping for {:d} seconds...'.format(postprocess_wait))
         time.sleep(postprocess_wait)

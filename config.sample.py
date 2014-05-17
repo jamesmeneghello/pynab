@@ -100,7 +100,9 @@ postprocess = {
     # postprocess_wait: time to sleep between postprocess.py loops
     # setting this to 0 may be horrible to online APIs, but if you've got a good
     # local db it should be fine
-    'postprocess_wait': 0,
+    # once you've scanned virtually everything and are just maintaining it,
+    # set it to the same as update_wait or more.
+    'postprocess_wait': 300,
 
     # process_rars: whether to check for passworded releases, get file size and count
     # this uses extra bandwidth, since it needs to download at least one archive
