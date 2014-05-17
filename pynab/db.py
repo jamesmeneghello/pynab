@@ -98,7 +98,7 @@ class Release(Base):
     nzb_id = Column(Integer, ForeignKey('nzbs.id'), index=True)
     nzb = relationship('NZB', backref=backref('release', uselist=False))
 
-    files = relationship('Release', passive_deletes=True, cascade='all, delete-orphan', backref=backref('release'))
+    files = relationship('File', passive_deletes=True, cascade='all, delete-orphan', backref=backref('release'))
     rar_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     nfo_id = Column(Integer, ForeignKey('nfos.id'), index=True)
