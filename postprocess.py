@@ -4,7 +4,7 @@ import traceback
 import psycopg2.extensions
 
 from pynab import log
-from pynab.db import db_session, Release, engine
+from pynab.db import db_session, Release, engine, File
 
 import pynab.groups
 import pynab.binaries
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
             if config.postprocess.get('delete_bad_releases', False):
                 log.info('Deleting bad releases...')
-                db.query(Release).filter(Release.unwanted==True).delete()
+                db.query(Release).join(File).filter(Release.unwanted==True).delete()
 
 
             # vacuum the segments, parts and binaries tables
