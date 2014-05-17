@@ -18,9 +18,10 @@ def rename_bad_releases(category):
             count += 1
             name, category_id = pynab.releases.discover_name(release)
 
-            if name and not category_id:
-                # don't change anything, it was fine
-                pass
+            if not name and category_id:
+                # don't change the name, but the category might need changing
+                release.category_id = category_id
+                db.add(release)
             elif name and category_id:
                 # we found a new name!
                 s_count += 1
