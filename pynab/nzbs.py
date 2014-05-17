@@ -7,7 +7,7 @@ import pytz
 from mako.template import Template
 from mako import exceptions
 
-from lxml import etree
+from lxml import etree, html
 from xml.etree import cElementTree as cet
 
 from pynab.db import db_session, NZB, Category, Release, Group
@@ -49,9 +49,13 @@ def get_nzb_details(nzb):
     such as a list of any nfos/rars that the NZB references."""
 
     try:
-        tree = etree.fromstring(gzip.decompress(nzb.data))
-    except:
-        log.critical('Problem parsing XML with lxml')
+        # using the html parser here instead of the straight lxml might be slower
+        # but some of the nzbs spewed forth by newznab are broken and contain
+        # non-xml entities, ie. &sup2;
+        # this breaks the normal lxml parser
+        tree = html.fromstring(gzip.decompress(nzb.data))
+    except Exception as e:
+        log.critical('nzbs: problem parsing XML with lxml: {}'.format(e))
         return None
 
     nfos = []
