@@ -89,20 +89,21 @@ class Release(Base):
 
     tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
     tvshow = relationship('TvShow', backref=backref('releases'))
-    tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
+    tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     movie_id = Column(String, ForeignKey('movies.id'), index=True)
     movie = relationship('Movie', backref=backref('releases'))
-    movie_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
+    movie_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     nzb_id = Column(Integer, ForeignKey('nzbs.id'), index=True)
     nzb = relationship('NZB', backref=backref('release', uselist=False))
 
-    rar_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
+    files = relationship('Release', passive_deletes=True, cascade='all, delete-orphan', backref=backref('release'))
+    rar_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     nfo_id = Column(Integer, ForeignKey('nfos.id'), index=True)
     nfo = relationship('NFO', backref=backref('release', uselist=False))
-    nfo_metablack_id = Column(Integer, ForeignKey('metablack.id'), index=True)
+    nfo_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))
@@ -157,8 +158,7 @@ class File(Base):
     name = Column(String)
     size = Column(BigInteger)
 
-    release_id = Column(Integer, ForeignKey('releases.id'), index=True)
-    release = relationship('Release', backref=backref('files'))
+    release_id = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'), index=True)
 
 
 class Group(Base):
