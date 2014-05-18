@@ -61,9 +61,11 @@ def main():
                         data = r.result()
 
                 # process binaries
+                log.info('start: processing binaries...')
                 pynab.binaries.process()
 
                 # process releases
+                log.info('start: processing releases...')
                 pynab.releases.process()
 
                 # clean up dead binaries

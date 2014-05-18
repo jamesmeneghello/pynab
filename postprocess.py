@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    scripts.quick_postprocess.local_postprocess()
+    #scripts.quick_postprocess.local_postprocess()
 
     while True:
         with db_session() as db:
@@ -101,8 +101,8 @@ if __name__ == '__main__':
             scripts.rename_bad_releases.rename_bad_releases(7020)
 
             if config.postprocess.get('delete_bad_releases', False):
-                log.info('Deleting bad releases...')
-                db.query(Release).filter(Release.unwanted==True).delete()
+                deletes = db.query(Release).filter(Release.unwanted==True).delete()
+                log.info('postprocess: deleted {} bad releases'.format(deletes))
 
 
             # vacuum the segments, parts and binaries tables
