@@ -98,6 +98,7 @@ def process():
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None)
             total_parts = query.count()
             for part in query.all():
+                found = False
                 total_processed += 1
                 count += 1
 
@@ -182,10 +183,12 @@ def process():
                                 }
 
                                 binaries[match['name']] = b
+                            found = True
                             break
 
                 # the part matched no regex, so delete it
-                dead_parts.append(part.id)
+                if not found:
+                    dead_parts.append(part.id)
 
                 if count >= CHUNK_SIZE:
                     total_parts -= count
