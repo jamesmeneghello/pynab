@@ -221,7 +221,7 @@ def process():
                         # re-add the binary to the session
                         db.delete(binary)
 
-                        db.flush()
+                db.flush()
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(

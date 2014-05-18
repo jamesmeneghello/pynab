@@ -9,7 +9,7 @@ from pynab.db import db_session, engine, Binary, Part, Regex
 from pynab import log
 
 
-CHUNK_SIZE = 2000
+CHUNK_SIZE = 20000
 
 
 def save(binaries):
@@ -70,31 +70,41 @@ def process():
 
     binaries = {}
     orphan_binaries = []
-    count = 0
+    dead_parts = []
     total_processed = 0
     total_binaries = 0
+    count = 0
 
     # new optimisation: if we only have parts from a couple of groups,
     # we don't want to process the regex for every single one.
     # this removes support for "alt.binaries.games.*", but those weren't
     # used anyway, aside from just * (which it does work with)
 
-    # to re-enable that feature in future, mongo supports reverse-regex through
-    # where(), but it's slow as hell because it's processed by the JS engine
-
     with db_session() as db:
         relevant_groups = db.query(Part.group_name).group_by(Part.group_name).all()
         if relevant_groups:
+            # grab all relevant regex
             all_regex = db.query(Regex).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
-            for part in db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None).all():
+
+            # cache compiled regex
+            compiled_regex = {}
+            for reg in all_regex:
+                r = reg.regex
+                flags = r[r.rfind('/') + 1:]
+                r = r[r.find('/') + 1:r.rfind('/')]
+                regex_flags = regex.I if 'i' in flags else 0
+                compiled_regex[reg.id] = regex.compile(r, regex_flags)
+
+            query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None)
+            total_parts = query.count()
+            for part in query.all():
                 total_processed += 1
+                count += 1
 
-                relevant_regex = []
                 for reg in all_regex:
-                    if reg.group_name == part.group_name or reg.group_name == '.*':
-                        relevant_regex.append(reg)
+                    if reg.group_name != part.group_name and reg.group_name != '.*':
+                        continue
 
-                for reg in relevant_regex:
                     # convert php-style regex to python
                     # ie. /(\w+)/i -> (\w+), regex.I
                     # no need to handle s, as it doesn't exist in python
@@ -102,13 +112,8 @@ def process():
                     # why not store it as python to begin with? some regex
                     # shouldn't be case-insensitive, and this notation allows for that
 
-                    r = reg.regex
-                    flags = r[r.rfind('/') + 1:]
-                    r = r[r.find('/') + 1:r.rfind('/')]
-                    regex_flags = regex.I if 'i' in flags else 0
-
                     try:
-                        result = regex.search(r, part.subject, regex_flags)
+                        result = compiled_regex[reg.id].search(part.subject)
                     except:
                         log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
                         db.query(Regex).filter(reg.id).remove()
@@ -163,6 +168,8 @@ def process():
                             if match['name'] in binaries:
                                 binaries[match['name']]['parts'][current] = part
                             else:
+                                log.debug('binaries: new binary found: {}'.format(match['name']))
+
                                 b = {
                                     'name': match['name'],
                                     'posted': part.posted,
@@ -177,14 +184,24 @@ def process():
                                 binaries[match['name']] = b
                             break
 
+                # the part matched no regex, so delete it
+                dead_parts.append(part.id)
+
                 if count >= CHUNK_SIZE:
-                    save(binaries)
-                    count = 0
+                    total_parts -= count
                     total_binaries += len(binaries)
+
+                    save(binaries)
+                    deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
+
+                    log.debug('binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries), deleted, total_parts))
+
                     binaries = {}
+                    count = 0
 
             total_binaries += len(binaries)
             save(binaries)
+            db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
 
     end = time.time()
 
