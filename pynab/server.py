@@ -112,6 +112,10 @@ class Server:
             # optionally check for ones we missed later
             received.append(id)
 
+            # some messages don't have subjects? who knew
+            if 'subject' not in overview:
+                continue
+
             # get the current segment number
             results = regex.findall('\((\d+)[\/](\d+)\)', overview['subject'])
 
