@@ -394,7 +394,6 @@ category_regex = {
         regex.compile('^london(\.| )2012', regex.I)
     ],
     CAT_TV_DOCU: [
-        (regex.compile('\-DOCUMENT', regex.I), False),
         regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)(48\.Hours\.Mystery|Discovery.Channel|BBC|History.Channel|National.Geographic|Nat Geo|Shark.Week)',
             regex.I),
