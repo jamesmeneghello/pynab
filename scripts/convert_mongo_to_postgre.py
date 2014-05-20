@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 import config
 from pynab.db import engine, Base, db_session
 import pynab.db
-
+import pynab.util
 
 def mongo_connect():
     return pymongo.MongoClient(config.mongo.get('host'), config.mongo.get('port'))[config.mongo.get('db')]
@@ -59,6 +59,9 @@ if __name__ == '__main__':
             postgre.add(r)
 
         postgre.commit()
+
+        print('Updating regexes...')
+        pynab.util.update_regex()
 
         print('Copying users...')
         for user in mongo.users.find():
