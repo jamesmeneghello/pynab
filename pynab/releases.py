@@ -121,7 +121,7 @@ def process():
     with db_session() as db:
         binary_query = """
             SELECT
-                binaries.id
+                binaries.id, binaries.name, binaries.posted
             FROM binaries
                 INNER JOIN (
                         SELECT
@@ -138,90 +138,99 @@ def process():
         """
 
         for completed_binary in engine.execute(binary_query).fetchall():
-            binary = db.query(Binary).options(
-                subqueryload('parts'),
-                subqueryload('parts.segments'),
-                Load(Part).load_only(Part.id, Part.subject, Part.segments),
-            ).filter(Binary.id==completed_binary[0]).first()
+            # some optimisations here. we used to take the binary id and load it
+            # then compare binary.name and .posted to any releases
+            # in doing so, we loaded the binary into the session
+            # this meant that when we deleted it, it didn't cascade
+            # we had to submit many, many delete queries - one per segment/part
+            # by including name/posted in the big query, we don't load that much data
+            # but it lets us check for a release without another query, and means
+            # that we cascade delete when we clear the binary
 
-            # returns a list of _ids, so we need to get each binary
-            if binary:
-                r = db.query(Release).filter(Release.name==binary.name).filter(Release.posted==binary.posted).first()
-                if r:
+            # first we check if the release already exists
+            r = db.query(Release).filter(Release.name==completed_binary[1]).filter(Release.posted==completed_binary[2]).first()
+            if r:
+                # if it does, we have a duplicate - delete the binary
+                db.query(Binary).filter(Binary.id==completed_binary[0]).delete()
+            else:
+                # otherwise, start loading all the binary details
+                binary = db.query(Binary).options(
+                    subqueryload('parts'),
+                    subqueryload('parts.segments'),
+                    Load(Part).load_only(Part.id, Part.subject, Part.segments),
+                ).filter(Binary.id==completed_binary[0]).first()
+
+                binary_count += 1
+
+                release = Release()
+                release.name = binary.name
+                release.posted = binary.posted
+                release.posted_by = binary.posted_by
+                release.regex_id = binary.regex_id
+                release.grabs = 0
+
+                # check to make sure we have over the configured minimum files
+                nfos = []
+                rars = []
+                pars = []
+                rar_count = 0
+                par_count = 0
+                zip_count = 0
+
+                for part in binary.parts:
+                    if regex.search(pynab.nzbs.rar_part_regex, part.subject):
+                        rar_count += 1
+                    if regex.search(pynab.nzbs.nfo_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                part.subject):
+                        nfos.append(part)
+                    if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                part.subject):
+                        rars.append(part)
+                    if regex.search(pynab.nzbs.par2_regex, part.subject):
+                        par_count += 1
+                        if not regex.search(pynab.nzbs.par_vol_regex, part.subject):
+                            pars.append(part)
+                    if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
+                                                                                                part.subject):
+                        zip_count += 1
+
+                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
+                    log.info('release: [{}] - removed (less than minimum archives)'.format(
+                        binary.name
+                    ))
                     db.delete(binary)
-                else:
-                    binary_count += 1
+                    continue
 
-                    release = Release()
-                    release.name = binary.name
-                    release.posted = binary.posted
-                    release.posted_by = binary.posted_by
-                    release.regex_id = binary.regex_id
-                    release.grabs = 0
+                # clean the name for searches
+                release.search_name = clean_release_name(binary.name)
 
-                    # check to make sure we have over the configured minimum files
-                    nfos = []
-                    rars = []
-                    pars = []
-                    rar_count = 0
-                    par_count = 0
-                    zip_count = 0
+                # assign the release group
+                release.group = db.query(Group).filter(Group.name==binary.group_name).one()
 
-                    for part in binary.parts:
-                        if regex.search(pynab.nzbs.rar_part_regex, part.subject):
-                            rar_count += 1
-                        if regex.search(pynab.nzbs.nfo_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                    part.subject):
-                            nfos.append(part)
-                        if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                    part.subject):
-                            rars.append(part)
-                        if regex.search(pynab.nzbs.par2_regex, part.subject):
-                            par_count += 1
-                            if not regex.search(pynab.nzbs.par_vol_regex, part.subject):
-                                pars.append(part)
-                        if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                                    part.subject):
-                            zip_count += 1
+                # give the release a category
+                release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
 
-                    if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                        log.info('release: [{}] - removed (less than minimum archives)'.format(
-                            binary.name
-                        ))
-                        db.delete(binary)
-                        continue
+                # create the nzb, store it in GridFS and link it here
+                nzb = pynab.nzbs.create(release.search_name, release.category_id, binary)
 
-                    # clean the name for searches
-                    release.search_name = clean_release_name(binary.name)
+                if nzb:
+                    added_count += 1
 
-                    # assign the release group
-                    release.group = db.query(Group).filter(Group.name==binary.group_name).one()
+                    log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
+                        release.search_name,
+                        len(rars),
+                        rar_count
+                    ))
 
-                    # give the release a category
-                    release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
+                    release.nzb = nzb
 
-                    # create the nzb, store it in GridFS and link it here
-                    nzb = pynab.nzbs.create(release.search_name, release.category_id, binary)
+                    # save the release
+                    db.add(release)
 
-                    if nzb:
-                        added_count += 1
+                    # delete processed binaries
+                    db.delete(binary)
 
-                        log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
-                            release.search_name,
-                            len(rars),
-                            rar_count
-                        ))
-
-                        release.nzb = nzb
-
-                        # save the release
-                        db.add(release)
-
-                        # delete processed binaries
-                        # re-add the binary to the session
-                        db.delete(binary)
-
-                db.flush()
+            db.flush()
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(

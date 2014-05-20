@@ -98,7 +98,7 @@ class Release(Base):
     nzb_id = Column(Integer, ForeignKey('nzbs.id'), index=True)
     nzb = relationship('NZB', backref=backref('release', uselist=False))
 
-    files = relationship('File', passive_deletes=True, cascade='all, delete-orphan', backref=backref('release'))
+    files = relationship('File', passive_deletes=True, cascade='all, delete, delete-orphan', backref=backref('release'))
     rar_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
     nfo_id = Column(Integer, ForeignKey('nfos.id'), index=True)
@@ -127,10 +127,10 @@ class MetaBlack(Base):
     status = Column(Enum('ATTEMPTED', 'IMPOSSIBLE', name='enum_metablack_status'), default='ATTEMPTED')
     time = Column(DateTime, default=func.now())
 
-    tvshow = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
-    movie = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
-    nfo = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
-    rar = relationship('Release', cascade='all, delete-orphan', uselist=False, foreign_keys=[Release.rar_metablack_id])
+    tvshow = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
+    movie = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
+    nfo = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
+    rar = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.rar_metablack_id])
 
 
 class Episode(Base):
@@ -176,6 +176,7 @@ class Binary(Base):
     __tablename__ = 'binaries'
 
     id = Column(Integer, primary_key=True)
+    hash = Column(BigInteger, index=True)
 
     name = Column(String, index=True)
     total_parts = Column(Integer)
@@ -189,7 +190,7 @@ class Binary(Base):
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
-    parts = relationship('Part', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
+    parts = relationship('Part', cascade='all, delete, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
 
 
 # it's unlikely these will ever be used in sqlalchemy
@@ -211,7 +212,7 @@ class Part(Base):
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
 
-    segments = relationship('Segment', cascade='all, delete-orphan', passive_deletes=True, order_by="asc(Segment.segment)")
+    segments = relationship('Segment', cascade='all, delete, delete-orphan', passive_deletes=True, order_by="asc(Segment.segment)")
 
     #__table_args__ = (UniqueConstraint(subject),)
 

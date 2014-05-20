@@ -1,7 +1,6 @@
 import regex
 import time
-import datetime
-import pytz
+import pyhashxx
 
 from sqlalchemy import *
 
@@ -10,6 +9,15 @@ from pynab import log
 
 
 CHUNK_SIZE = 20000
+
+PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
+
+
+def generate_hash(name, group_name, posted_by, total_parts):
+    """Generates a mostly-unique temporary hash for a part."""
+    return pyhashxx.hashxx(name.encode('utf-8'), posted_by.encode('utf-8'),
+                           group_name.encode('utf-8'), total_parts.encode('utf-8')
+    )
 
 
 def save(binaries):
@@ -24,14 +32,14 @@ def save(binaries):
     if binaries:
         with db_session() as db:
             existing_binaries = dict(
-                ((binary.name, binary) for binary in
-                    db.query(Binary.id, Binary.name).filter(Binary.name.in_(binaries.keys())).all()
+                ((binary.hash, binary) for binary in
+                    db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
                 )
             )
 
             binary_inserts = []
-            for name, binary in binaries.items():
-                existing_binary = existing_binaries.get(name, None)
+            for hash, binary in binaries.items():
+                existing_binary = existing_binaries.get(hash, None)
                 if not existing_binary:
                     binary_inserts.append(binary)
 
@@ -41,14 +49,14 @@ def save(binaries):
                 engine.execute(Binary.__table__.insert(), binary_inserts)
 
             existing_binaries = dict(
-                ((binary.name, binary) for binary in
-                    db.query(Binary.id, Binary.name).filter(Binary.name.in_(binaries.keys())).all()
+                ((binary.hash, binary) for binary in
+                    db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
                 )
             )
 
             update_parts = []
-            for name, binary in binaries.items():
-                existing_binary = existing_binaries.get(name, None)
+            for hash, binary in binaries.items():
+                existing_binary = existing_binaries.get(hash, None)
                 if existing_binary:
                     for number, part in binary['parts'].items():
                         update_parts.append({'_id': part.id, '_binary_id': existing_binary.id})
@@ -69,7 +77,6 @@ def process():
     start = time.time()
 
     binaries = {}
-    orphan_binaries = []
     dead_parts = []
     total_processed = 0
     total_binaries = 0
@@ -84,7 +91,7 @@ def process():
         relevant_groups = db.query(Part.group_name).group_by(Part.group_name).all()
         if relevant_groups:
             # grab all relevant regex
-            all_regex = db.query(Regex).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
+            all_regex = db.query(Regex).filter(Regex.status==True).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
 
             # cache compiled regex
             compiled_regex = {}
@@ -136,23 +143,13 @@ def process():
                         if not match.get('name'):
                             continue
 
-                        # if the binary has no part count and is 3 hours old
-                        # turn it into something anyway
-                        timediff = pytz.utc.localize(datetime.datetime.now()) \
-                                   - pytz.utc.localize(part.posted)
-
                         # if regex are shitty, look for parts manually
                         # segment numbers have been stripped by this point, so don't worry
                         # about accidentally hitting those instead
                         if not match.get('parts'):
-                            result = regex.search('(\d{1,3}\/\d{1,3})', part.subject)
+                            result = PART_REGEX.search(part.subject)
                             if result:
                                 match['parts'] = result.group(1)
-
-                        # probably an nzb
-                        if not match.get('parts') and timediff.seconds / 60 / 60 > 3:
-                            orphan_binaries.append(match['name'])
-                            match['parts'] = '00/00'
 
                         if match.get('name') and match.get('parts'):
                             if match['parts'].find('/') == -1:
@@ -164,14 +161,26 @@ def process():
 
                             current, total = match['parts'].split('/')
 
+                            # calculate binary hash for matching
+                            hash = generate_hash(match['name'], part.group_name, part.posted_by, total)
+
                             # if the binary is already in our chunk,
                             # just append to it to reduce query numbers
-                            if match['name'] in binaries:
-                                binaries[match['name']]['parts'][current] = part
+                            if hash in binaries:
+                                if current in binaries[hash]['parts']:
+                                    # but if we already have this part, pick the one closest to the binary
+                                    if binaries[hash]['posted'] - part.posted < binaries[hash]['posted'] - binaries[hash]['parts'][current].posted:
+                                        binaries[hash]['parts'][current] = part
+                                    else:
+                                        dead_parts.append(part.id)
+                                        break
+                                else:
+                                    binaries[hash]['parts'][current] = part
                             else:
                                 log.debug('binaries: new binary found: {}'.format(match['name']))
 
                                 b = {
+                                    'hash': hash,
                                     'name': match['name'],
                                     'posted': part.posted,
                                     'posted_by': part.posted_by,
@@ -182,7 +191,7 @@ def process():
                                     'parts': {current: part}
                                 }
 
-                                binaries[match['name']] = b
+                                binaries[hash] = b
                             found = True
                             break
 
@@ -195,7 +204,10 @@ def process():
                     total_binaries += len(binaries)
 
                     save(binaries)
-                    deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
+                    if dead_parts:
+                        deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
+                    else:
+                        deleted = 0
 
                     log.debug('binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries), deleted, total_parts))
 
@@ -204,7 +216,8 @@ def process():
 
             total_binaries += len(binaries)
             save(binaries)
-            db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
+            if dead_parts:
+                db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
 
     end = time.time()
 

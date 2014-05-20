@@ -12,11 +12,9 @@ from sqlalchemy.orm import Load, subqueryload
 
 def generate_hash(subject, posted_by, group_name, total_segments):
     """Generates a mostly-unique temporary hash for a part."""
-    hash = pyhashxx.hashxx(subject.encode('utf-8'), posted_by.encode('utf-8'),
+    return pyhashxx.hashxx(subject.encode('utf-8'), posted_by.encode('utf-8'),
                            group_name.encode('utf-8'), struct.pack('I', total_segments)
     )
-
-    return hash
 
 
 def save_all(parts):
