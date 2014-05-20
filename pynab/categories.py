@@ -241,7 +241,7 @@ group_regex = {
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
     regex.compile('alt\.binaries\.(teevee|tv|tvseries)', regex.I): [
-        CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_XXX, CAT_MISC_OTHER
+        CAT_PARENT_TV, CAT_PARENT_XXX, CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
     regex.compile('alt\.binaries\.multimedia$', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
@@ -288,7 +288,7 @@ parent_category_regex = {
         ]),
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
-        (regex.compile('[-._ ]AVC|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|BR|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|Untouched|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
+        (regex.compile('[-._ ]AVC|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
             CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
         ])
     ]),
