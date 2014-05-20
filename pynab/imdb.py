@@ -6,7 +6,7 @@ import pymongo
 import requests
 import pytz
 
-from pynab.db import db_session, Release, Movie, MetaBlack, Category
+from pynab.db import db_session, Release, Movie, MetaBlack, Category, DataLog
 from pynab import log
 import config
 
@@ -78,9 +78,8 @@ def process(limit=100, online=True):
                     release.id,
                     release.search_name
                 ))
-                mb = MetaBlack(status='IMPOSSIBLE')
-                mb.movie = release
-                db.add(mb)
+                db.add(MetaBlack(status='IMPOSSIBLE', movie=release))
+                db.add(DataLog(description='imdb parse_movie regex', data=release.search_name))
 
         db.commit()
 

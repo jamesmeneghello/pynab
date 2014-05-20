@@ -10,7 +10,7 @@ import pytz
 from lxml import etree
 from collections import defaultdict
 
-from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode
+from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog
 from pynab import log
 import pynab.util
 import config
@@ -52,6 +52,9 @@ def process(limit=100, online=True):
             method = ''
 
             show = parse_show(release.search_name)
+            if not show:
+                show = parse_show(release.name)
+
             if show:
                 rage = db.query(TvShow).filter(
                     TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
@@ -117,8 +120,9 @@ def process(limit=100, online=True):
                     release.search_name,
                     'no suitable regex for show name'
                 ))
-                mb = MetaBlack(tvshow=release, status='IMPOSSIBLE')
-                db.add(mb)
+                db.add(MetaBlack(tvshow=release, status='IMPOSSIBLE'))
+                db.add(DataLog(description='tvrage parse_show regex', data=release.search_name))
+
         db.commit()
 
 

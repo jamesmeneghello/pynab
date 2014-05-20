@@ -48,7 +48,6 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 # -------------------
 """
 
-
 @contextmanager
 def db_session():
     session = Session()
@@ -309,3 +308,11 @@ class TvShow(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, index=True)
     country = Column(String(5))
+
+
+class DataLog(Base):
+    __tablename__ = 'datalogs'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String, index=True)
+    data = Column(Text)
