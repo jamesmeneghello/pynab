@@ -1,10 +1,10 @@
 import regex
-
 import requests
 
 from pynab.db import db_session, Regex, Blacklist, engine
 from pynab import log
 import config
+import db.regex
 
 
 class Match(object):
@@ -94,6 +94,7 @@ def update_regex():
                     log.info('We either lost or gained regex, so dump them and reload.')
 
                     db.query(Regex).filter(Regex.id <= 100000).delete()
+                    regexes = modify_regex(regexes)
                     engine.execute(Regex.__table__.insert(), regexes)
 
                     return True
@@ -103,4 +104,12 @@ def update_regex():
         else:
             log.error('No config item set for regex_url - do you own newznab plus?')
             return False
+
+
+def modify_regex(regexes):
+    for key, replacement in db.regex.replacements.items():
+        regexes[key] = replacement
+
+    return regexes
+
 
