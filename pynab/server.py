@@ -14,6 +14,9 @@ import pynab.yenc
 import config
 
 
+SEGMENT_REGEX = regex.compile('\((\d+)[\/](\d+)\)', regex.I)
+
+
 class Server:
     def __init__(self):
         self.connection = None
@@ -117,7 +120,7 @@ class Server:
                 continue
 
             # get the current segment number
-            results = regex.findall('\((\d+)[\/](\d+)\)', overview['subject'])
+            results = SEGMENT_REGEX.findall(overview['subject'])
 
             # it might match twice, so just get the last one
             # the first is generally the part number
