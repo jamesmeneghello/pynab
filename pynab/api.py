@@ -112,7 +112,7 @@ def auth():
 def movie_search(dataset=None):
     if auth():
         with db_session() as db:
-            query = db.query(Release).join(Category).filter(Category.id.in_([2020, 2030, 2040, 2050, 2060]))
+            query = db.query(Release)
 
             try:
                 imdb_id = request.query.imdbid or None
@@ -135,7 +135,7 @@ def movie_search(dataset=None):
 def tv_search(dataset=None):
     if auth():
         with db_session() as db:
-            query = db.query(Release).join(Category).filter(Category.id.in_([5030, 5040, 5050, 5060, 5070, 5080]))
+            query = db.query(Release)
 
             try:
                 tvrage_id = request.query.rid or None
@@ -256,7 +256,7 @@ def search(dataset=None, query=None):
             except Exception as e:
                 # normally a try block this long would make me shudder
                 # but we don't distinguish between errors, so it's fine
-                log.error('Incorrect API Paramter or parsing error: {}'.format(e))
+                log.error('Incorrect API Parameter or parsing error: {}'.format(e))
                 return api_error(201)
 
             search_terms = request.query.q or None
