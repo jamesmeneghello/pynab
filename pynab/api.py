@@ -201,9 +201,9 @@ def caps(dataset=None):
         category_alias = aliased(Category)
         dataset['categories'] = db.query(Category).filter(Category.parent_id==None).join(category_alias, Category.children).all()
 
-        totals = []
+        dataset['totals'] = []
 
-        totals += [
+        dataset['totals'] += [
             {
                 'label': 'TV',
                 'total': db.query(Release.id).join(Category).filter(Category.parent_id==5000).group_by(Release.id).count(),
