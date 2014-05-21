@@ -1,7 +1,6 @@
 import datetime
 import os
 import gzip
-import pymongo
 
 from mako.template import Template
 from mako import exceptions
@@ -9,7 +8,7 @@ from bottle import request, response
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_
 
-from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode
+from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode, File
 from pynab import log, root_dir
 import config
 
@@ -189,6 +188,9 @@ def details(dataset=None):
 
 
 def caps(dataset=None):
+    if not dataset:
+        dataset = {}
+
     dataset['app_version'] = config.api.get('version', '1.0.0')
     dataset['api_version'] = config.api.get('api_version', '0.2.3')
     dataset['email'] = config.api.get('email', '')
@@ -198,6 +200,32 @@ def caps(dataset=None):
     with db_session() as db:
         category_alias = aliased(Category)
         dataset['categories'] = db.query(Category).filter(Category.parent_id==None).join(category_alias, Category.children).all()
+
+        totals = []
+
+        totals += [
+            {
+                'label': 'TV',
+                'total': db.query(Release.id).join(Category).filter(Category.parent_id==5000).group_by(Release.id).count(),
+                'processed': db.query(Release.id).join(Category).join(TvShow).filter(Category.parent_id==5000).group_by(Release.id).count()
+            },
+            {
+                'label': 'Movies',
+                'total': db.query(Release.id).join(Category).filter(Category.parent_id==2000).group_by(Release.id).count(),
+                'processed': db.query(Release.id).join(Category).join(Movie).filter(Category.parent_id==2000).group_by(Release.id).count()
+            },
+            {
+                'label': 'NFOs',
+                'total': db.query(Release.id).join(Category).group_by(Release.id).count(),
+                'processed': db.query(Release.id).join(Category).join(NFO).group_by(Release.id).count()
+            },
+            {
+                'label': 'Files',
+                'total': db.query(Release.id).join(Category).group_by(Release.id).count(),
+                'processed': db.query(Release.id).join(Category).join(File).filter(Release.files.any()).group_by(Release.id).count()
+            }
+        ]
+
 
         try:
             tmpl = Template(
