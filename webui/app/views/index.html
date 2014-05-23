@@ -3,6 +3,7 @@
 	<hr>
 	<p>This interface will somewhat simplify searching for files on a Pynab Indexer.</p>
     <hr>
+    <h3>Post-processing Status</h3>
     <table class="table table-striped">
         <tr>
             <th>Type</th>
@@ -19,6 +20,18 @@
                     <span style="color:black;">{{total.value}}%</span>
                 </progressbar>
             </td>
+        </tr>
+    </table>
+    <hr>
+    <h3>Releases</h3>
+    <table class="table table-striped">
+        <tr>
+            <th>Category</th>
+            <th>Releases</th>
+        </tr>
+        <tr ng-repeat="category in categories">
+            <td>{{category.label}}</td>
+            <td>{{category.value}}</td>
         </tr>
     </table>
     <hr>

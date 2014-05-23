@@ -32,10 +32,4 @@
             </category>
         % endfor
     </categories>
-
-    <totals>
-        % for total in totals:
-            <total label="${total['label']}" total="${total['total']}" processed="${total['processed']}"></total>
-        % endfor
-    </totals>
 </caps>

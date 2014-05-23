@@ -3,19 +3,26 @@
 angular.module('pynabWebuiApp')
     .controller('IndexCtrl', function ($scope, $http, PYNAB_CONFIG) {
         var params = {
-			t: 'caps',
+			t: 'stats',
 			o: 'json',
 			callback:'JSON_CALLBACK'
 		};
 
         $http.jsonp(PYNAB_CONFIG.hostUrl + 'api', {params:params}).then(function(response) {
 			var totals = [];
-			response.data.caps.totals.total.forEach(function(total) {
+			response.data.stats.totals.total.forEach(function(total) {
 				total.value = Math.round((total.processed/total.total)*100);
                 totals.push(total);
 			});
-			$scope.totals = totals;
-            console.log($scope.totals);
+
+            $scope.totals = totals;
+
+            var categories = [];
+            response.data.stats.categories.category.forEach(function(category) {
+				categories.push(category);
+			});
+
+			$scope.categories = categories;
 		});
     })
 	.controller('SearchCtrl', function ($scope, $http, $cookieStore, PYNAB_CONFIG) {

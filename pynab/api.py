@@ -6,7 +6,7 @@ from mako.template import Template
 from mako import exceptions
 from bottle import request, response
 from sqlalchemy.orm import aliased
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode, File
 from pynab import log, root_dir
@@ -200,7 +200,20 @@ def caps(dataset=None):
     with db_session() as db:
         category_alias = aliased(Category)
         dataset['categories'] = db.query(Category).filter(Category.parent_id==None).join(category_alias, Category.children).all()
+        try:
+            tmpl = Template(
+                filename=os.path.join(root_dir, 'templates/api/caps.mako'))
+            return tmpl.render(**dataset)
+        except:
+            log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+            return None
 
+
+def stats(dataset=None):
+    if not dataset:
+        dataset = {}
+
+    with db_session() as db:
         dataset['totals'] = []
 
         dataset['totals'] += [
@@ -226,10 +239,12 @@ def caps(dataset=None):
             }
         ]
 
+        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(Category.id).all()
+
 
         try:
             tmpl = Template(
-                filename=os.path.join(root_dir, 'templates/api/caps.mako'))
+                filename=os.path.join(root_dir, 'templates/api/stats.mako'))
             return tmpl.render(**dataset)
         except:
             log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
@@ -324,4 +339,5 @@ functions = {
     'm|movie': movie_search,
     'g|get': get_nzb,
     'gn|getnfo': get_nfo,
+    'stats': stats,
 }
