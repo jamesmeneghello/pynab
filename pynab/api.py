@@ -214,33 +214,32 @@ def stats(dataset=None):
         dataset = {}
 
     with db_session() as db:
-        dataset['totals'] = []
+        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
+        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
+        nfo_total = db.query(Release.id).filter(Release.nfo_id!=None).count()
+        file_total = db.query(Release.id).filter(Release.files.any()).count()
+        release_total = db.query(Release.id).count()
 
-        dataset['totals'] += [
-            {
-                'label': 'TV',
-                'total': db.query(Release.id).join(Category).filter(Category.parent_id==5000).group_by(Release.id).count(),
-                'processed': db.query(Release.id).join(Category).join(TvShow).filter(Category.parent_id==5000).group_by(Release.id).count()
+        dataset['totals'] = {
+            'TV': {
+                'processed': tv_totals[0],
+                'total': tv_totals[1]
             },
-            {
-                'label': 'Movies',
-                'total': db.query(Release.id).join(Category).filter(Category.parent_id==2000).group_by(Release.id).count(),
-                'processed': db.query(Release.id).join(Category).join(Movie).filter(Category.parent_id==2000).group_by(Release.id).count()
+            'Movies': {
+                'processed': movie_totals[0],
+                'total': movie_totals[1]
             },
-            {
-                'label': 'NFOs',
-                'total': db.query(Release.id).join(Category).group_by(Release.id).count(),
-                'processed': db.query(Release.id).join(Category).join(NFO).group_by(Release.id).count()
+            'NFOs': {
+                'processed': nfo_total,
+                'total': release_total
             },
-            {
-                'label': 'Files',
-                'total': db.query(Release.id).join(Category).group_by(Release.id).count(),
-                'processed': db.query(Release.id).join(Category).join(File).filter(Release.files.any()).group_by(Release.id).count()
+            'File Info': {
+                'processed': file_total,
+                'total': release_total
             }
-        ]
+        }
 
         dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(Category.id).all()
-
 
         try:
             tmpl = Template(
