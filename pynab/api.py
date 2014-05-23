@@ -68,7 +68,8 @@ def get_nfo(dataset=None):
 
 
 def get_nzb(dataset=None):
-    if auth():
+    user = auth()
+    if user:
         id = request.query.guid or None
         if not id:
             id = request.query.id or None
@@ -78,7 +79,9 @@ def get_nzb(dataset=None):
                 release = db.query(Release).join(NZB).join(Category).filter(Release.id==id).one()
                 if release:
                     release.grabs += 1
+                    user.grabs += 1
                     db.merge(release)
+                    db.merge(user)
                     db.commit()
 
                     data = release.nzb.data
@@ -103,7 +106,7 @@ def auth():
     with db_session() as db:
         user = db.query(User).filter(User.api_key==api_key).one()
         if user:
-            return api_key
+            return user
         else:
             return False
 
