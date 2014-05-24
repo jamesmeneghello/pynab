@@ -6,7 +6,7 @@ from mako.template import Template
 from mako import exceptions
 from bottle import request, response
 from sqlalchemy.orm import aliased
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, desc
 
 from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode, File
 from pynab import log, root_dir
@@ -217,32 +217,37 @@ def stats(dataset=None):
         dataset = {}
 
     with db_session() as db:
-        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
-        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
-        nfo_total = db.query(Release.id).filter(Release.nfo_id!=None).count()
+        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.tvshow_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
+        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.movie_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
+        nfo_total = db.query(func.count(Release.nfo_id), func.count(Release.nfo_metablack_id)).one()
         file_total = db.query(Release.id).filter(Release.files.any()).count()
+        file_failed_total = db.query(func.count(Release.rar_metablack_id)).one()
         release_total = db.query(Release.id).count()
 
         dataset['totals'] = {
             'TV': {
                 'processed': tv_totals[0],
-                'total': tv_totals[1]
+                'failed': tv_totals[1],
+                'total': tv_totals[2]
             },
             'Movies': {
                 'processed': movie_totals[0],
-                'total': movie_totals[1]
+                'failed': movie_totals[1],
+                'total': movie_totals[2]
             },
             'NFOs': {
-                'processed': nfo_total,
+                'processed': nfo_total[0],
+                'failed': nfo_total[1],
                 'total': release_total
             },
             'File Info': {
                 'processed': file_total,
+                'failed': file_failed_total[0],
                 'total': release_total
             }
         }
 
-        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(Category.id).all()
+        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(desc(func.count(Release.id))).all()
 
         try:
             tmpl = Template(

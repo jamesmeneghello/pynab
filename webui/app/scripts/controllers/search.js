@@ -11,7 +11,6 @@ angular.module('pynabWebuiApp')
         $http.jsonp(PYNAB_CONFIG.hostUrl + 'api', {params:params}).then(function(response) {
 			var totals = [];
 			response.data.stats.totals.total.forEach(function(total) {
-				total.value = Math.round((total.processed/total.total)*100);
                 totals.push(total);
 			});
 

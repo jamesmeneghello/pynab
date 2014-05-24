@@ -8,17 +8,20 @@
         <tr>
             <th>Type</th>
             <th>Processed</th>
+            <th>Failed</th>
             <th>Total</th>
             <th>Completion</th>
         </tr>
         <tr ng-repeat="total in totals">
             <td>{{total.label}}</td>
             <td>{{total.processed}}</td>
+            <td>{{total.failed}}</td>
             <td>{{total.total}}</td>
             <td>
-                <progressbar class="progress-striped" value="total.value">
-                    <span style="color:black;">{{total.value}}%</span>
-                </progressbar>
+                <progress class="progress-striped" max="total.total">
+                    <bar type="success" value="total.processed"><span style="color:black;">{{total.processed/total.total*100|number:0}}%</span></bar>
+                    <bar type="warning" value="total.failed"><span style="color:black;">{{total.failed/total.total*100|number:0}}%</span></bar>
+                </progress>
             </td>
         </tr>
     </table>

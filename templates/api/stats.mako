@@ -2,7 +2,7 @@
 <stats>
     <totals>
         % for label, total in totals.items():
-            <total label="${label}" total="${total['total']}" processed="${total['processed']}"></total>
+            <total label="${label}" total="${total['total']}" processed="${total['processed']}" failed="${total['failed']}"></total>
         % endfor
     </totals>
 
