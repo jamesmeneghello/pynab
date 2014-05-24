@@ -350,22 +350,13 @@ To create a user (will return a generated API key):
 
 	> python3 scripts/create_user.py <email>
 
-To update indexes (generally only run if a commit message tells you to):
-
-	> python3 scripts/ensure_indexes.py 
-
 Update regex (run it every now and then, but it doesn't update that often):
 
     > python3 scripts/update_regex.py
 
-Quickly match releases to local post-processing databases (run this pretty often, 
-it'll probably be incorporated into start.py at some point):
-
-	> python3 scripts/quick_postprocess.py
-
 Categorise all uncategorised releases - this runs automatically after import.
 
-	> python3 scripts/process_uncategorised.py
+    > python3 scripts/process_uncategorised.py
 
 
 ### Building the WebUI ###
@@ -404,20 +395,6 @@ config options, and the project is mostly in bugfix mode at the moment.
 
 Re-run `pip3 install -r requirements.txt`. You're missing some libraries that we use.
 
-- Start.py keeps failing with some kind of EOFError or just some random error.
-
-Python's Multiprocessing Pool is such that any error will tend to flip it out and kill all the workers,
-so combined with NNTP implementations' rather.. "free" usage of error messages and standards, this'll
-happen for a while until I catch all the weird bugs. Found a new, weird crash? Post an issue!
-
-Most of these got cleaned up in a recent revision, but there's still the potential for broken servers
-to return bad data.
-
-- I'm getting some random error while trying to fill groups
-
-Go into config.py and set logging_level to logging.DEBUG and logging_file to something appropriate,
-then upload the log somewhere and attach it to an issue.
-
 - How do I enable header compression?
 
 You don't - it's automatically enabled if your provider supports it. The benefits of using it are so 
@@ -431,6 +408,12 @@ Check uWSGI's logs. Most likely your logfiles are going somewhere that you don't
 - After updating from Git, the webui won't build, citing bower-install errors.
 
 Delete the webui/node_modules and webui/app/bower_components folder and re-run npm install / bower install.
+
+- A whole lot of releases are getting miscategorised!
+
+There was a bug in a particular version of the python regex module that could cause release and binary
+regex to give incredibly shitty results. This is forced to a correct version in requirements.txt, so just
+run `pip3 install --upgrade regex` if it's happening.
 
 Newznab API
 ===========
