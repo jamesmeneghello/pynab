@@ -24,7 +24,6 @@ def update(group_name):
         return pynab.groups.update(group_name)
     except Exception as e:
         log.critical(traceback.format_exc())
-        raise Exception
 
 
 def daemonize(pidfile):
