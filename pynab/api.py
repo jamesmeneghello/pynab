@@ -220,7 +220,7 @@ def stats(dataset=None):
         tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.tvshow_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
         movie_totals = db.query(func.count(Release.movie_id), func.count(Release.movie_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
         nfo_total = db.query(func.count(Release.nfo_id), func.count(Release.nfo_metablack_id)).one()
-        file_total = db.query(Release.id).filter((Release.files.any()|Release.passworded!='UNKNOWN')).count()
+        file_total = db.query(Release.id).filter((Release.files.any())|(Release.passworded!='UNKNOWN')).count()
         file_failed_total = db.query(func.count(Release.rar_metablack_id)).one()
         release_total = db.query(Release.id).count()
 
