@@ -233,6 +233,6 @@ if __name__ == '__main__':
                 release.pop('req_id')
 
             r = pynab.db.Release(**release)
-            postgre.add(r)
+            postgre.merge(r)
             postgre.flush()
 
