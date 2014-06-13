@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
         print('Copying movies...')
         for movie in mongo.imdb.find():
-            if movie['name'] and movie['year'] and 'tt' in movie['_id']:
+            if movie['name'] and movie['year'] and 'tt' in str(movie['_id']):
                 movie['id'] = str(movie['_id'])
                 movie.pop('_id')
 
