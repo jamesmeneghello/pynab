@@ -136,6 +136,9 @@ if __name__ == '__main__':
             release['name'] = release['name'].encode('utf-8', 'replace').decode('latin-1')
             release['search_name'] = release['search_name'].encode('utf-8', 'replace').decode('latin-1')
 
+            if postgre.query(pynab.db.Release).filter(pynab.db.Release.name==release['name']).filter(pynab.db.Release.posted==release['posted']).first():
+                continue
+
             print('Processing {}...'.format(release['search_name']))
 
             release.pop('_id')
