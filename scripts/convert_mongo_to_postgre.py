@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
         print('Copying regexes...')
         for regex in mongo.regexes.find():
-            regex['id'] = regex['_id']
+            regex['id'] = str(regex['_id'])
             regex.pop('_id')
             regex.pop('category_id')
             regex['status'] = bool(regex['status'])
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
         print('Copying TV shows...')
         for tvshow in mongo.tvrage.find():
-            tvshow['id'] = tvshow['_id']
+            tvshow['id'] = str(tvshow['_id'])
             tvshow.pop('_id')
 
             tv = pynab.db.TvShow(**tvshow)
@@ -84,10 +84,12 @@ if __name__ == '__main__':
 
         print('Copying movies...')
         for movie in mongo.imdb.find():
-            movie['id'] = movie['_id']
+            movie['id'] = str(movie['_id'])
             movie.pop('_id')
             if 'genre' in movie:
                 movie['genre'] = ','.join(movie['genre'])
+            if 'lang' in movie:
+                movie.pop('lang')
 
             m = pynab.db.Movie(**movie)
             postgre.add(m)
@@ -106,7 +108,7 @@ if __name__ == '__main__':
 
         print('Copying categories...')
         for category in mongo.categories.find():
-            category['id'] = category['_id']
+            category['id'] = str(category['_id'])
             category.pop('_id')
             category.pop('min_size')
             category.pop('max_size')
