@@ -233,10 +233,10 @@ if __name__ == '__main__':
                 release.pop('req_id')
 
             r = pynab.db.Release(**release)
+            postgre.add(r)
             try:
-                postgre.add(r)
+                postgre.flush()
             except:
                 # ignore duplicates
                 pass
-            postgre.flush()
 
