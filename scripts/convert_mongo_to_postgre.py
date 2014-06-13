@@ -51,7 +51,7 @@ if __name__ == '__main__':
         print('Copying regexes...')
         custom_count = 100001
         for regex in mongo.regexes.find():
-            if not regex['_id'].isdigit():
+            if not str(regex['_id']).isdigit():
                 # custom regex, add it to the end
                 regex['id'] = custom_count
                 custom_count += 1
