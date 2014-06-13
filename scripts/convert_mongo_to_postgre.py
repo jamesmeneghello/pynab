@@ -160,8 +160,8 @@ if __name__ == '__main__':
                 else:
                     release.pop('regex')
 
-            if 'imdb' in release and release['imdb'] and '_id' in release['imdb']:
-                release['movie'] = postgre.query(pynab.db.Movie).filter(pynab.db.Movie.id==release['imdb']['_id']).first()
+            if 'imdb' in release and release['imdb'] and '_id' in release['imdb'] and 'tt' in str(release['imdb']):
+                release['movie'] = postgre.query(pynab.db.Movie).filter(pynab.db.Movie.id==str(release['imdb']['_id'])).first()
             if 'imdb' in release:
                 release.pop('imdb')
 
