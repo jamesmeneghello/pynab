@@ -49,8 +49,13 @@ if __name__ == '__main__':
         postgre.commit()
 
         print('Copying regexes...')
+        custom_count = 100001
         for regex in mongo.regexes.find():
-            regex['id'] = str(regex['_id'])
+            if len(regex['_id']) == 24:
+                # custom regex, add it to the end
+                regex['id'] = custom_count
+                custom_count += 1
+
             regex.pop('_id')
             regex.pop('category_id')
             regex['status'] = bool(regex['status'])
@@ -84,15 +89,17 @@ if __name__ == '__main__':
 
         print('Copying movies...')
         for movie in mongo.imdb.find():
-            movie['id'] = str(movie['_id'])
-            movie.pop('_id')
-            if 'genre' in movie:
-                movie['genre'] = ','.join(movie['genre'])
-            if 'lang' in movie:
-                movie.pop('lang')
+            if movie['name'] and movie['year'] and 'tt' in movie['_id']:
+                movie['id'] = str(movie['_id'])
+                movie.pop('_id')
 
-            m = pynab.db.Movie(**movie)
-            postgre.add(m)
+                if 'genre' in movie:
+                    movie['genre'] = ','.join(movie['genre'])
+                if 'lang' in movie:
+                    movie.pop('lang')
+
+                m = pynab.db.Movie(**movie)
+                postgre.add(m)
 
         postgre.commit()
 
