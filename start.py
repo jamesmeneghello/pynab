@@ -18,6 +18,8 @@ import pynab.nfos
 import pynab.imdb
 import pynab.debug
 import config
+import pynab.xmpp
+import multiprocessing
 
 
 def update(group_name):
@@ -41,8 +43,7 @@ def process():
 
     # process releases
     log.info('start: processing releases...')
-    pynab.releases.process()
-
+    pynab.releases.process(q)
 
 def daemonize(pidfile):
     try:
@@ -67,6 +68,14 @@ def main():
     #pynab.debug.listen()
 
     iterations = 0
+    multiprocessing.log_to_stderr().setLevel(config.log['logging_level'])
+
+    q = multiprocessing.Queue()
+    if config.bot:
+      log.warning("The xmpp bot will be spawned")
+      xmpp_p = multiprocessing.Process(target=pynab.xmpp.process, args=(q,))
+      xmpp_p.start()
+
     while True:
         iterations += 1
 
