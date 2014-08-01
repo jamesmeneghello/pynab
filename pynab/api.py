@@ -146,28 +146,25 @@ def tv_search(dataset=None):
 
                 season = request.query.season or None
                 episode = request.query.ep or None
-                if season and not episode:
-                    if season.isdigit():
-                        query = query.join(Episode).filter(Episode.season=='S{:02d}'.format(int(season)))
-                    else:
-                        query = query.join(Episode).filter(Episode.season==season)
-                elif not season and episode:
-                    if episode.isdigit():
-                        query = query.join(Episode).filter(Episode.episode=='E{:02d}'.format(int(episode)))
-                    else:
-                        query = query.join(Episode).filter(Episode.episode==episode)
-                elif season and episode:
-                    if episode.isdigit():
-                        q_episode = 'E{:02d}'.format(int(episode))
-                    else:
-                        q_episode = episode
 
-                    if season.isdigit():
-                        q_season = 'S{:02d}'.format(int(season))
-                    else:
-                        q_season = season
+                if season or episode:
+                    query = query.join(Episode)
 
-                    query = query.join(Episode).filter(Episode.episode==q_episode, Episode.season==q_season)
+                    if season:
+                        # 2014, do nothing
+                        if season.isdigit() and len(season) <= 2:
+                            # 2, convert to S02
+                            season = 'S{:02d}'.format(int(season))
+
+                        query = query.filter(Episode.season==season)
+
+                    if episode:
+                        # 23/10, do nothing
+                        if episode.isdigit() and '/' not in episode:
+                            # 15, convert to E15
+                            episode = 'E{:02d}'.format(int(episode))
+
+                        query = query.filter(Episode.episode==episode)
             except Exception as e:
                 log.error('API Error: {}'.format(e))
                 return api_error(201)
