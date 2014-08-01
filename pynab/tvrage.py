@@ -97,11 +97,9 @@ def process(limit=100, online=True):
                             year=show.get('year'),
                             tvshow_id=rage.id
                         )
-                    e.release = release
-                    db.add(e)
-
                     release.tvshow = rage
                     release.tvshow_metablack_id = None
+                    release.episode = e
                     db.add(release)
                 elif not rage and online:
                     log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
