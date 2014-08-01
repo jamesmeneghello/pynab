@@ -145,19 +145,31 @@ def tv_search(dataset=None):
                     query = query.join(TvShow).filter(TvShow.id==int(tvrage_id))
 
                 season = request.query.season or None
-                if season:
+                episode = request.query.ep or None
+                if season and not episode:
                     if season.isdigit():
                         query = query.join(Episode).filter(Episode.season=='S{:02d}'.format(int(season)))
                     else:
                         query = query.join(Episode).filter(Episode.season==season)
-
-                episode = request.query.ep or None
-                if episode:
+                elif not season and episode:
                     if episode.isdigit():
                         query = query.join(Episode).filter(Episode.episode=='E{:02d}'.format(int(episode)))
                     else:
                         query = query.join(Episode).filter(Episode.episode==episode)
-            except:
+                elif season and episode:
+                    if episode.isdigit():
+                        q_episode = 'E{:02d}'.format(int(episode))
+                    else:
+                        q_episode = episode
+
+                    if season.isdigit():
+                        q_season = 'S{:02d}'.format(int(season))
+                    else:
+                        q_season = season
+
+                    query = query.join(Episode).filter(Episode.episode==q_episode, Episode.season==q_season)
+            except Exception as e:
+                log.error('API Error: {}'.format(e))
                 return api_error(201)
 
             return search(dataset, query)
