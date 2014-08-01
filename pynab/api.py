@@ -297,6 +297,13 @@ def search(dataset=None, query=None):
                     oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
                     query = query.filter(Release.posted>oldest)
 
+                # more info?
+                extended = request.query.extended or None
+                if extended:
+                    dataset['extended'] = True
+                else:
+                    dataset['extended'] = False
+
                 # set limit to request or default
                 # this will also match limit == 0, which would be infinite
                 limit = request.query.limit or None
