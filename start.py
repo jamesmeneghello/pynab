@@ -16,6 +16,7 @@ import pynab.tvrage
 import pynab.rars
 import pynab.nfos
 import pynab.imdb
+import pynab.debug
 import config
 
 
@@ -45,6 +46,8 @@ def daemonize(pidfile):
 
 def main():
     log.info('start: starting update...')
+    log.info('debug enabled: send SIGUSR1 to drop to the shell')
+    pynab.debug.listen()
 
     while True:
         # refresh the db session each iteration, just in case
