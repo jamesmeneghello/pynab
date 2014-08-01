@@ -35,7 +35,7 @@
                 % else:
                     <category>${release.category.name}</category>
                 % endif
-                <description>${release.search_name}</description>
+                <description>${release.search_name | x}</description>
                 <posted>${utils.formatdate(posted_date)}</posted>
                 <group>${release.group.name}</group>
                 <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}"
@@ -47,7 +47,7 @@
                     <newznab:attr name="category" value="${release.category.parent_id}"/>
                 % endif
                 % if detail or extended:
-                    <newznab:attr name="poster" value="${release.posted_by}"/>
+                    <newznab:attr name="poster" value="${release.posted_by | x}"/>
                     <newznab:attr name="posted" value="${posted_date}"/>
                     <newznab:attr name="grabs" value="${release.grabs}"/>
                     <newznab:attr name="group" value="${release.group.name}"/>
