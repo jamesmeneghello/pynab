@@ -134,6 +134,8 @@ class Server:
             # make sure the header contains everything we need
             if ':bytes' not in overview:
                 continue
+            elif not overview[':bytes']:
+                continue
 
             # assuming everything didn't fuck up, continue
             if int(segment_number) > 0 and int(total_segments) > 0:
