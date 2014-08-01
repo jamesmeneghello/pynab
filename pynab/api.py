@@ -104,7 +104,7 @@ def auth():
     api_key = request.query.apikey or ''
 
     with db_session() as db:
-        user = db.query(User).filter(User.api_key==api_key).one()
+        user = db.query(User).filter(User.api_key==api_key).first()
         if user:
             return user
         else:
