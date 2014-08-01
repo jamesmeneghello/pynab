@@ -46,11 +46,12 @@
                 % if release.category.parent_id:
                     <newznab:attr name="category" value="${release.category.parent_id}"/>
                 % endif
-                % if detail:
+                % if detail or extended:
                     <newznab:attr name="poster" value="${release.posted_by}"/>
                     <newznab:attr name="posted" value="${posted_date}"/>
                     <newznab:attr name="grabs" value="${release.grabs}"/>
                     <newznab:attr name="group" value="${release.group.name}"/>
+                    <newznab:attr name="size" value="${release.size}"/>
                 % endif
                 <newznab:attr name="guid" value="${release.id}"/>
             </item>
