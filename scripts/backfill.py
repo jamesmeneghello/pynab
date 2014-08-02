@@ -25,9 +25,11 @@ with db_session() as db:
     if args.group:
         group = db.query(Group).filter(Group.name==args.group).first()
         if group:
-            if not args.date:
+            if args.date:
+                args.date = pytz.utc.localize(dateutil.parser.parse(args.date))
+            else:
                 args.date = None
-            if pynab.groups.backfill(group.name, pytz.utc.localize(dateutil.parser.parse(args.date))):
+            if pynab.groups.backfill(group.name, args.date):
                 print('Group {0} successfully backfilled!'.format(group.name))
             else:
                 print('Problem backfilling group {0}.'.format(group.name))
