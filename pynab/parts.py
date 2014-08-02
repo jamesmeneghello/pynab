@@ -104,7 +104,7 @@ def save_all(parts):
                             # kinda wish people would stop reposting shit constantly
                             pass
                 else:
-                    log.critical('i\'ve made a huge mistake')
+                    log.critical('parts: part didn\'t exist when we went to save it. backfilling with dead_binary_age not set to 0?')
                     return False
 
             if segment_inserts:

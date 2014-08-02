@@ -71,7 +71,7 @@ scan = {
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so
-    # NOTE: if you're backfilling, set this to 0 or it'll delete things you don't want it to
+    # !!WARNING!! if backfilling, set this to 0.
     'dead_binary_age': 3,
 
     # pid_file: process file for the scanner, if daemonized

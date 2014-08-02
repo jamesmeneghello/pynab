@@ -22,6 +22,7 @@ parser.add_argument('-d', '--date', nargs='?', help='Date to backfill to (leave 
 args = parser.parse_args()
 
 with db_session() as db:
+    print('Starting backfill. Ensure that dead_binary_age is set to 0 in config.py!')
     if args.group:
         group = db.query(Group).filter(Group.name==args.group).first()
         if group:
