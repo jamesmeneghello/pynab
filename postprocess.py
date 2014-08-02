@@ -103,7 +103,7 @@ if __name__ == '__main__':
             if config.postprocess.get('delete_bad_releases', False):
                 deletes = db.query(Release).filter(Release.unwanted==True).delete()
                 log.info('postprocess: deleted {} bad releases'.format(deletes))
-
+                db.commit()
 
             # vacuum the segments, parts and binaries tables
             log.info('postprocess: vacuuming relevant tables...')
