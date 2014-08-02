@@ -187,7 +187,7 @@ class Server:
 
         # instead of checking every single individual segment, package them first
         # so we typically only end up checking the blacklist for ~150 parts instead of thousands
-        blacklist = [k for k, v in messages.items() if pynab.parts.is_blacklisted(v['subject'], group_name, blacklists)]
+        blacklist = [k for k, v in messages.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
         blacklisted_parts = len(blacklist)
         total_parts = len(messages)
         for k in blacklist:

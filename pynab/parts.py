@@ -142,11 +142,11 @@ def save_all(parts):
     return True
 
 
-def is_blacklisted(subject, group_name, blacklists):
+def is_blacklisted(part, group_name, blacklists):
     for blacklist in blacklists:
         if regex.search(blacklist.group_name, group_name):
             # too spammy
             #log.debug('{0}: Checking blacklist {1}...'.format(group_name, blacklist['regex']))
-            if regex.search(blacklist.regex, subject):
+            if regex.search(blacklist.regex, part[blacklist.field]):
                 return True
     return False

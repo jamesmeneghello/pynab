@@ -253,6 +253,7 @@ class Blacklist(Base):
 
     description = Column(String)
     group_name = Column(String, index=True)
+    field = Column(String, default='subject', nullable=False)
     regex = Column(Text, unique=True)
     status = Column(Boolean, default=False)
 
