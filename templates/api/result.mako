@@ -42,13 +42,14 @@
             <newznab:attr name="category" value="${release.category.parent_id}"/>
             % endif
             % if detail or extended:
-            <newznab:attr name="poster" value="${release.posted_by | x}"/>
-            <newznab:attr name="posted" value="${posted_date}"/>
-            <newznab:attr name="grabs" value="${release.grabs}"/>
-            <newznab:attr name="group" value="${release.group.name}"/>
             <newznab:attr name="size" value="${release.size}"/>
             % endif
             <newznab:attr name="guid" value="${release.id}"/>
+            <newznab:attr name="poster" value="${release.posted_by | x}"/>
+            <newznab:attr name="usenetdate" value="${posted_date}"/>
+            <newznab:attr name="grabs" value="${release.grabs}"/>
+            <newznab:attr name="group" value="${release.group.name}"/>
+            <newznab:attr name="size" value="${release.size}"/>
         </item>
     % endfor
     </channel>
