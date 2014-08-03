@@ -49,7 +49,9 @@
             <newznab:attr name="usenetdate" value="${utils.formatdate(posted_date)}"/>
             <newznab:attr name="grabs" value="${release.grabs}"/>
             <newznab:attr name="group" value="${release.group.name}"/>
+	    % if release.size:
             <newznab:attr name="size" value="${release.size}"/>
+	    % endif
         </item>
     % endfor
     </channel>
