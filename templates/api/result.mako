@@ -41,9 +41,6 @@
             % if release.category.parent_id:
             <newznab:attr name="category" value="${release.category.parent_id}"/>
             % endif
-            % if detail or extended:
-            <newznab:attr name="size" value="${release.size}"/>
-            % endif
             % if release.tvshow_id:
             <newznab:attr name="rageid" value="${release.tvshow_id}"/>
             % endif
