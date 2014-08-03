@@ -73,6 +73,7 @@ class Release(Base):
 
     status = Column(Integer)
     grabs = Column(Integer, default=0)
+    size = Column(BigInteger, default=0)
 
     passworded = Column(Enum('UNKNOWN', 'YES', 'NO', 'MAYBE', name='enum_passworded'), default='UNKNOWN')
     unwanted = Column(Boolean, default=False, index=True)
@@ -108,14 +109,6 @@ class Release(Base):
     episode = relationship('Episode', backref=backref('releases'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
-
-    @hybrid_property
-    def size(self):
-        return sum(file.size for file in self.files)
-
-    @size.expression
-    def size(cls):
-        return select([func.sum(File.size)]).where(File.release_id==cls.id).label('size')
 
 
 class MetaBlack(Base):
@@ -253,7 +246,7 @@ class Blacklist(Base):
 
     description = Column(String)
     group_name = Column(String, index=True)
-    field = Column(String, default='subject', nullable=False)
+    field = Column(String, server_default='subject', nullable=False)
     regex = Column(Text, unique=True)
     status = Column(Boolean, default=False)
 

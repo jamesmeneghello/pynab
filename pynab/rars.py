@@ -249,11 +249,14 @@ def process(limit=20, category=0):
                         ))
                         release.passworded = passworded
 
+                        size = 0
                         for file in info:
                             f = File(name=file['name'], size=file['size'])
                             f.release = release
+                            size += file['size']
                             db.add(f)
 
+                        release.size = size
                         release.rar_metablack_id = None
                         db.add(release)
                         continue
