@@ -3,6 +3,7 @@ import regex
 import time
 import datetime
 import math
+import socket
 
 import dateutil.parser
 import pytz
@@ -99,6 +100,11 @@ class Server:
 
             # don't even quit, because that'll still break
             # null the connection and restart it
+            self.connection = None
+            self.connect()
+            return False, None
+        except socket.timeout:
+            # backfills can sometimes go for so long that everything explodes
             self.connection = None
             self.connect()
             return False, None
