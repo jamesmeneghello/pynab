@@ -80,6 +80,13 @@ class Server:
                         return None
             except nntplib.NNTPError as nntpe:
                 log.error('server: [{}]: problem retrieving messages: {}.'.format(group_name, nntpe))
+                self.connection = None
+                self.connect()
+                return None
+            except socket.timeout:
+                log.error('server: socket timed out, reconnecting')
+                self.connection = None
+                self.connect()
                 return None
 
             return data
@@ -105,6 +112,7 @@ class Server:
             return False, None
         except socket.timeout:
             # backfills can sometimes go for so long that everything explodes
+            log.error('server: socket timed out, reconnecting')
             self.connection = None
             self.connect()
             return False, None
