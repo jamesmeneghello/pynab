@@ -31,7 +31,7 @@ def get(nfo):
     return gzip.decompress(nfo.data)
 
 
-def process(limit=50, category=0):
+def process(limit=None, category=0):
     """Process releases for NFO parts and download them."""
 
     with Server() as server:
@@ -88,4 +88,4 @@ def process(limit=50, category=0):
                         ))
                         mb = MetaBlack(nfo=release, status='IMPOSSIBLE')
                         db.add(mb)
-            db.commit()
+                db.commit()

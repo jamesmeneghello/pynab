@@ -15,7 +15,7 @@ OMDB_SEARCH_URL = 'http://www.omdbapi.com/?s='
 OMDB_DETAIL_URL = 'http://www.omdbapi.com/?i='
 
 
-def process(limit=100, online=True):
+def process(limit=None, online=True):
     """Process movies without imdb data and append said data."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
@@ -81,7 +81,7 @@ def process(limit=100, online=True):
                 db.add(MetaBlack(status='IMPOSSIBLE', movie=release))
                 db.add(DataLog(description='imdb parse_movie regex', data=release.search_name))
 
-        db.commit()
+            db.commit()
 
 
 def search(name, year):

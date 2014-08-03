@@ -29,7 +29,7 @@ XPATH_COUNTRY = etree.XPath('country/text()')
 RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
 
 
-def process(limit=100, online=True):
+def process(limit=None, online=True):
     """Processes [limit] releases to add TVRage information."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
     api_session = requests.Session()
@@ -125,7 +125,7 @@ def process(limit=100, online=True):
                 db.add(MetaBlack(tvshow=release, status='IMPOSSIBLE'))
                 db.add(DataLog(description='tvrage parse_show regex', data=release.search_name))
 
-        db.commit()
+            db.commit()
 
 
 def search(session, show):

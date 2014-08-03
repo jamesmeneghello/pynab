@@ -223,7 +223,7 @@ def check_release_files(server, group_name, nzb):
     return False, None
 
 
-def process(limit=20, category=0):
+def process(limit=None, category=0):
     """Processes release rarfiles to check for passwords and filecounts."""
 
     with Server() as server:
@@ -266,4 +266,4 @@ def process(limit=20, category=0):
                 ))
                 mb = MetaBlack(rar=release, status='IMPOSSIBLE')
                 db.add(mb)
-            db.commit()
+                db.commit()
