@@ -2,17 +2,22 @@ import gzip
 import os
 import datetime
 import regex
+import sys
+import time
 
 import pytz
 from mako.template import Template
 from mako import exceptions
+from xml.sax.saxutils import escape, quoteattr
 
 from lxml import etree, html
+from lxml.builder import E
 from xml.etree import cElementTree as cet
 
 from pynab.db import db_session, NZB, Category, Release, Group
 from pynab import log, root_dir
 import pynab
+import pynab.binaries
 
 XPATH_FILE = etree.XPath('file/@subject')
 XPATH_SEGMENT = etree.XPath('segments/segment')
@@ -89,27 +94,44 @@ def get_nzb_details(nzb):
     }
 
 
-def create(name, category_id, binary):
+def create(name, category, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
 
-    with db_session() as db:
-        category = db.query(Category).filter(Category.id==category_id).one()
-        category_name = category.name
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+          '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n' \
+          '<nzb>\n'
+    xml += '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(category.name, escape(name))
 
-        xml = ''
-        try:
-            tpl = Template(filename=os.path.join(root_dir, 'templates/nzb.mako'))
-            xml = tpl.render(version=pynab.__version__, name=name, category=category_name, binary=binary)
-        except:
-            log.error('nzb: failed to create NZB: {0}'.format(exceptions.text_error_template().render()))
-            return None
+    for part in binary.parts:
+        if sys.version_info >= (3, 3):
+            timestamp = '{:.0f}'.format(part.posted.replace(tzinfo=pytz.utc).timestamp())
+        else:
+            timestamp = '{:.0f}'.format(int(part.posted.replace(tzinfo=pytz.utc).strftime("%s")))
+        subject = '{0} (1/{1:d})'.format(part.subject, part.total_segments)
+        xml += '<file poster={} date={} subject={}>\n'.format(
+            quoteattr(binary.posted_by),
+            quoteattr(timestamp),
+            quoteattr(subject)
+        )
+        xml += '<groups>'
+        for group in pynab.binaries.parse_xref(binary.xref):
+            xml += '<group>{}</group>'.format(group)
+        xml += '</groups>\n<segments>\n'
+        for segment in part.segments:
+            xml += '<segment bytes="{}" number="{}">{}</segment>\n'.format(
+                segment.size,
+                segment.segment,
+                escape(segment.message_id)
+            )
+        xml += '</segments>\n</file>\n'
+    xml += '</nzb>'
 
-        data = gzip.compress(xml.encode('utf-8'))
+    data = gzip.compress(xml.encode('utf-8'))
 
-        nzb = NZB()
-        nzb.data = data
-        return nzb
+    nzb = NZB()
+    nzb.data = data
+    return nzb
 
 
 def import_nzb(filepath, quick=True):
@@ -146,7 +168,7 @@ def import_nzb(filepath, quick=True):
 
         # check that it doesn't exist first
         with db_session() as db:
-            r = db.query(Release).filter(Release.name==release['name']).one()
+            r = db.query(Release).filter(Release.name == release['name']).one()
             if not r:
                 r = Release()
                 r.name = release['name']
@@ -163,7 +185,7 @@ def import_nzb(filepath, quick=True):
                 if 'category' in release:
                     parent, child = release['category'].split(' > ')
 
-                    category = db.query(Category).filter(Category.name==parent).filter(Category.name==child).one()
+                    category = db.query(Category).filter(Category.name == parent).filter(Category.name == child).one()
                     if category:
                         release.category = category
                     else:
@@ -173,9 +195,10 @@ def import_nzb(filepath, quick=True):
 
                 # make sure the release belongs to a group we have in our db
                 if 'group_name' in release:
-                    group = db.query(Group).filter(Group.name==release['group_name']).one()
+                    group = db.query(Group).filter(Group.name == release['group_name']).one()
                     if not group:
-                        log.error('nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
+                        log.error(
+                            'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
                         return False
                     release.group = group
 
