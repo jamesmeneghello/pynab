@@ -287,6 +287,18 @@ By running start.py at the same time as the backfill scripts, start.py will auto
 processing parts created by the backfill scripts at regular intervals, preventing the parts table from
 becoming extremely large.
 
+You can also run the script supplied to execute start and postprocess:
+
+    > ./run.sh
+
+### Updating Pynab ###
+
+Run the following to update to the latest version:
+
+    > ./update.sh
+
+Requires that alembic is installed and in your path (as well as git, obviously).
+
 ### Starting the API ###
 
 To activate the API:
