@@ -269,7 +269,9 @@ def process(limit=None, category=0):
                             size += file['size']
                             db.add(f)
 
-                        release.size = size
+                        if size != 0:
+                            release.size = size
+
                         release.rar_metablack_id = None
                         db.add(release)
                         continue

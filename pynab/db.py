@@ -184,6 +184,14 @@ class Binary(Base):
 
     parts = relationship('Part', cascade='all, delete, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
 
+    def size(self):
+        size = 0
+        for part in self.parts:
+            for segment in part.segments:
+                size += segment.size
+
+        return size
+
 
 # it's unlikely these will ever be used in sqlalchemy
 # for performance reasons, but keep them to create tables etc

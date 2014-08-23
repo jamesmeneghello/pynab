@@ -171,6 +171,7 @@ def process():
                 release.posted_by = binary.posted_by
                 release.regex_id = binary.regex_id
                 release.grabs = 0
+                release.size = binary.size()
 
                 # check to make sure we have over the configured minimum files
                 rars = []
