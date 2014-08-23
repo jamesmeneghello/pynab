@@ -35,7 +35,6 @@
             <group>${release.group.name}</group>
             <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}" type="application/x-nzb"></enclosure>
             <grabs>${release.grabs}</grabs>
-            <size>${release.size}</size>
 
             <newznab:attr name="category" value="${release.category.id}"/>
             % if release.category.parent_id:
@@ -49,7 +48,10 @@
             <newznab:attr name="usenetdate" value="${utils.formatdate(posted_date)}"/>
             <newznab:attr name="grabs" value="${release.grabs}"/>
             <newznab:attr name="group" value="${release.group.name}"/>
+	    % if release.size:
             <newznab:attr name="size" value="${release.size}"/>
+	    <size>${release.size}</size>
+	    % endif
         </item>
     % endfor
     </channel>
