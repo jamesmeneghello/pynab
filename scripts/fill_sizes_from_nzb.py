@@ -23,7 +23,7 @@ def fill_sizes():
 
                 release.size = size
                 db.add(release)
-                db.commit()
+        db.commit()
 
 
 
