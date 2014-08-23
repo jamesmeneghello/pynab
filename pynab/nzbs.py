@@ -3,24 +3,21 @@ import os
 import datetime
 import regex
 import sys
-import time
 
 import pytz
-from mako.template import Template
-from mako import exceptions
 from xml.sax.saxutils import escape, quoteattr
 
 from lxml import etree, html
-from lxml.builder import E
 from xml.etree import cElementTree as cet
 
 from pynab.db import db_session, NZB, Category, Release, Group
-from pynab import log, root_dir
+from pynab import log
 import pynab
 import pynab.binaries
 
 XPATH_FILE = etree.XPath('file/@subject')
 XPATH_SEGMENT = etree.XPath('segments/segment')
+XPATH_BYTES = etree.XPath('//@bytes')
 
 nfo_regex = regex.compile('[ "\(\[].*?\.(nfo|ofn)[ "\)\]]', regex.I)
 rar_regex = regex.compile('.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]', regex.I)
@@ -29,6 +26,29 @@ metadata_regex = regex.compile('\.(par2|vol\d+\+|sfv|nzb)', regex.I)
 par2_regex = regex.compile('\.par2(?!\.)', regex.I)
 par_vol_regex = regex.compile('vol\d+\+', regex.I)
 zip_regex = regex.compile('\.zip(?!\.)', regex.I)
+
+
+def get_size(nzb):
+    """Returns the size of a release (in bytes) as given by the NZB, compressed."""
+    try:
+        # using the html parser here instead of the straight lxml might be slower
+        # but some of the nzbs spewed forth by newznab are broken and contain
+        # non-xml entities, ie. &sup2;
+        # this breaks the normal lxml parser
+        tree = html.fromstring(gzip.decompress(nzb.data))
+    except Exception as e:
+        log.critical('nzbs: problem parsing XML with lxml: {}'.format(e))
+        return None
+
+    size = 0
+    for bytes in XPATH_BYTES(tree):
+        try:
+            size += int(bytes)
+        except:
+            # too bad, there was a problem
+            return 0
+
+    return size
 
 
 def filexml_to_dict(element):
