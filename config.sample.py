@@ -116,6 +116,14 @@ postprocess = {
     # 'C:\\Program Files (x86)\\Unrar\\Unrar.exe'
     'unrar_path': '',
 
+    # delete_spam: delete releases that contain executables
+    # uses delete_spam_groups config for the groups to scan
+    'delete_spam': True,
+
+    # delete_spam_groups: which groups to remove exe'd releases from
+    # comma-separated group names
+    'delete_spam_groups': 'alt.binaries.hdtv,alt.binaries.hdtv.x264,alt.binaries.moovee,alt.binaries.movies.divx,alt.binaries.movies,alt.binaries.multimedia,alt.binaries.teevee',
+
     # delete_passworded: delete releases that are passworded
     'delete_passworded': True,
 

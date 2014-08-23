@@ -16,6 +16,7 @@ import config
 
 MAYBE_PASSWORDED_REGEX = regex.compile('\.(ace|cab|tar|gz|url)$', regex.I)
 PASSWORDED_REGEX = regex.compile('password\.url', regex.I)
+SPAM_REGEX = regex.compile('.(ace|cab|tar|gz|url|exe|zip|msi|com)$', regex.I)
 
 
 def attempt_parse(file):
@@ -195,15 +196,27 @@ def check_release_files(server, group_name, nzb):
                 # if we got file info and we're not yet 100% certain, have a look
                 if info and highest_password != 'YES':
                     for file in info:
+                        # if we want to delete spam, check the group and peek inside
+                        if config.postprocess.get('delete_spam'):
+                            if group_name in config.postprocess.get('delete_spam_groups'):
+                                result = SPAM_REGEX.search(file['name'])
+                                if result:
+                                    log.info('rar: [{}] - [{}] - release is spam')
+                                    highest_password = 'YES'
+                                    break
+
+
                         # whether "maybe" releases get deleted or not is a config option
                         result = MAYBE_PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO'):
+                            log.info('rar: [{}] - [{}] - release might be passworded')
                             highest_password = 'MAYBE'
                             break
 
                         # as is definitely-deleted
                         result = PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO' or highest_password == 'MAYBE'):
+                            log.info('rar: [{}] - [{}] - release is passworded')
                             highest_password = 'YES'
                             break
 
