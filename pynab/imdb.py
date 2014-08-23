@@ -94,8 +94,10 @@ def search(name, year):
     else:
         year_query = ''
 
-    r = requests.get(OMDB_SEARCH_URL + name + year_query)
+    data = {}
+
     try:
+        r = requests.get(OMDB_SEARCH_URL + name + year_query)
         data = r.json()
     except:
         log.critical('There was a problem accessing the IMDB API page.')
