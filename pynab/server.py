@@ -182,19 +182,23 @@ class Server:
                     # dateutil will parse the date as whatever and convert to UTC
                     # some subjects/posters have odd encoding, which will break pymongo
                     # so we make sure it doesn't
-                    message = {
-                        'hash': hash,
-                        'subject': subject,
-                        'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': posted_by,
-                        'group_name': group_name,
-                        'xref': overview['xref'],
-                        'total_segments': int(total_segments),
-                        'available_segments': 1,
-                        'segments': {segment_number: segment, },
-                    }
+                    try:
+                        message = {
+                            'hash': hash,
+                            'subject': subject,
+                            'posted': dateutil.parser.parse(overview['date']),
+                            'posted_by': posted_by,
+                            'group_name': group_name,
+                            'xref': overview['xref'],
+                            'total_segments': int(total_segments),
+                            'available_segments': 1,
+                            'segments': {segment_number: segment, },
+                        }
 
-                    messages[hash] = message
+                        messages[hash] = message
+                    except Exception as e:
+                        log.error('server: bad message parse: {}'.format(e))
+                        continue
             else:
                 # :getout:
                 ignored += 1
@@ -257,7 +261,12 @@ class Server:
                 continue
 
             if art_num and overview:
-                return dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
+                try:
+                    date = dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
+                except Exception as e:
+                    log.error('server: date parse failed while dating message: {}'.format(e))
+                    return None
+                return date
             else:
                 return None
 
