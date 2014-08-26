@@ -198,8 +198,8 @@ def check_release_files(server, group_name, nzb):
                 if info and highest_password != 'YES':
                     for file in info:
                         # if we want to delete spam, check the group and peek inside
-                        if config.postprocess.get('delete_spam'):
-                            if group_name in config.postprocess.get('delete_spam_groups'):
+                        if config.postprocess.get('delete_spam', False):
+                            if group_name in config.postprocess.get('delete_spam_groups', []):
                                 result = SPAM_REGEX.search(file['name'])
                                 if result:
                                     log.info('rar: [{}] - [{}] - release is spam')
