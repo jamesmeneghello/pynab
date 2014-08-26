@@ -4,7 +4,7 @@ import traceback
 import psycopg2.extensions
 
 from pynab import log
-from pynab.db import db_session, Release, engine, File
+from pynab.db import db_session, Release, engine, Blacklist, Group
 
 import pynab.groups
 import pynab.binaries
@@ -71,10 +71,6 @@ if __name__ == '__main__':
                 deleted = query.delete()
                 log.info('postprocess: deleted {} passworded releases'.format(deleted))
 
-            # delete any nzbs that don't have an associated release
-            # and delete any releases that don't have an nzb
-            #TODO
-
             with concurrent.futures.ThreadPoolExecutor(4) as executor:
                 threads = []
 
@@ -99,6 +95,17 @@ if __name__ == '__main__':
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)
             scripts.rename_bad_releases.rename_bad_releases(7020)
+
+            # do a postproc deletion of any enabled blacklists
+            # assuming it's enabled, of course
+            if config.postprocess.get('delete_blacklisted_releases'):
+                deleted = 0
+                for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
+                    deleted += db.query(Release).filter(Release.group_id.in_(
+                        db.query(Group.id).filter(Group.name.op('~*')(blacklist.group_name)).subquery()
+                    )).filter(Release.name.op('~*')(blacklist.regex)).delete(False)
+                log.info('postprocess: deleted {} blacklisted releases'.format(deleted))
+                db.commit()
 
             if config.postprocess.get('delete_bad_releases', False):
                 deletes = db.query(Release).filter(Release.unwanted==True).delete()

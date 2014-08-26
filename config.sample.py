@@ -133,6 +133,11 @@ postprocess = {
     # delete_bad_releases: delete releases that we can't rename out of misc-other
     'delete_bad_releases': True,
 
+    # delete_blacklisted_releases: delete releases matching blacklist rules during postproc
+    # blacklisting is only done during part collation, so if releases are being renamed
+    # during postproc, they'll hang around. this will do a second pass during postproc.
+    'delete_blacklisted_releases': False,
+
     # process_imdb: match movie releases against IMDB
     # couchpotato sometimes depends on this data for API usage, definitely recommended
     'process_imdb': True,
