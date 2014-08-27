@@ -138,6 +138,12 @@ postprocess = {
     # during postproc, they'll hang around. this will do a second pass during postproc.
     'delete_blacklisted_releases': False,
 
+    # delete_blacklisted_days: only go back x days looking for blacklisted releases
+    # if you want to run this over your whole DB, set it to 0
+    # you don't want to repeatedly do that, though
+    # set it to 3 or so for normal operation
+    'delete_blacklisted_days': 3,
+
     # process_imdb: match movie releases against IMDB
     # couchpotato sometimes depends on this data for API usage, definitely recommended
     'process_imdb': True,

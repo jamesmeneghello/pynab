@@ -2,6 +2,8 @@ import concurrent.futures
 import time
 import traceback
 import psycopg2.extensions
+import datetime
+import pytz
 
 from pynab import log
 from pynab.db import db_session, Release, engine, Blacklist, Group
@@ -101,11 +103,26 @@ if __name__ == '__main__':
             if config.postprocess.get('delete_blacklisted_releases'):
                 deleted = 0
                 for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
-                    deleted += db.query(Release).filter(Release.group_id.in_(
+                    # remap subject to name, since normal blacklists operate on binaries
+                    # this is on releases, and the attribute changes
+                    if blacklist.field == 'subject':
+                        field = 'name'
+                    else:
+                        field = blacklist.field
+
+                    # filter by:
+                    #   group_name should match the blacklist's
+                    #   <field> should match the blacklist's regex
+                    #   <field> is determined by blacklist's field (usually subject/name)
+                    #   date (optimisation)
+                    query = db.query(Release).filter(Release.group_id.in_(
                         db.query(Group.id).filter(Group.name.op('~*')(blacklist.group_name)).subquery()
-                    )).filter(Release.name.op('~*')(blacklist.regex)).delete(False)
+                    )).filter(getattr(Release, field).op('~*')(blacklist.regex))
+                    if config.postprocess.get('delete_blacklisted_days'):
+                        query = query.filter(Release.posted >= (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=config.postprocess.get('delete_blacklisted_days'))))
+                    deleted += query.delete(False)
                 log.info('postprocess: deleted {} blacklisted releases'.format(deleted))
-                db.commit()
+                db.rollback()
 
             if config.postprocess.get('delete_bad_releases', False):
                 deletes = db.query(Release).filter(Release.unwanted==True).delete()
