@@ -122,7 +122,7 @@ if __name__ == '__main__':
                         query = query.filter(Release.posted >= (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=config.postprocess.get('delete_blacklisted_days'))))
                     deleted += query.delete(False)
                 log.info('postprocess: deleted {} blacklisted releases'.format(deleted))
-                db.rollback()
+                db.commit()
 
             if config.postprocess.get('delete_bad_releases', False):
                 deletes = db.query(Release).filter(Release.unwanted==True).delete()
