@@ -373,9 +373,30 @@ Categorise all uncategorised releases - this runs automatically after import.
 
 ### Building the WebUI ###
 
-Requires NPM and probably a few other things (post an issue if you're missing stuff):
+Requires NPM and probably a few other things. You can install nodejs, NPM, grunt and bower
+however you like. Ubuntu's repositories sometimes have an issue with node, however. Order
+of installation is important.
 
-    > sudo apt-get install npm
+Note that using NPM 2.0.0 can break everything, 1.3.10~ should be used (which is the default
+in Ubuntu's repos). Installing things in the wrong order can break everything. Installing
+grunt/bower from aptitude can break everything, and using sudo in the wrong place can break
+everything. If you're having trouble with permissions and package errors, try running
+`npm cache clear` and `rm -rf ~/.npm` before removing/reinstalling NPM 1.3.10 and any node.js
+packages that came from aptitude.
+
+A semi-reliable way to install the required packages is below (be careful of sudo use):
+
+    > sudo apt-get install npm nodejs-legacy ruby ruby-compass
+
+Run the npm install:
+
+    > cd webui
+    > npm install [not using sudo]
+
+Install necessary build tools (using sudo):
+
+    > sudo npm install -g grunt-cli
+    > sudo npm install -g bower
 
 To build the webui from source, first modify the config to include your indexer host:
 
@@ -385,8 +406,6 @@ To build the webui from source, first modify the config to include your indexer 
 
 Then initiate the build:
 
-    > cd webui
-    > npm install
     > bower install
     > grunt build
 
@@ -426,6 +445,8 @@ Delete the webui/node_modules and webui/app/bower_components folder and re-run n
 There was a bug in a particular version of the python regex module that could cause release and binary
 regex to give incredibly shitty results. This is forced to a correct version in requirements.txt, so just
 run `pip3 install --upgrade regex` if it's happening.
+
+- While running `npm install` to build the WebUI,
 
 Newznab API
 ===========
