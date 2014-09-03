@@ -33,7 +33,7 @@
             <description>${release.search_name | x}</description>
             <posted>${utils.formatdate(posted_date)}</posted>
             <group>${release.group.name}</group>
-            <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}" type="application/x-nzb"></enclosure>
+            <enclosure url="${get_link('/api')}?t=g&amp;guid=${release.id}&amp;apikey=${api_key}" length="${release.size}" type="application/x-nzb"></enclosure>
             <grabs>${release.grabs}</grabs>
 
             <newznab:attr name="category" value="${release.category.id}"/>
