@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab import log
 import pynab.nzbs
-import scripts.process_uncategorised
+import scripts.recategorise_everything
 
 parser = argparse.ArgumentParser(
     description='Recursively import NZBs into Pynab. NOTE: DESTRUCTIVE. Will delete NZB upon successful import. Don\'t run it on a directory you may need to use again.')
@@ -25,6 +25,6 @@ if __name__ == '__main__':
             if pynab.nzbs.import_nzb(os.path.join(root, name)):
                 os.remove(os.path.join(root, name))
 
-    log.info('Import completed. Running scripts/process_uncategorised.py to fix release categories...')
-    scripts.process_uncategorised.fix_uncategorised()
+    log.info('Import completed. Running scripts/recategorise_everything.py to fix release categories...')
+    scripts.recategorise_everything.recategorise()
     log.info('Completed.')

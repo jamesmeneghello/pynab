@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from pynab.db import db_session, Release, Group
 import pynab.categories
 
+
 def recategorise():
     with db_session() as db:
         i = 0
