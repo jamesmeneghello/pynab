@@ -106,7 +106,7 @@ if __name__ == '__main__':
                     # remap subject to name, since normal blacklists operate on binaries
                     # this is on releases, and the attribute changes
                     if blacklist.field == 'subject':
-                        field = 'name'
+                        field = 'search_name'
                     else:
                         field = blacklist.field
 
