@@ -10,6 +10,7 @@ import pynab.categories
 import pynab.nzbs
 import pynab.rars
 import pynab.nfos
+import pynab.sfvs
 import config
 
 
@@ -24,19 +25,25 @@ def names_from_nfos(release):
 
 def names_from_files(release):
     """Attempt to grab a release name from filenames inside the release."""
-    if release.files:
-        potential_names = []
-        for file in release.files:
-            name = pynab.rars.attempt_parse(file.name)
-            if name:
-                potential_names.append(name)
-        return potential_names
+    potential_names = []
+    for file in release.files:
+        name = pynab.rars.attempt_parse(file.name)
+        if name:
+            potential_names.append(name)
+    return potential_names
+
+
+def names_from_sfvs(release):
+    """Attempt to grab a release name from supplied SFV (if it exists)."""
+    sfv = pynab.sfvs.get(release.sfv).decode('ascii', 'ignore')
+    if sfv:
+        return pynab.sfvs.attempt_parse(sfv)
     else:
         return []
 
 
 def discover_name(release):
-    """Attempts to fix a release name by nfo or filelist."""
+    """Attempts to fix a release name by nfo, filelist or sfv."""
     potential_names = [release.search_name, ]
 
     if release.files:
@@ -44,6 +51,9 @@ def discover_name(release):
 
     if release.nfo:
         potential_names += names_from_nfos(release)
+
+    if release.sfv:
+        potential_names += names_from_sfvs(release)
 
     if len(potential_names) > 1:
         old_category = release.category_id

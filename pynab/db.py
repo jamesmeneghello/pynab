@@ -48,6 +48,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 # -------------------
 """
 
+
 @contextmanager
 def db_session():
     session = Session()
@@ -105,6 +106,10 @@ class Release(Base):
     nfo = relationship('NFO', backref=backref('release', uselist=False))
     nfo_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
 
+    sfv_id = Column(Integer, ForeignKey('sfvs.id'), index=True)
+    sfv = relationship('SFV', backref=backref('release', uselist=False))
+    sfv_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+
     episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))
 
@@ -122,6 +127,7 @@ class MetaBlack(Base):
     tvshow = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
     movie = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
     nfo = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
+    sfv = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.sfv_metablack_id])
     rar = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.rar_metablack_id])
 
 
@@ -289,6 +295,13 @@ class NZB(Base):
 
 class NFO(Base):
     __tablename__ = 'nfos'
+
+    id = Column(Integer, primary_key=True)
+    data = Column(LargeBinary)
+
+
+class SFV(Base):
+    __tablename__ = 'sfvs'
 
     id = Column(Integer, primary_key=True)
     data = Column(LargeBinary)

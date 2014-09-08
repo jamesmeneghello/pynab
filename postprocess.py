@@ -14,6 +14,7 @@ import pynab.releases
 import pynab.tvrage
 import pynab.rars
 import pynab.nfos
+import pynab.sfvs
 import pynab.imdb
 
 import scripts.quick_postprocess
@@ -33,6 +34,14 @@ def process_tvrage():
 def process_nfos():
     try:
         return pynab.nfos.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
+
+
+def process_sfvs():
+    try:
+        return pynab.sfvs.process(500)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
@@ -59,7 +68,7 @@ if __name__ == '__main__':
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    #scripts.quick_postprocess.local_postprocess()
+    scripts.quick_postprocess.local_postprocess()
 
     while True:
         with db_session() as db:
@@ -86,6 +95,10 @@ if __name__ == '__main__':
                 # grab and append nfo data to all releases
                 if config.postprocess.get('process_nfos', True):
                     threads.append(executor.submit(process_nfos))
+
+                # grab and append sfv data to all releases
+                if config.postprocess.get('process_sfvs', False):
+                    threads.append(executor.submit(process_sfvs))
 
                 # check for passwords, file count and size
                 if config.postprocess.get('process_rars', True):
@@ -137,7 +150,7 @@ if __name__ == '__main__':
                 (MetaBlack.rar==None)&
                 (MetaBlack.nfo==None)&
                 (MetaBlack.sfv==None)
-            ).delete()
+            ).delete(synchronize_session='fetch')
 
             # vacuum the segments, parts and binaries tables
             log.info('postprocess: vacuuming relevant tables...')

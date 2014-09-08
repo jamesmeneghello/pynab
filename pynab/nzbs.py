@@ -20,6 +20,7 @@ XPATH_SEGMENT = etree.XPath('segments/segment')
 XPATH_BYTES = etree.XPath('//@bytes')
 
 nfo_regex = regex.compile('[ "\(\[].*?\.(nfo|ofn)[ "\)\]]', regex.I)
+sfv_regex = regex.compile('[ "\(\[].*?\.(sfv|vfs)[ "\)\]]', regex.I)
 rar_regex = regex.compile('.*\W(?:part0*1|(?!part\d+)[^.]+)\.(rar|001)[ "\)\]]', regex.I)
 rar_part_regex = regex.compile('\.(rar|r\d{2,3})(?!\.)', regex.I)
 metadata_regex = regex.compile('\.(par2|vol\d+\+|sfv|nzb)', regex.I)
@@ -84,9 +85,11 @@ def get_nzb_details(nzb):
         return None
 
     nfos = []
+    sfvs = []
     rars = []
     pars = []
     zips = []
+
     rar_count = 0
     par_count = 0
 
@@ -95,6 +98,8 @@ def get_nzb_details(nzb):
             rar_count += 1
         if nfo_regex.search(file_subject) and not metadata_regex.search(file_subject):
             nfos.append(filexml_to_dict(file_subject.getparent()))
+        if sfv_regex.search(file_subject):
+            sfvs.append(filexml_to_dict(file_subject.getparent()))
         if rar_regex.search(file_subject) and not metadata_regex.search(file_subject):
             rars.append(filexml_to_dict(file_subject.getparent()))
         if par2_regex.search(file_subject):
@@ -106,6 +111,7 @@ def get_nzb_details(nzb):
 
     return {
         'nfos': nfos,
+        'sfvs': sfvs,
         'rars': rars,
         'pars': pars,
         'zips': zips,
