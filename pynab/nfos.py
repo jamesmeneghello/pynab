@@ -51,35 +51,33 @@ def process(limit=None, category=0):
 
                 if nzb:
                     nfos = []
-                    if nzb['nfos']:
-                        for nfo in nzb['nfos']:
-                            for part in nfo['segments']:
-                                if int(part['size']) > NFO_MAX_FILESIZE:
-                                    continue
-                                nfos.append(part)
+                    for nfo in nzb['nfos']:
+                        for part in nfo['segments']:
+                            if int(part['size']) > NFO_MAX_FILESIZE:
+                                continue
+                            nfos.append(part)
 
-                    if nfos:
-                        for nfo in nfos:
-                            try:
-                                article = server.get(release.group.name, [nfo['message_id'], ])
-                            except:
-                                article = None
+                    for nfo in nfos:
+                        try:
+                            article = server.get(release.group.name, [nfo['message_id'], ])
+                        except:
+                            article = None
 
-                            if article:
-                                data = gzip.compress(article.encode('utf-8'))
-                                nfo = NFO(data=data)
-                                db.add(nfo)
+                        if article:
+                            data = gzip.compress(article.encode('utf-8'))
+                            nfo = NFO(data=data)
+                            db.add(nfo)
 
-                                release.nfo = nfo
-                                release.nfo_metablack_id = None
-                                db.add(release)
+                            release.nfo = nfo
+                            release.nfo_metablack_id = None
+                            db.add(release)
 
-                                log.info('nfo: [{}] - [{}] - nfo added'.format(
-                                    release.id,
-                                    release.search_name
-                                ))
-                                found = True
-                                break
+                            log.info('nfo: [{}] - [{}] - nfo added'.format(
+                                release.id,
+                                release.search_name
+                            ))
+                            found = True
+                            break
 
                     if not found:
                         log.warning('nfo: [{}] - [{}] - no nfos in release'.format(
