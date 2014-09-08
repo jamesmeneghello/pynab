@@ -6,7 +6,7 @@ import datetime
 import pytz
 
 from pynab import log
-from pynab.db import db_session, Release, engine, Blacklist, Group
+from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack
 
 import pynab.groups
 import pynab.binaries
@@ -128,6 +128,16 @@ if __name__ == '__main__':
                 deletes = db.query(Release).filter(Release.unwanted==True).delete()
                 log.info('postprocess: deleted {} bad releases'.format(deletes))
                 db.commit()
+
+            # delete any orphan metablacks
+            log.info('postprocess: deleting orphan metablacks...')
+            db.query(MetaBlack).filter(
+                (MetaBlack.movie==None)&
+                (MetaBlack.tvshow==None)&
+                (MetaBlack.rar==None)&
+                (MetaBlack.nfo==None)&
+                (MetaBlack.sfv==None)
+            ).delete()
 
             # vacuum the segments, parts and binaries tables
             log.info('postprocess: vacuuming relevant tables...')
