@@ -17,8 +17,16 @@ beyond my own needs, but this is what open source is for.
 
 Note that because this is purely for API access, the WebUI is very simple. You
 cannot add users through a web interface, manage releases, etc. 
-Something like 99.9% of the usage of my old Newznab server was API-only
-for Sickbeard, Couchpotato, Headphones etc - so it's low-priority.
+Something like 99.9% of the usage of my old Newznab server was API-only,
+so it's low-priority.
+
+API Compatibility
+-----------------
+
+- [Sickbeard](http://sickbeard.com) and branches
+- [NZBDrone](http://nzbdrone.com)
+- [CouchPotato](http://couchpota.to)
+- [Headphones](https://github.com/rembo10/headphones) (only slightly tested)
 
 Features
 --------
@@ -381,8 +389,8 @@ Note that using NPM 2.0.0 can break everything, 1.3.10~ should be used (which is
 in Ubuntu's repos). Installing things in the wrong order can break everything. Installing
 grunt/bower from aptitude can break everything, and using sudo in the wrong place can break
 everything. If you're having trouble with permissions and package errors, try running
-`npm cache clear` and `rm -rf ~/.npm` before removing/reinstalling NPM 1.3.10 and any node.js
-packages that came from aptitude.
+`rm -rf node_modules`, `npm cache clear`, `rm -rf ~/.npm` before removing/reinstalling
+NPM 1.3.10 and any node.js packages that came from aptitude.
 
 A semi-reliable way to install the required packages is below (be careful of sudo use):
 
