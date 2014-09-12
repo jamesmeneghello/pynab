@@ -20,6 +20,9 @@ import pynab.debug
 import config
 
 
+THREAD_TIMEOUT = 600
+
+
 def update(group_name):
     try:
         return pynab.groups.update(group_name)
@@ -47,7 +50,7 @@ def daemonize(pidfile):
 def main():
     log.info('start: starting update...')
     log.info('debug enabled: send SIGUSR1 to drop to the shell')
-    pynab.debug.listen()
+    #pynab.debug.listen()
 
     while True:
         # refresh the db session each iteration, just in case
@@ -59,7 +62,7 @@ def main():
                     # they're long processes usually, so no problem having one task per child
                     result = [executor.submit(update, active_group) for active_group in active_groups]
                     #result = executor.map(update, active_groups)
-                    for r in concurrent.futures.as_completed(result):
+                    for r in concurrent.futures.as_completed(result, timeout=THREAD_TIMEOUT):
                         data = r.result()
 
                 # process binaries
