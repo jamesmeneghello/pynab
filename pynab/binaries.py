@@ -159,6 +159,9 @@ def process():
                             match['parts'] = match['parts'].replace('[', '').replace(']', '') \
                                 .replace('(', '').replace(')', '')
 
+                            if '/' not in match['parts']:
+                                continue
+
                             current, total = match['parts'].split('/')
 
                             # calculate binary hash for matching
