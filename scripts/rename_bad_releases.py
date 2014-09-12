@@ -13,7 +13,7 @@ def rename_bad_releases(category):
     count = 0
     s_count = 0
     with db_session() as db:
-        query = db.query(Release).filter(Release.category_id==int(category)).filter((Release.files.any())|(Release.nfo!=None)).filter(Release.status!=1)
+        query = db.query(Release).filter(Release.category_id==int(category)).filter((Release.files.any())|(Release.nfo!=None)|(Release.sfv!=None)).filter((Release.status!=1)|(Release.status==None))
         for release in query.all():
             count += 1
             name, category_id = pynab.releases.discover_name(release)

@@ -21,7 +21,7 @@ def attempt_parse(sfv):
     for regex in SFV_REGEX:
         result = regex.search(sfv)
         if result:
-            potential_names.append(result.group(0))
+            potential_names.append(result.group(0).rstrip('.rar '))
 
     return potential_names
 
