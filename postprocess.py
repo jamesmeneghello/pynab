@@ -4,6 +4,7 @@ import traceback
 import psycopg2.extensions
 import datetime
 import pytz
+from sqlalchemy import or_
 
 from pynab import log
 from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack
@@ -68,7 +69,7 @@ if __name__ == '__main__':
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    scripts.quick_postprocess.local_postprocess()
+    #scripts.quick_postprocess.local_postprocess()
 
     while True:
         with db_session() as db:
@@ -76,10 +77,11 @@ if __name__ == '__main__':
             if config.postprocess.get('delete_passworded', True):
                 query = db.query(Release)
                 if config.postprocess.get('delete_potentially_passworded', True):
-                    query = query.filter(Release.passworded=='MAYBE')
-
-                query = query.filter(Release.passworded=='YES')
+                    query = query.filter((Release.passworded=='MAYBE')|(Release.passworded=='YES'))
+                else:
+                    query = query.filter(Release.passworded=='YES')
                 deleted = query.delete()
+                db.commit()
                 log.info('postprocess: deleted {} passworded releases'.format(deleted))
 
             with concurrent.futures.ThreadPoolExecutor(4) as executor:
