@@ -580,7 +580,7 @@ class _NNTPBase:
 
         # Check if the decompressed string is not empty.
         if decomp[0] == b'':
-            raise NNTPDataError('Data from NNTP is empty gzip string.')
+            decomp = []
 
         openedFile = None
         try:
