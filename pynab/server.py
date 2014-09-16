@@ -123,17 +123,17 @@ class Server:
             # null the connection and restart it
             self.connection = None
             self.connect()
-            return False, None, None
+            return False, None, None, None
         except socket.timeout:
             # backfills can sometimes go for so long that everything explodes
             log.error('server: socket timed out, reconnecting')
             self.connection = None
             self.connect()
-            return False, None, None
+            return False, None, None, None
 
-        messages = {}
+        parts = {}
+        messages = []
         ignored = 0
-        received = []
 
         if overviews:
             with db_session() as db:
@@ -142,7 +142,7 @@ class Server:
             for (id, overview) in overviews:
                 # keep track of which messages we received so we can
                 # optionally check for ones we missed later
-                received.append(id)
+                messages.append(id)
 
                 # some messages don't have subjects? who knew
                 if 'subject' not in overview:
@@ -190,9 +190,9 @@ class Server:
                     }
 
                     # if we've already got a binary by this name, add this segment
-                    if hash in messages:
-                        messages[hash]['segments'][segment_number] = segment
-                        messages[hash]['available_segments'] += 1
+                    if hash in parts:
+                        parts[hash]['segments'][segment_number] = segment
+                        parts[hash]['available_segments'] += 1
                     else:
                         # dateutil will parse the date as whatever and convert to UTC
                         # some subjects/posters have odd encoding, which will break pymongo
@@ -210,7 +210,7 @@ class Server:
                                 'segments': {segment_number: segment, },
                             }
 
-                            messages[hash] = message
+                            parts[hash] = message
                         except Exception as e:
                             log.error('server: bad message parse: {}'.format(e))
                             continue
@@ -220,11 +220,11 @@ class Server:
 
             # instead of checking every single individual segment, package them first
             # so we typically only end up checking the blacklist for ~150 parts instead of thousands
-            blacklist = [k for k, v in messages.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
+            blacklist = [k for k, v in parts.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
             blacklisted_parts = len(blacklist)
-            total_parts = len(messages)
+            total_parts = len(parts)
             for k in blacklist:
-                del messages[k]
+                del parts[k]
         else:
             total_parts = 0
             blacklisted_parts = 0
@@ -232,7 +232,7 @@ class Server:
         # check for missing messages if desired
         # don't do this if we're grabbing ranges, because it won't work
         if not message_ranges:
-            messages_missed = list(set(range(first, last)) - set(received))
+            messages_missed = list(set(range(first, last)) - set(messages))
 
         end = time.time()
 
@@ -240,19 +240,19 @@ class Server:
             group_name,
             first, last,
             end - start,
-            len(received),
+            len(messages),
             total_parts,
             ignored,
             blacklisted_parts
         ))
 
         # check to see if we at least got some messages - they might've been ignored
-        if len(received) > 0:
+        if len(messages) > 0:
             status = True
         else:
             status = False
 
-        return status, messages, messages_missed
+        return status, parts, messages, messages_missed
 
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""

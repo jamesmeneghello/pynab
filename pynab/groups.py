@@ -52,13 +52,13 @@ def backfill(group_name, date=None):
 
                 retries = 0
                 while True:
-                    status, messages = server.scan(group_name, first=start, last=end)
+                    status, parts, messages, missed = server.scan(group_name, first=start, last=end)
 
-                    if status and messages:
-                        pynab.parts.save_all(messages)
+                    if status and parts:
+                        pynab.parts.save_all(parts)
                         group.first = start
                         db.commit()
-                    elif status and not messages:
+                    elif status and not parts:
                         # there were ignored messages and we didn't get anything to save
                         pass
                     else:
@@ -174,15 +174,15 @@ def update(group_name):
                             else:
                                 end = start + MESSAGE_LIMIT - 1
 
-                        status, messages, missed = server.scan(group_name, first=start, last=end)
+                        status, parts, messages, missed = server.scan(group_name, first=start, last=end)
 
                         # save any missed messages first (if desired)
                         if status and missed and config.scan.get('retry_missed'):
                             save_missing_segments(group_name, missed)
 
                         # then save normal messages
-                        if status and messages:
-                            if pynab.parts.save_all(messages):
+                        if status and parts:
+                            if pynab.parts.save_all(parts):
                                 group.last = end
                                 db.merge(group)
                                 db.commit()
@@ -190,7 +190,7 @@ def update(group_name):
                             else:
                                 log.error('group: {}: problem saving parts to db'.format(group_name))
                                 return False
-                        elif status and not messages:
+                        elif status and not parts:
                             # there were ignored messages and we didn't get anything to save
                             pass
                         else:
@@ -288,10 +288,10 @@ def scan_missing_segments(group_name):
             server = Server()
             server.connect()
 
-            status, messages, missed = server.scan(group_name, message_ranges=missing_ranges)
-            if messages:
+            status, parts, messages, missed = server.scan(group_name, message_ranges=missing_ranges)
+            if parts:
                 # we got some!
-                pynab.parts.save_all(messages)
+                pynab.parts.save_all(parts)
                 db.commit()
 
             if missed:
