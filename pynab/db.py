@@ -48,7 +48,6 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 # -------------------
 """
 
-
 @contextmanager
 def db_session():
     session = Session()
@@ -236,6 +235,17 @@ class Segment(Base):
     part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
     #__table_args__ = (UniqueConstraint(part_id, segment),)
+
+
+class Miss(Base):
+    __tablename__ = 'misses'
+
+    id = Column(Integer, primary_key=True)
+    group_name = Column(String, index=True)
+
+    message = Column(BigInteger, index=True, nullable=False)
+
+    attempts = Column(Integer)
 
 
 class Regex(Base):

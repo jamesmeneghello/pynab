@@ -64,6 +64,14 @@ scan = {
     # make sure there's no quotes around it
     'message_scan_limit': 20000,
 
+    # retry_misses: whether to re-scan for missed messages
+    # slow, but useful for some providers
+    'retry_misses': False,
+
+    # miss_retry_limit: number of times to retry missed messages
+    # integer, it'll retry this many times before giving up.
+    'miss_retry_limit': 3,
+
     # backfill_days: number of days to backfill groups (using backfill)
     # make sure there's no quotes around it
     'backfill_days': 10,
@@ -76,7 +84,7 @@ scan = {
 
     # pid_file: process file for the scanner, if daemonized
     # make sure it's writable, leave blank for nginx
-    'pid_file': ''
+    'pid_file': '',
 
 }
 

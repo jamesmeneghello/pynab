@@ -16,3 +16,4 @@ sqlalchemy>=0.9
 alembic
 psycopg2
 pyhashxx
+intspan

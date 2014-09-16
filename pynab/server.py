@@ -93,14 +93,28 @@ class Server:
         else:
             return None
 
-    def scan(self, group_name, first, last):
+    def scan(self, group_name, first=None, last=None, message_ranges=None):
         """Scan a group for segments and return a list."""
+
+        messages_missed = []
 
         start = time.time()
         try:
             # grab the headers we're after
             self.connection.group(group_name)
-            status, overviews = self.connection.over((first, last))
+            if message_ranges:
+                overviews = []
+                for first, last in message_ranges:
+                    log.debug('server: getting range {}-{}'.format(first, last))
+                    status, range_overviews = self.connection.over((first, last))
+                    if range_overviews:
+                        overviews += range_overviews
+                    else:
+                        # we missed them
+                        messages_missed += range(first, last + 1)
+
+            else:
+                status, overviews = self.connection.over((first, last))
         except nntplib.NNTPError as nntpe:
             log.error('server: [{}]: nntp error: {}'.format(group_name, nntpe))
             log.error('server: suspected dead nntp connection, restarting')
@@ -109,111 +123,116 @@ class Server:
             # null the connection and restart it
             self.connection = None
             self.connect()
-            return False, None
+            return False, None, None
         except socket.timeout:
             # backfills can sometimes go for so long that everything explodes
             log.error('server: socket timed out, reconnecting')
             self.connection = None
             self.connect()
-            return False, None
+            return False, None, None
 
         messages = {}
         ignored = 0
         received = []
 
-        with db_session() as db:
-            blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+        if overviews:
+            with db_session() as db:
+                blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
 
-        for (id, overview) in overviews:
-            # keep track of which messages we received so we can
-            # optionally check for ones we missed later
-            received.append(id)
+            for (id, overview) in overviews:
+                # keep track of which messages we received so we can
+                # optionally check for ones we missed later
+                received.append(id)
 
-            # some messages don't have subjects? who knew
-            if 'subject' not in overview:
-                continue
+                # some messages don't have subjects? who knew
+                if 'subject' not in overview:
+                    continue
 
-            # get the current segment number
-            results = SEGMENT_REGEX.findall(overview['subject'])
+                # get the current segment number
+                results = SEGMENT_REGEX.findall(overview['subject'])
 
-            # it might match twice, so just get the last one
-            # the first is generally the part number
-            if results:
-                (segment_number, total_segments) = results[-1]
-            else:
-                # if there's no match at all, it's probably not a binary
-                ignored += 1
-                continue
-
-            # make sure the header contains everything we need
-            if ':bytes' not in overview:
-                continue
-            elif not overview[':bytes']:
-                continue
-
-            # assuming everything didn't fuck up, continue
-            if int(segment_number) > 0 and int(total_segments) > 0:
-                # strip the segment number off the subject so
-                # we can match binary parts together
-                subject = nntplib.decode_header(overview['subject'].replace(
-                    '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
-                ).strip()).encode('utf-8', 'replace').decode('latin-1')
-
-                posted_by = nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode('latin-1')
-
-                # generate a hash to perform matching
-                hash = pynab.parts.generate_hash(subject, posted_by, group_name, int(total_segments))
-
-                # this is spammy as shit, for obvious reasons
-                #pynab.log.debug('Binary part found: ' + subject)
-
-                # build the segment, make sure segment number and size are ints
-                segment = {
-                    'message_id': overview['message-id'][1:-1],
-                    'segment': int(segment_number),
-                    'size': int(overview[':bytes'])
-                }
-
-                # if we've already got a binary by this name, add this segment
-                if hash in messages:
-                    messages[hash]['segments'][segment_number] = segment
-                    messages[hash]['available_segments'] += 1
+                # it might match twice, so just get the last one
+                # the first is generally the part number
+                if results:
+                    (segment_number, total_segments) = results[-1]
                 else:
-                    # dateutil will parse the date as whatever and convert to UTC
-                    # some subjects/posters have odd encoding, which will break pymongo
-                    # so we make sure it doesn't
-                    try:
-                        message = {
-                            'hash': hash,
-                            'subject': subject,
-                            'posted': dateutil.parser.parse(overview['date']),
-                            'posted_by': posted_by,
-                            'group_name': group_name,
-                            'xref': overview['xref'],
-                            'total_segments': int(total_segments),
-                            'available_segments': 1,
-                            'segments': {segment_number: segment, },
-                        }
+                    # if there's no match at all, it's probably not a binary
+                    ignored += 1
+                    continue
 
-                        messages[hash] = message
-                    except Exception as e:
-                        log.error('server: bad message parse: {}'.format(e))
-                        continue
-            else:
-                # :getout:
-                ignored += 1
+                # make sure the header contains everything we need
+                if ':bytes' not in overview:
+                    continue
+                elif not overview[':bytes']:
+                    continue
 
-        # instead of checking every single individual segment, package them first
-        # so we typically only end up checking the blacklist for ~150 parts instead of thousands
-        blacklist = [k for k, v in messages.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
-        blacklisted_parts = len(blacklist)
-        total_parts = len(messages)
-        for k in blacklist:
-            del messages[k]
+                # assuming everything didn't fuck up, continue
+                if int(segment_number) > 0 and int(total_segments) > 0:
+                    # strip the segment number off the subject so
+                    # we can match binary parts together
+                    subject = nntplib.decode_header(overview['subject'].replace(
+                        '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
+                    ).strip()).encode('utf-8', 'replace').decode('latin-1')
 
-        # TODO: implement re-checking of missed messages, or maybe not
-        # most parts that get ko'd these days aren't coming back anyway
-        messages_missed = list(set(range(first, last)) - set(received))
+                    posted_by = nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode('latin-1')
+
+                    # generate a hash to perform matching
+                    hash = pynab.parts.generate_hash(subject, posted_by, group_name, int(total_segments))
+
+                    # this is spammy as shit, for obvious reasons
+                    #pynab.log.debug('Binary part found: ' + subject)
+
+                    # build the segment, make sure segment number and size are ints
+                    segment = {
+                        'message_id': overview['message-id'][1:-1],
+                        'segment': int(segment_number),
+                        'size': int(overview[':bytes'])
+                    }
+
+                    # if we've already got a binary by this name, add this segment
+                    if hash in messages:
+                        messages[hash]['segments'][segment_number] = segment
+                        messages[hash]['available_segments'] += 1
+                    else:
+                        # dateutil will parse the date as whatever and convert to UTC
+                        # some subjects/posters have odd encoding, which will break pymongo
+                        # so we make sure it doesn't
+                        try:
+                            message = {
+                                'hash': hash,
+                                'subject': subject,
+                                'posted': dateutil.parser.parse(overview['date']),
+                                'posted_by': posted_by,
+                                'group_name': group_name,
+                                'xref': overview['xref'],
+                                'total_segments': int(total_segments),
+                                'available_segments': 1,
+                                'segments': {segment_number: segment, },
+                            }
+
+                            messages[hash] = message
+                        except Exception as e:
+                            log.error('server: bad message parse: {}'.format(e))
+                            continue
+                else:
+                    # :getout:
+                    ignored += 1
+
+            # instead of checking every single individual segment, package them first
+            # so we typically only end up checking the blacklist for ~150 parts instead of thousands
+            blacklist = [k for k, v in messages.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
+            blacklisted_parts = len(blacklist)
+            total_parts = len(messages)
+            for k in blacklist:
+                del messages[k]
+        else:
+            total_parts = 0
+            blacklisted_parts = 0
+
+        # check for missing messages if desired
+        # don't do this if we're grabbing ranges, because it won't work
+        if not message_ranges:
+            messages_missed = list(set(range(first, last)) - set(received))
 
         end = time.time()
 
@@ -233,7 +252,7 @@ class Server:
         else:
             status = False
 
-        return status, messages
+        return status, messages, messages_missed
 
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""

@@ -7,7 +7,7 @@ import traceback
 import psycopg2.extensions
 
 from pynab import log, log_descriptor
-from pynab.db import db_session, Group, Binary, engine
+from pynab.db import db_session, Group, Binary, Miss, engine
 
 import pynab.groups
 import pynab.binaries
@@ -26,6 +26,13 @@ THREAD_TIMEOUT = 600
 def update(group_name):
     try:
         return pynab.groups.update(group_name)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+
+
+def scan_missing(group_name):
+    try:
+        return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
         log.critical(traceback.format_exc())
 
@@ -61,9 +68,20 @@ def main():
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
                     result = [executor.submit(update, active_group) for active_group in active_groups]
-                    #result = executor.map(update, active_groups)
+
                     for r in concurrent.futures.as_completed(result, timeout=THREAD_TIMEOUT):
-                        data = r.result()
+                        try:
+                            data = r.result()
+                        except concurrent.futures.TimeoutError:
+                            log.info('start: thread took too long, will continue next run')
+
+                    if config.scan.get('retry_misses'):
+                        miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
+                        miss_result = [executor.submit(scan_missing, miss_group) for miss_group in miss_groups]
+
+                        # no timeout for these, because it could take a while
+                        for r in concurrent.futures.as_completed(miss_result):
+                            data = r.result()
 
                 # process binaries
                 log.info('start: processing binaries...')

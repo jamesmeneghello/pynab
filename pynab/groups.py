@@ -1,5 +1,8 @@
+from intspan import intspan
+from sqlalchemy.sql.expression import bindparam
+
 from pynab import log
-from pynab.db import db_session, Group
+from pynab.db import db_session, Group, Miss
 from pynab.server import Server
 import pynab.parts
 import config
@@ -49,7 +52,7 @@ def backfill(group_name, date=None):
 
                 retries = 0
                 while True:
-                    status, messages = server.scan(group_name, start, end)
+                    status, messages = server.scan(group_name, first=start, last=end)
 
                     if status and messages:
                         pynab.parts.save_all(messages)
@@ -171,7 +174,13 @@ def update(group_name):
                             else:
                                 end = start + MESSAGE_LIMIT - 1
 
-                        status, messages = server.scan(group_name, start, end)
+                        status, messages, missed = server.scan(group_name, first=start, last=end)
+
+                        # save any missed messages first (if desired)
+                        if status and missed and config.scan.get('retry_missed'):
+                            save_missing_segments(group_name, missed)
+
+                        # then save normal messages
                         if status and messages:
                             if pynab.parts.save_all(messages):
                                 group.last = end
@@ -211,3 +220,83 @@ def update(group_name):
     else:
         log.error('backfill: unable to send group command - connection dead?')
         return False
+
+
+def save_missing_segments(group_name, missing_segments):
+    """Handles any missing segments by mashing them into ranges
+    and saving them to the db for later checking."""
+
+    with db_session() as db:
+        # we don't want to get the whole db's worth of segments
+        # just get the ones in the range we need
+        first, last = min(missing_segments), max(missing_segments)
+
+        # get previously-missed parts
+        previous_misses = [r for r, in db.query(Miss.message).filter(Miss.message>=first).filter(Miss.message<=last).filter(Miss.group_name==group_name).all()]
+
+        # find any messages we're trying to get again
+        repeats = list(set(previous_misses) & set(missing_segments))
+
+        # update the repeats to include the new attempt
+        if repeats:
+            stmt = Miss.__table__.update().where(
+                Miss.__table__.c.message == bindparam('m')
+            ).values(
+                attempts=Miss.__table__.c.attempts + 1
+            )
+
+            db.execute(stmt, [{'m': m} for m in repeats if m])
+
+        # subtract the repeats from our new list
+        new_misses = list(set(missing_segments) - set(repeats))
+
+        # batch-insert the missing messages
+        db.execute(Miss.__table__.insert(), [
+            {
+                'message': m,
+                'group_name': group_name,
+                'attempts': 1
+            }
+            for m in new_misses
+        ])
+
+        # delete anything that's been attempted enough
+        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(Miss.group_name==group_name).delete()
+        db.commit()
+        log.info('missing: saved {} misses and deleted {} expired misses'.format(len(new_misses), expired))
+
+
+def scan_missing_segments(group_name):
+    """Scan for previously missed segments."""
+
+    log.info('missing: checking for missed segments')
+
+    with db_session() as db:
+        # recheck for anything to delete
+        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(Miss.group_name==group_name).delete()
+        db.commit()
+        if expired:
+            log.info('missing: deleted {} expired misses'.format(expired))
+
+        # get missing articles for this group
+        missing_messages = [r for r, in db.query(Miss.message).filter(Miss.group_name==group_name).all()]
+
+        if missing_messages:
+            # mash it into ranges
+            missing_ranges = intspan(missing_messages).ranges()
+
+            server = Server()
+            server.connect()
+
+            status, messages, missed = server.scan(group_name, message_ranges=missing_ranges)
+            if messages:
+                # we got some!
+                pynab.parts.save_all(messages)
+                db.commit()
+
+            if missed:
+                # clear up those we didn't get
+                save_missing_segments(group_name, missed)
+
+            if server.connection:
+                server.connection.quit()
