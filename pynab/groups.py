@@ -176,6 +176,8 @@ def update(group_name):
 
                         status, parts, messages, missed = server.scan(group_name, first=start, last=end)
 
+                        end = max(messages) or end
+
                         # save any missed messages first (if desired)
                         if status and missed and config.scan.get('retry_missed'):
                             save_missing_segments(group_name, missed)
