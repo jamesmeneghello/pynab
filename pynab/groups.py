@@ -297,7 +297,7 @@ def scan_missing_segments(group_name):
             if parts:
                 # we got some!
                 pynab.parts.save_all(parts)
-                db.query(Miss).filter(Miss.message.in_(messages)).delete(False)
+                db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
                 db.commit()
 
             if missed:
