@@ -64,9 +64,9 @@ scan = {
     # make sure there's no quotes around it
     'message_scan_limit': 20000,
 
-    # retry_misses: whether to re-scan for missed messages
+    # retry_missed: whether to re-scan for missed messages
     # slow, but useful for some providers
-    'retry_misses': False,
+    'retry_missed': False,
 
     # miss_retry_limit: number of times to retry missed messages
     # integer, it'll retry this many times before giving up.

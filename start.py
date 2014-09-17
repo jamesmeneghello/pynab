@@ -75,7 +75,7 @@ def main():
                         except concurrent.futures.TimeoutError:
                             log.info('start: thread took too long, will continue next run')
 
-                    if config.scan.get('retry_misses'):
+                    if config.scan.get('retry_missed'):
                         miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
                         miss_result = [executor.submit(scan_missing, miss_group) for miss_group in miss_groups]
 
