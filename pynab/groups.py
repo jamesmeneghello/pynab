@@ -176,6 +176,9 @@ def update(group_name):
 
                         status, parts, messages, missed = server.scan(group_name, first=start, last=end)
 
+                        log.debug('max: s: {}, e: {}'.format(start, end))
+                        log.debug('max: {}'.format(messages))
+
                         end = max(messages) or end
 
                         # save any missed messages first (if desired)
