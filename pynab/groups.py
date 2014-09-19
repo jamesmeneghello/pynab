@@ -6,6 +6,7 @@ from pynab.db import db_session, Group, Miss
 from pynab.server import Server
 import pynab.parts
 import config
+import time
 
 MESSAGE_LIMIT = config.scan.get('message_scan_limit', 20000)
 
@@ -174,12 +175,26 @@ def update(group_name):
                             else:
                                 end = start + MESSAGE_LIMIT - 1
 
+                        if start > end:
+                            log.debug('group: {}: start greater than end. aborting run'.format(group_name))
+                            if server.connection:
+                                server.connection.quit()
+                            return False
+
                         status, parts, messages, missed = server.scan(group_name, first=start, last=end)
 
-                        log.debug('max: s: {}, e: {}'.format(start, end))
-                        log.debug('max: {}'.format(messages))
+                        try:
+                            end = max(messages)
+                        except:
+                            log.error('group: {}: problem updating group ({}-{}) - trying again'.format(group_name, start, end))
 
-                        end = max(messages) or end
+                            retries += 1
+                            if retries <= 15:
+                                time.sleep(retries)
+                                continue
+                            else:
+                                log.error('group: {}: problem updating group. aborting run'.format(group_name))
+                                return False
 
                         # save any missed messages first (if desired)
                         if status and missed and config.scan.get('retry_missed'):
@@ -195,15 +210,6 @@ def update(group_name):
                             else:
                                 log.error('group: {}: problem saving parts to db'.format(group_name))
                                 return False
-                        elif status and not parts:
-                            # there were ignored messages and we didn't get anything to save
-                            pass
-                        else:
-                            log.error('group: {}: problem updating group ({}-{}) - trying again'.format(group_name, start, end))
-                            retries += 1
-                            # keep trying the same block 3 times, then skip
-                            if retries <= 3:
-                                continue
 
                         if end == last:
                             log.info('group: {}: update completed'.format(group_name))
@@ -256,14 +262,15 @@ def save_missing_segments(group_name, missing_segments):
         new_misses = list(set(missing_segments) - set(repeats))
 
         # batch-insert the missing messages
-        db.execute(Miss.__table__.insert(), [
-            {
-                'message': m,
-                'group_name': group_name,
-                'attempts': 1
-            }
-            for m in new_misses
-        ])
+        if new_misses:
+            db.execute(Miss.__table__.insert(), [
+                {
+                    'message': m,
+                    'group_name': group_name,
+                    'attempts': 1
+                }
+                for m in new_misses
+            ])
 
         # delete anything that's been attempted enough
         expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(Miss.group_name==group_name).delete()
