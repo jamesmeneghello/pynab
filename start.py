@@ -69,11 +69,11 @@ def main():
                     # they're long processes usually, so no problem having one task per child
                     result = [executor.submit(update, active_group) for active_group in active_groups]
 
-                    for r in concurrent.futures.as_completed(result, timeout=THREAD_TIMEOUT):
-                        try:
+                    try:
+                        for r in concurrent.futures.as_completed(result, timeout=THREAD_TIMEOUT):
                             data = r.result()
-                        except concurrent.futures.TimeoutError:
-                            log.info('start: thread took too long, will continue next run')
+                    except concurrent.futures.TimeoutError:
+                        log.info('start: thread took too long, will continue next run')
 
                     if config.scan.get('retry_missed'):
                         miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
