@@ -61,9 +61,9 @@ def scan(group_name, direction='forward', date=None):
                         return False
 
                     log.debug('s: {} t: {}'.format(start, target))
-                    for i in range(start + mult, target + mult, config.scan.get('message_scan_limit') * mult):
+                    for i in range(start, target, config.scan.get('message_scan_limit') * mult):
                         # set the beginning and ends of the scan to their respective values
-                        begin = i
+                        begin = i + mult
                         end = i + (mult * config.scan.get('message_scan_limit'))
 
                         # check if the target is before our end
