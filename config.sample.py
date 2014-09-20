@@ -58,7 +58,8 @@ scan = {
 
     # new_group_scan_days: how many days to scan for a new group
     # make sure there's no quotes around it
-    'new_group_scan_days': 5,
+    # 'new_group_scan_days': 5,
+    # DEPRECATED: now uses backfill_days
 
     # message_scan_limit: number of messages to take from nntp server at once
     # make sure there's no quotes around it
@@ -72,7 +73,7 @@ scan = {
     # integer, it'll retry this many times before giving up.
     'miss_retry_limit': 3,
 
-    # backfill_days: number of days to backfill groups (using backfill)
+    # backfill_days: number of days to backfill groups or scan new groups
     # make sure there's no quotes around it
     'backfill_days': 10,
 

@@ -6,205 +6,101 @@ from pynab.db import db_session, Group, Miss
 from pynab.server import Server
 import pynab.parts
 import config
-import time
-
-MESSAGE_LIMIT = config.scan.get('message_scan_limit', 20000)
 
 
-def backfill(group_name, date=None):
-    log.info('group: {}: backfilling group'.format(group_name))
+def scan(group_name, direction='forward', date=None):
+    log.info('group: {}: scanning group'.format(group_name))
 
-    server = Server()
-    _, count, first, last, _ = server.group(group_name)
+    with Server() as server:
+        _, count, first, last, _ = server.group(group_name)
 
-    if count:
-        if date:
-            target_article = server.day_to_post(group_name, server.days_old(date))
-        else:
-            target_article = server.day_to_post(group_name, config.scan.get('backfill_days', 10))
+        if count:
+            with db_session() as db:
+                group = db.query(Group).filter(Group.name==group_name).one()
 
-        with db_session() as db:
-            group = db.query(Group).filter(Group.name==group_name).one()
+                if group:
+                    # check that our firsts and lasts are valid
+                    if group.first < first:
+                        log.error('group: {}: first article was older than first on server'.format(group_name))
+                        return False
+                    elif group.last > last:
+                        log.error('group: {}: last article was newer than last on server'.format(group_name))
+                        return False
 
-            if group:
-                # if the group hasn't been updated before, quit
-                if not group.first:
-                    log.error('group: {}: run a normal update prior to backfilling'.format(group_name))
-                    if server.connection:
-                        server.connection.quit()
-                    return False
+                    # sort out missing first/lasts
+                    if not group.first and not group.last:
+                        group.first = last
+                        group.last = last
+                        direction = 'backward'
+                    elif not group.first:
+                        group.first = group.last
+                    elif not group.last:
+                        group.last = group.first
 
-                # if the first article we have is lower than the target
-                if target_article >= group.first:
-                    log.info('group: {}: nothing to do, we already have the target post'.format(group_name))
-                    if server.connection:
-                        server.connection.quit()
-                    return True
+                    db.merge(group)
 
-                # or if the target is below the server's first
-                if target_article < first:
-                    target_article = first
+                    # sort out a target
+                    start = 0
+                    target = 0
+                    mult = 0
+                    if direction == 'forward':
+                        start = group.last
+                        target = last
+                        mult = 1
+                    elif direction == 'backward':
+                        start = group.first
+                        target = server.day_to_post(group_name, server.days_old(date) if date else 380) #config.scan.get('backfill_days', 10))
+                        mult = -1
 
-                total = group.first - target_article
-                end = group.first - 1
-                start = end - MESSAGE_LIMIT + 1
-                if target_article > start:
-                    start = target_article
-
-                retries = 0
-                while True:
-                    status, parts, messages, missed = server.scan(group_name, first=start, last=end)
-
-                    if status and parts:
-                        pynab.parts.save_all(parts)
-                        group.first = start
-                        db.commit()
-                    elif status and not parts:
-                        # there were ignored messages and we didn't get anything to save
-                        pass
-                    else:
-                        log.error('group: {}: problem updating group - trying again'.format(group_name))
-                        retries += 1
-                        # keep trying the same block 3 times, then skip
-                        if retries <= 3:
-                            continue
-
-                    if start == target_article:
-                        if server.connection:
-                            server.connection.quit()
+                    if group.first <= target <= group.last:
+                        log.info('group: {}: nothing to do, already have target'.format(group_name))
                         return True
-                    else:
-                        end = start - 1
-                        start = end - MESSAGE_LIMIT + 1
-                        if target_article > start:
-                            start = target_article
-            else:
-                log.error('group: {}: group doesn\'t exist in db.'.format(group_name))
-                if server.connection:
-                    server.connection.quit()
-                return False
-    else:
-        log.error('group: unable to send group command - connection dead?')
-        return False
 
-
-def update(group_name):
-    log.info('group: {}: updating group'.format(group_name))
-
-    server = Server()
-    _, count, first, last, _ = server.group(group_name)
-
-    if count:
-        with db_session() as db:
-            group = db.query(Group).filter(Group.name==group_name).one()
-            if group:
-                # if the group has been scanned before
-                if group.last:
-                    # pick up where we left off
-                    start = group.last + 1
-
-                    # if our last article is newer than the server's, something's wrong
-                    if last < group.last:
-                        log.error('group: {}: last article {:d} on server is older than the local {:d}'.format(group_name, last,
-                                                                                                        group.last))
-                        if server.connection:
-                            try:
-                                server.connection.quit()
-                            except:
-                                pass
+                    if first > target or last < target:
+                        log.error('group: {}: server doesn\'t carry target article'.format(group_name))
                         return False
-                else:
-                    # otherwise, start from x days old
-                    log.info('group: {}: determining a start point for the group'.format(group_name))
 
-                    start = server.day_to_post(group_name, config.scan.get('new_group_scan_days', 5))
-                    if not start:
-                        log.error('group: {}: couldn\'t determine a start point for group'.format(group_name))
-                        if server.connection:
-                            try:
-                                server.connection.quit()
-                            except:
-                                pass
-                        return False
-                    else:
-                        group.first = start
-                        db.commit()
+                    log.debug('s: {} t: {}'.format(start, target))
+                    for i in range(start + mult, target + mult, config.scan.get('message_scan_limit') * mult):
+                        # set the beginning and ends of the scan to their respective values
+                        begin = i
+                        end = i + (mult * config.scan.get('message_scan_limit'))
 
-                # either way, we're going upwards so end is the last available
-                end = last
+                        # check if the target is before our end
+                        if abs(begin) <= abs(target) <= abs(end):
+                            # we don't want to overscan
+                            end = target
 
-                # if total > 0, we have new parts
-                total = end - start + 1
+                        # at this point, we care about order
+                        # flip them if one is bigger
+                        begin, end = (begin, end) if begin < end else (end, begin)
 
-                log.info('group: {}: pulling {} - {}'.format(group_name, start, end))
+                        log.debug('{} - {}'.format(begin, end))
 
-                if total > 0:
-                    if not group.last:
-                        log.info('group: {}: starting new group with {:d} days and {:d} new parts'
-                            .format(group_name, config.scan.get('new_group_scan_days', 5), total))
-                    else:
-                        log.info('group: {}: group has {:d} new parts.'.format(group_name, total))
-
-                    # until we're finished, loop
-                    while True:
-                        # break the load into segments
-                        if total > MESSAGE_LIMIT:
-                            if start + MESSAGE_LIMIT > last:
-                                end = last
-                            else:
-                                end = start + MESSAGE_LIMIT - 1
-
-                        if start > end:
-                            log.debug('group: {}: start greater than end. aborting run'.format(group_name))
-                            if server.connection:
-                                try:
-                                    server.connection.quit()
-                                except:
-                                    pass
-                            return False
-
-                        status, parts, messages, missed = server.scan(group_name, first=start, last=end)
+                        status, parts, messages, missed = server.scan(group_name, first=begin, last=end)
 
                         try:
-                            end = max(messages)
+                            if direction == 'forward':
+                                group.last = max(messages)
+                            elif direction == 'backward':
+                                group.first = min(messages)
                         except:
-                            log.error('group: {}: problem updating group ({}-{}) - trying again'.format(group_name, start, end))
+                            log.error('group: {}: problem updating group ({}-{})'.format(group_name, start, end))
                             return False
 
-                        # save any missed messages first (if desired)
                         if status and missed and config.scan.get('retry_missed'):
                             save_missing_segments(group_name, missed)
 
-                        # then save normal messages
                         if status and parts:
                             if pynab.parts.save_all(parts):
-                                group.last = end
                                 db.merge(group)
                                 db.commit()
                             else:
-                                log.error('group: {}: problem saving parts to db'.format(group_name))
+                                log.error('group: problem saving parts to db')
                                 return False
 
-                        if end == last:
-                            log.info('group: {}: update completed'.format(group_name))
-                            if server.connection:
-                                server.connection.quit()
-                            return True
-                        else:
-                            start = end + 1
-                else:
-                    log.info('group: {}: no new messages'.format(group_name))
-                    if server.connection:
-                        server.connection.quit()
+                    log.info('group: {}: scan completed'.format(group_name))
                     return True
-            else:
-                log.error('group: {}: no group in db'.format(group_name))
-                if server.connection:
-                    server.connection.quit()
-                return False
-    else:
-        log.error('group: unable to send group command - connection dead?')
-        return False
 
 
 def save_missing_segments(group_name, missing_segments):

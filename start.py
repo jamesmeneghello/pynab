@@ -25,7 +25,7 @@ THREAD_TIMEOUT = 600
 
 def update(group_name):
     try:
-        return pynab.groups.update(group_name)
+        return pynab.groups.scan(group_name)
     except Exception as e:
         log.critical(traceback.format_exc())
 

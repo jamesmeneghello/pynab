@@ -30,7 +30,7 @@ with db_session() as db:
                 args.date = pytz.utc.localize(dateutil.parser.parse(args.date))
             else:
                 args.date = None
-            if pynab.groups.backfill(group.name, args.date):
+            if pynab.groups.scan(group.name, direction='backward', date=args.date):
                 print('Group {0} successfully backfilled!'.format(group.name))
             else:
                 print('Problem backfilling group {0}.'.format(group.name))
@@ -38,7 +38,7 @@ with db_session() as db:
             print('No group called {0} exists in the db.'.format(args.group))
     else:
         for group in db.query(Group).filter(Group.active==True).all():
-            if pynab.groups.backfill(group.name):
+            if pynab.groups.scan(group.name, direction='backward'):
                 print('Group {0} successfully backfilled!'.format(group.name))
             else:
                 print('Problem backfilling group {0}.'.format(group.name))
