@@ -84,7 +84,7 @@ def backfill(group_name, date=None):
                     server.connection.quit()
                 return False
     else:
-        log.error('backfill: unable to send group command - connection dead?')
+        log.error('group: unable to send group command - connection dead?')
         return False
 
 
@@ -136,26 +136,6 @@ def update(group_name):
                 # if total > 0, we have new parts
                 total = end - start + 1
 
-                # this has been removed, because certain groups (looking at you,
-                # a.b.multimedia and probably boneless as well) are taking far too
-                # long to return a reply and it's literally only used for
-                # informational purposes
-                """
-                start_date = server.post_date(group_name, start)
-                end_date = server.post_date(group_name, end)
-
-                if start_date and end_date:
-                    total_date = end_date - start_date
-
-                    log.info('group: {}: pulling {} - {} ({}d, {}h, {}m)'.format(
-                        group_name,
-                        start, end,
-                        total_date.days,
-                        total_date.seconds // 3600,
-                        (total_date.seconds // 60) % 60
-                    ))
-                else:
-                """
                 log.info('group: {}: pulling {} - {}'.format(group_name, start, end))
 
                 if total > 0:
@@ -165,7 +145,6 @@ def update(group_name):
                     else:
                         log.info('group: {}: group has {:d} new parts.'.format(group_name, total))
 
-                    retries = 0
                     # until we're finished, loop
                     while True:
                         # break the load into segments
@@ -178,7 +157,10 @@ def update(group_name):
                         if start > end:
                             log.debug('group: {}: start greater than end. aborting run'.format(group_name))
                             if server.connection:
-                                server.connection.quit()
+                                try:
+                                    server.connection.quit()
+                                except:
+                                    pass
                             return False
 
                         status, parts, messages, missed = server.scan(group_name, first=start, last=end)
@@ -187,14 +169,7 @@ def update(group_name):
                             end = max(messages)
                         except:
                             log.error('group: {}: problem updating group ({}-{}) - trying again'.format(group_name, start, end))
-
-                            retries += 1
-                            if retries <= 15:
-                                time.sleep(retries)
-                                continue
-                            else:
-                                log.error('group: {}: problem updating group. aborting run'.format(group_name))
-                                return False
+                            return False
 
                         # save any missed messages first (if desired)
                         if status and missed and config.scan.get('retry_missed'):
@@ -206,7 +181,6 @@ def update(group_name):
                                 group.last = end
                                 db.merge(group)
                                 db.commit()
-                                retries = 0
                             else:
                                 log.error('group: {}: problem saving parts to db'.format(group_name))
                                 return False
@@ -229,7 +203,7 @@ def update(group_name):
                     server.connection.quit()
                 return False
     else:
-        log.error('backfill: unable to send group command - connection dead?')
+        log.error('group: unable to send group command - connection dead?')
         return False
 
 
@@ -304,12 +278,17 @@ def scan_missing_segments(group_name):
             if parts:
                 # we got some!
                 pynab.parts.save_all(parts)
-                db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
-                db.commit()
+
+            db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
+            db.commit()
 
             if missed:
                 # clear up those we didn't get
                 save_missing_segments(group_name, missed)
 
             if server.connection:
-                server.connection.quit()
+                try:
+                    server.connection.quit()
+                except:
+                    pass
+
