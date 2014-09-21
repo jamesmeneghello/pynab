@@ -19,14 +19,6 @@ def scan(group_name, direction='forward', date=None):
                 group = db.query(Group).filter(Group.name==group_name).one()
 
                 if group:
-                    # check that our firsts and lasts are valid
-                    if group.first < first:
-                        log.error('group: {}: first article was older than first on server'.format(group_name))
-                        return False
-                    elif group.last > last:
-                        log.error('group: {}: last article was newer than last on server'.format(group_name))
-                        return False
-
                     # sort out missing first/lasts
                     if not group.first and not group.last:
                         group.first = last
@@ -36,6 +28,14 @@ def scan(group_name, direction='forward', date=None):
                         group.first = group.last
                     elif not group.last:
                         group.last = group.first
+
+                    # check that our firsts and lasts are valid
+                    if group.first < first:
+                        log.error('group: {}: first article was older than first on server'.format(group_name))
+                        return False
+                    elif group.last > last:
+                        log.error('group: {}: last article was newer than last on server'.format(group_name))
+                        return False
 
                     db.merge(group)
 
