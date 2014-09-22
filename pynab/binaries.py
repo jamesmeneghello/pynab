@@ -4,11 +4,10 @@ import pyhashxx
 
 from sqlalchemy import *
 
-from pynab.db import db_session, engine, Binary, Part, Regex
+from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query
 from pynab import log
+import config
 
-
-CHUNK_SIZE = 20000
 
 PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
 
@@ -104,7 +103,7 @@ def process():
 
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None)
             total_parts = query.count()
-            for part in query.all():
+            for part in windowed_query(query, Part.id, config.scan.get('binary_process_chunk_size', 1000)):
                 found = False
                 total_processed += 1
                 count += 1
@@ -202,25 +201,21 @@ def process():
                 if not found:
                     dead_parts.append(part.id)
 
-                if count >= CHUNK_SIZE:
+                if count >= config.scan.get('binary_process_chunk_size', 1000) or (total_parts - count) == 0:
                     total_parts -= count
                     total_binaries += len(binaries)
 
                     save(binaries)
                     if dead_parts:
-                        deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
+                        deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session='fetch')
                     else:
                         deleted = 0
 
+                    db.commit()
                     log.debug('binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries), deleted, total_parts))
 
                     binaries = {}
                     count = 0
-
-            total_binaries += len(binaries)
-            save(binaries)
-            if dead_parts:
-                db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session=False)
 
     end = time.time()
 

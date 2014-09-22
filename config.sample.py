@@ -77,6 +77,13 @@ scan = {
     # make sure there's no quotes around it
     'backfill_days': 10,
 
+    # binary_process_chunk_size: number of parts to process per batch
+    # baseline process memory usage is about 20mb, this adds approximately:
+    # 1000 - +4mb
+    # 10000 - +32mb
+    # ...i probably wouldn't go much higher than that
+    'binary_process_chunk_size': 10000,
+
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so
