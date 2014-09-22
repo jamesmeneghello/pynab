@@ -60,7 +60,6 @@ def scan(group_name, direction='forward', date=None):
                         log.error('group: {}: server doesn\'t carry target article'.format(group_name))
                         return False
 
-                    log.debug('s: {} t: {}'.format(start, target))
                     for i in range(start, target, config.scan.get('message_scan_limit') * mult):
                         # set the beginning and ends of the scan to their respective values
                         begin = i + mult
@@ -88,7 +87,8 @@ def scan(group_name, direction='forward', date=None):
                             log.error('group: {}: problem updating group ({}-{})'.format(group_name, start, end))
                             return False
 
-                        if status and missed and config.scan.get('retry_missed'):
+                        # don't save misses if we're backfilling, there are too many
+                        if status and missed and config.scan.get('retry_missed') and direction == 'forward':
                             save_missing_segments(group_name, missed)
 
                         if status and parts:
@@ -171,11 +171,15 @@ def scan_missing_segments(group_name):
             server.connect()
 
             status, parts, messages, missed = server.scan(group_name, message_ranges=missing_ranges)
+
+            # if we got some missing parts, save them
             if parts:
-                # we got some!
                 pynab.parts.save_all(parts)
 
-            db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
+            # even if they got blacklisted, delete the ones we got from the misses
+            if messages:
+                db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
+
             db.commit()
 
             if missed:
