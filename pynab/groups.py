@@ -74,8 +74,6 @@ def scan(group_name, direction='forward', date=None):
                         # flip them if one is bigger
                         begin, end = (begin, end) if begin < end else (end, begin)
 
-                        log.debug('{} - {}'.format(begin, end))
-
                         status, parts, messages, missed = server.scan(group_name, first=begin, last=end)
 
                         try:
@@ -98,6 +96,14 @@ def scan(group_name, direction='forward', date=None):
                             else:
                                 log.error('group: problem saving parts to db')
                                 return False
+
+                        to_go = abs(target - end)
+                        log.info('group: {}: {:.0f} iterations ({} messages) to go'.format(
+                            group_name,
+                            to_go / config.scan.get('message_scan_limit'),
+                            to_go
+                            )
+                        )
 
                     log.info('group: {}: scan completed'.format(group_name))
                     return True
