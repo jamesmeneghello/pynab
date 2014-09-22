@@ -284,10 +284,10 @@ class Server:
                     date = dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
                 except Exception as e:
                     log.error('server: date parse failed while dating message: {}'.format(e))
-                    return None
+                    return False
                 return date
             else:
-                return None
+                return False
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
