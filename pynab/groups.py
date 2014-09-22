@@ -49,7 +49,7 @@ def scan(group_name, direction='forward', date=None):
                         mult = 1
                     elif direction == 'backward':
                         start = group.first
-                        target = server.day_to_post(group_name, server.days_old(date) if date else 380) #config.scan.get('backfill_days', 10))
+                        target = server.day_to_post(group_name, server.days_old(date) if date else config.scan.get('backfill_days', 10))
                         mult = -1
 
                     if group.first <= target <= group.last:
