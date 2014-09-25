@@ -267,7 +267,7 @@ class Binary(Base):
 class Part(Base):
     __tablename__ = 'parts'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     hash = Column(BigInteger, index=True)
 
     subject = Column(String)
@@ -291,13 +291,13 @@ class Part(Base):
 class Segment(Base):
     __tablename__ = 'segments'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
 
     segment = Column(Integer, index=True)
     size = Column(Integer)
     message_id = Column(String)
 
-    part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
+    part_id = Column(BigInteger, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
     # __table_args__ = (UniqueConstraint(part_id, segment),)
 
