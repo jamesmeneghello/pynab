@@ -71,7 +71,7 @@ def save_all(parts):
                 cur.copy_expert("COPY parts ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(', '.join(ordering)), s)
                 conn.commit()
                 insert_end = time.time()
-                log.debug('Time: {:.2f}s'.format(insert_end - insert_start))
+                log.debug('parts: postgres part copy time: {:.2f}s'.format(insert_end - insert_start))
 
                 #engine.execute(Part.__table__.insert(), part_inserts)
 
@@ -127,7 +127,7 @@ def save_all(parts):
                 cur.copy_from(s, 'segments', columns=ordering)
                 conn.commit()
                 insert_end = time.time()
-                log.debug('parts: postgres copy time: {:.2f}s'.format(insert_end - insert_start))
+                log.debug('parts: postgres segment copy time: {:.2f}s'.format(insert_end - insert_start))
 
                 #engine.execute(Segment.__table__.insert(), segment_inserts)
 

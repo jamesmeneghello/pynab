@@ -1,9 +1,11 @@
-from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, create_engine, func, UniqueConstraint, Enum, Float
+from contextlib import contextmanager
+
+from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
+    create_engine, UniqueConstraint, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import select, func
-from contextlib import contextmanager
+from sqlalchemy import func, and_
+
 import config
 
 
@@ -48,6 +50,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 # -------------------
 """
 
+
 @contextmanager
 def db_session():
     session = Session()
@@ -57,6 +60,61 @@ def db_session():
     except:
         session.rollback()
         raise
+
+
+# thanks zzzeek! https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/WindowedRangeQuery
+def column_windows(session, column, windowsize):
+    """Return a series of WHERE clauses against
+    a given column that break it into windows.
+
+    Result is an iterable of tuples, consisting of
+    ((start, end), whereclause), where (start, end) are the ids.
+
+    Requires a database that supports window functions,
+    i.e. Postgresql, SQL Server, Oracle.
+
+    Enhance this yourself !  Add a "where" argument
+    so that windows of just a subset of rows can
+    be computed.
+    """
+    def int_for_range(start_id, end_id):
+        if end_id:
+            return and_(
+                column >= start_id,
+                column < end_id
+            )
+        else:
+            return column >= start_id
+
+    q = session.query(
+        column,
+        func.row_number().
+        over(order_by=column).
+        label('rownum')
+    ). \
+        from_self(column)
+    if windowsize > 1:
+        q = q.filter("rownum %% %d=1" % windowsize)
+
+    intervals = [id for id, in q]
+
+    while intervals:
+        start = intervals.pop(0)
+        if intervals:
+            end = intervals[0]
+        else:
+            end = None
+        yield int_for_range(start, end)
+
+
+def windowed_query(q, column, windowsize):
+    """"Break a Query into windows on a given column."""
+
+    for whereclause in column_windows(
+            q.session,
+            column, windowsize):
+        for row in q.filter(whereclause).order_by(column):
+            yield row
 
 
 class Release(Base):
@@ -123,11 +181,16 @@ class MetaBlack(Base):
     status = Column(Enum('ATTEMPTED', 'IMPOSSIBLE', name='enum_metablack_status'), default='ATTEMPTED')
     time = Column(DateTime, default=func.now())
 
-    tvshow = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.tvshow_metablack_id])
-    movie = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.movie_metablack_id])
-    nfo = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.nfo_metablack_id])
-    sfv = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.sfv_metablack_id])
-    rar = relationship('Release', cascade='all, delete, delete-orphan', uselist=False, foreign_keys=[Release.rar_metablack_id])
+    tvshow = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
+                          foreign_keys=[Release.tvshow_metablack_id])
+    movie = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
+                         foreign_keys=[Release.movie_metablack_id])
+    nfo = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
+                       foreign_keys=[Release.nfo_metablack_id])
+    sfv = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
+                       foreign_keys=[Release.sfv_metablack_id])
+    rar = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
+                       foreign_keys=[Release.rar_metablack_id])
 
 
 class Episode(Base):
@@ -187,7 +250,8 @@ class Binary(Base):
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
-    parts = relationship('Part', cascade='all, delete, delete-orphan', passive_deletes=True, order_by="asc(Part.subject)")
+    parts = relationship('Part', cascade='all, delete, delete-orphan', passive_deletes=True,
+                         order_by="asc(Part.subject)")
 
     def size(self):
         size = 0
@@ -203,7 +267,7 @@ class Binary(Base):
 class Part(Base):
     __tablename__ = 'parts'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     hash = Column(BigInteger, index=True)
 
     subject = Column(String)
@@ -217,24 +281,25 @@ class Part(Base):
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
 
-    segments = relationship('Segment', cascade='all, delete, delete-orphan', passive_deletes=True, order_by="asc(Segment.segment)")
+    segments = relationship('Segment', cascade='all, delete, delete-orphan', passive_deletes=True,
+                            order_by="asc(Segment.segment)")
 
-    #__table_args__ = (UniqueConstraint(subject),)
+    # __table_args__ = (UniqueConstraint(subject),)
 
 
 # likewise
 class Segment(Base):
     __tablename__ = 'segments'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
 
     segment = Column(Integer, index=True)
     size = Column(Integer)
     message_id = Column(String)
 
-    part_id = Column(Integer, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
+    part_id = Column(BigInteger, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
-    #__table_args__ = (UniqueConstraint(part_id, segment),)
+    # __table_args__ = (UniqueConstraint(part_id, segment),)
 
 
 class Miss(Base):

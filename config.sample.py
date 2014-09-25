@@ -58,23 +58,31 @@ scan = {
 
     # new_group_scan_days: how many days to scan for a new group
     # make sure there's no quotes around it
-    'new_group_scan_days': 5,
+    # 'new_group_scan_days': 5,
+    # DEPRECATED: now uses backfill_days
 
     # message_scan_limit: number of messages to take from nntp server at once
     # make sure there's no quotes around it
     'message_scan_limit': 20000,
 
-    # retry_misses: whether to re-scan for missed messages
+    # retry_missed: whether to re-scan for missed messages
     # slow, but useful for some providers
-    'retry_misses': False,
+    'retry_missed': False,
 
     # miss_retry_limit: number of times to retry missed messages
     # integer, it'll retry this many times before giving up.
     'miss_retry_limit': 3,
 
-    # backfill_days: number of days to backfill groups (using backfill)
+    # backfill_days: number of days to backfill groups or scan new groups
     # make sure there's no quotes around it
     'backfill_days': 10,
+
+    # binary_process_chunk_size: number of parts to process per batch
+    # baseline process memory usage is about 20mb, this adds approximately:
+    # 1000 - +4mb
+    # 10000 - +32mb
+    # ...i probably wouldn't go much higher than that
+    'binary_process_chunk_size': 10000,
 
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be

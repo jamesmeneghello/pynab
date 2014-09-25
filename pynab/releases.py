@@ -148,6 +148,10 @@ def process():
             HAVING count(*) >= binaries.total_parts
         """
 
+        # for interest's sakes, memory usage:
+        # 38,000 releases uses 8.9mb of memory here
+        # no real need to batch it, since this will mostly be run with
+        # < 1000 releases per run
         for completed_binary in engine.execute(binary_query).fetchall():
             # some optimisations here. we used to take the binary id and load it
             # then compare binary.name and .posted to any releases

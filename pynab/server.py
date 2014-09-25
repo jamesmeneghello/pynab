@@ -316,7 +316,11 @@ class Server:
                     while temp_date > target_date:
                         upper = upper - interval - (skip - 1)
                         skip *= 2
-                        temp_date = self.post_date(group_name, upper - interval)
+                        date = self.post_date(group_name, upper - interval)
+                        # if we couldn't get the date, skip this one
+                        if date:
+                            temp_date = date
+
 
                 interval = math.ceil(interval / 2)
                 if interval <= 0:
