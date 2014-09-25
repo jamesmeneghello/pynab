@@ -115,6 +115,7 @@ def clean_release_name(name):
         name = name.replace(c, '')
     return name.replace('_', ' ').replace('.', ' ').replace('-', ' ')
 
+
 def process():
     """Helper function to begin processing binaries. Checks
     for 100% completion and will create NZBs/releases for
@@ -146,7 +147,6 @@ def process():
             GROUP BY binaries.id
             HAVING count(*) >= binaries.total_parts
         """
-
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
