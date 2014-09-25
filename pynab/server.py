@@ -123,7 +123,7 @@ class Server:
             # null the connection and restart it
             self.connection = None
             self.connect()
-            return False, None, None, None
+            self.scan(group_name, first, last, message_ranges)
         except socket.timeout:
             # backfills can sometimes go for so long that everything explodes
             log.error('server: socket timed out, reconnecting')
