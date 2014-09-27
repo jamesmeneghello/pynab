@@ -117,7 +117,7 @@ postprocess = {
     # if it's lower than this, it'll get removed eventually
     # it'll only create releases of this completion if 3 hours have passed to make sure
     # we're not accidentally cutting off the end of a new release
-    'min_completion': 99,
+    'min_completion': 100,
 
     # 100% completion resulted in about 11,000 unmatched releases after 4 weeks over 6 groups
     # lowering that to 99% built an extra 3,500 releases

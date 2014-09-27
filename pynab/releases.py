@@ -134,19 +134,18 @@ def process():
             SELECT
                 binaries.id, binaries.name, binaries.posted
             FROM binaries
-                INNER JOIN (
-                        SELECT
-                            parts.id, parts.binary_id, parts.total_segments
-                        FROM parts
-                            INNER JOIN segments ON parts.id = segments.part_id
-                        GROUP BY parts.id
-                        HAVING count(*) >= parts.total_segments
-                        ORDER BY parts.posted DESC
-                    ) as parts
-                    ON binaries.id = parts.binary_id
+            INNER JOIN (
+                SELECT
+                    parts.id, parts.binary_id, parts.total_segments, count(*) as available_segments
+                FROM parts
+                    INNER JOIN segments ON parts.id = segments.part_id
+                GROUP BY parts.id
+                ORDER BY parts.posted DESC
+                ) as parts
+                ON binaries.id = parts.binary_id
             GROUP BY binaries.id
-            HAVING count(*) >= binaries.total_parts
-        """
+            HAVING count(*) >= binaries.total_parts AND (sum(parts.available_segments) / sum(parts.total_segments)) * 100 >= {}
+        """.format(config.postprocess.get('min_completion', 100))
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
