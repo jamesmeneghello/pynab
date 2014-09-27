@@ -187,6 +187,23 @@ def process():
                 release.grabs = 0
                 release.size = binary.size()
 
+                # check against minimum size for this group
+                undersized = False
+                for size, groups in config.postprocess.get('min_size', {}).items():
+                    if binary.group_name in groups:
+                        if release.size < size:
+                            undersized = True
+                            break
+
+                if undersized:
+                    log.info('release: [{}] - removed (smaller than minimum size for group)'.format(
+                        binary.name
+                    ))
+                    db.delete(binary)
+                    db.commit()
+                    continue
+
+
                 # check to make sure we have over the configured minimum files
                 rars = []
                 rar_count = 0
@@ -207,6 +224,7 @@ def process():
                         binary.name
                     ))
                     db.delete(binary)
+                    db.commit()
                     continue
 
                 # clean the name for searches

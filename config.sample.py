@@ -100,6 +100,15 @@ postprocess = {
     # release processing settings
     # ---------------------------
 
+    # min_size: minimum size of releases per-group
+    # anything smaller than this in a group will be deleted
+    # layout is minimum size and then a list of groups to check, ie.
+    # 'min_size': {
+    #     104857600: ['alt.binaries.hdtv', 'alt.binaries.hdtv.x264'],
+    #     314572800: ['alt.binaries.mooveee']
+    # },
+    'min_size': {},
+
     # min_archives: the minimum number of archives in a binary to form a release
     # setting this to 1 will cut out releases that only contain an nzb, etc.
     'min_archives': 1,
