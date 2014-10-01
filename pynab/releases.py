@@ -5,7 +5,7 @@ import regex
 from sqlalchemy.orm import *
 
 from pynab import log
-from pynab.db import db_session, engine, Binary, Part, Release, Group, Category
+from pynab.db import db_session, engine, Binary, Part, Release, Group, Category, Blacklist
 import pynab.categories
 import pynab.nzbs
 import pynab.rars
@@ -147,6 +147,11 @@ def process():
             HAVING count(*) >= binaries.total_parts AND (sum(parts.available_segments) / sum(parts.total_segments)) * 100 >= {}
         """.format(config.postprocess.get('min_completion', 100))
 
+        # pre-cache blacklists and group them
+        blacklists = {}
+        for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
+            blacklists[blacklist.group_name] = blacklist
+
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
         # no real need to batch it, since this will mostly be run with
@@ -175,6 +180,20 @@ def process():
                     subqueryload('parts.segments'),
                     Load(Part).load_only(Part.id, Part.subject, Part.segments),
                 ).filter(Binary.id == completed_binary[0]).first()
+
+                blacklisted = False
+                for blacklist in blacklists[binary.group_name]:
+                    # we're operating on binaries, not releases
+                    field = 'name' if blacklist.field == 'subject' else blacklist.field
+                    if regex.search(blacklist.regex, getattr(binary, field)):
+                        log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
+                        db.delete(binary)
+                        db.commit()
+                        blacklisted = True
+                        break
+
+                if blacklisted:
+                    continue
 
                 binary_count += 1
 
