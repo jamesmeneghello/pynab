@@ -150,7 +150,10 @@ def process():
         # pre-cache blacklists and group them
         blacklists = {}
         for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
-            blacklists[blacklist.group_name] = blacklist
+            if blacklist.group_name in blacklists:
+                blacklists[blacklist.group_name].append(blacklist)
+            else:
+                blacklists[blacklist.group_name] = [blacklist]
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
