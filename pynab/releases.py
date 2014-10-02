@@ -148,12 +148,7 @@ def process():
         """.format(config.postprocess.get('min_completion', 100))
 
         # pre-cache blacklists and group them
-        blacklists = {}
-        for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
-            if blacklist.group_name in blacklists:
-                blacklists[blacklist.group_name].append(blacklist)
-            else:
-                blacklists[blacklist.group_name] = [blacklist]
+        blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
@@ -185,15 +180,16 @@ def process():
                 ).filter(Binary.id == completed_binary[0]).first()
 
                 blacklisted = False
-                for blacklist in blacklists[binary.group_name]:
-                    # we're operating on binaries, not releases
-                    field = 'name' if blacklist.field == 'subject' else blacklist.field
-                    if regex.search(blacklist.regex, getattr(binary, field)):
-                        log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
-                        db.delete(binary)
-                        db.commit()
-                        blacklisted = True
-                        break
+                for blacklist in blacklists:
+                    if regex.search(blacklist.group_name, binary.group_name):
+                        # we're operating on binaries, not releases
+                        field = 'name' if blacklist.field == 'subject' else blacklist.field
+                        if regex.search(blacklist.regex, getattr(binary, field)):
+                            log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
+                            db.delete(binary)
+                            db.commit()
+                            blacklisted = True
+                            break
 
                 if blacklisted:
                     continue
