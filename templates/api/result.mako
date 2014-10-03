@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>\
+<?xml version="1.0" encoding="UTF-8" ?>\
 <%!
     import config, sys
     from email import utils
@@ -7,10 +7,8 @@
 <channel>
     <title>${config.api.get('title', 'pynab')}</title>
     <description>${config.api.get('description', '')}</description>
-    <link>${get_link('')}</link>\
-    % if search:
-    <newznab:response offset="${offset}" total="${total}"/>\
-    % endif
+    <link>${get_link('')}</link>
+    <newznab:response offset="${offset}" total="${total}"/>
     % for release in releases:
         <%
             if sys.version_info >= (3,3):
