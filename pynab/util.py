@@ -90,17 +90,20 @@ def update_regex():
                 # this will show a negative if we add our own, but who cares for the moment
                 log.info('Retrieved {:d} regexes, {:d} new.'.format(len(regexes), change))
 
-                if change != 0:
-                    log.info('We either lost or gained regex, so dump them and reload.')
+                ids = []
+                regexes = modify_regex(regexes)
+                for reg in regexes:
+                    r = Regex(**reg)
+                    ids.append(r.id)
+                    db.merge(r)
 
-                    db.query(Regex).filter(Regex.id <= 100000).delete()
-                    regexes = modify_regex(regexes)
-                    engine.execute(Regex.__table__.insert(), regexes)
+                removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update({Regex.status: False}, synchronize_session='fetch')
 
-                    return True
-                else:
-                    log.info('Appears to be no change, leaving alone.')
-                    return False
+                db.commit()
+
+                log.info('Disabled {:d} removed regexes.'.format(removed))
+
+                return True
         else:
             log.error('No config item set for regex_url - do you own newznab plus?')
             return False
