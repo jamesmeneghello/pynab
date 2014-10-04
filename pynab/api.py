@@ -281,7 +281,7 @@ def search(dataset=None, query=None):
                 if cat_ids:
                     query = query.join(Category)
                     cat_ids = cat_ids.split(',')
-                    query = query.filter(Category.id.in_(cat_ids))
+                    query = query.filter(Category.id.in_(cat_ids) | Category.parent_id.in_(cat_ids))
 
                 # group names
                 group_names = request.query.group or []
