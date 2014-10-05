@@ -27,8 +27,8 @@ API Compatibility
 - [NZBDrone](http://nzbdrone.com)
 - [CouchPotato](http://couchpota.to)
 - [Headphones](https://github.com/rembo10/headphones) (only slightly tested)
-- NZB360
-- NZBSearcher
+- [NZB360](http://nzb360.com/)
+- [NZBSearcher](https://play.google.com/store/apps/details?id=nl.giejay.nzbsearcher.trial&hl=en)
 
 Features
 --------
