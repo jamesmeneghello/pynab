@@ -120,7 +120,7 @@ if __name__ == '__main__':
                 for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
                     # remap subject to name, since normal blacklists operate on binaries
                     # this is on releases, and the attribute changes
-                    field = 'name' if blacklist.field == 'subject' else blacklist.field
+                    field = 'search_name' if blacklist.field == 'subject' else blacklist.field
 
                     # filter by:
                     #   group_name should match the blacklist's
