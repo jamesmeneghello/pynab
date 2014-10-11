@@ -106,7 +106,7 @@ And a few packages required by psycopg2:
 
     > sudo apt-get install postgres-server-dev-9.3
 
-### Universal ###
+### General *nix ###
 
     > cd /var/www/
     > sudo git clone https://github.com/Murodese/pynab.git
@@ -119,6 +119,32 @@ If you receive an error message related to an old version of distribute while ru
 install the new version by typing:
 
     sudo easy_install -U distribute
+
+### Windows ###
+
+Running pynab on Windows is possible, but not recommended or well-supported. Lack of screen support
+ means that console output is tricky, so using logfiles is very much recommended.
+
+Clone and configure:
+
+    > [browse to desired directory]
+    > git clone https://github.com/Murodese/pynab.git
+    > [browse to pynab]
+    > [copy config.sample.py to config.py]
+    > [fill in config as appropriate, ensuring to set logfile]
+
+Install pre-reqs. The following packages are available as Windows binaries from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
+Select the appropriate package for your version of python (ie. py34 for 3.4, etc):
+
+    - lxml
+    - sqlalchemy
+    - psycopg2
+
+Two packages used in pynab require a compiler, such as [MinGW](http://www.mingw.org/). Install this prior to running the next step:
+
+    > pip install -r requirements.txt
+
+### Install/Migrate ###
 
 New installation? As below:
 
@@ -300,6 +326,12 @@ becoming extremely large.
 You can also run the script supplied to execute start and postprocess:
 
     > ./run.sh
+
+Or, on Windows:
+
+    > run.bat
+
+The Windows batch script will also start the API, since uwsgi is not available.
 
 ### Updating Pynab ###
 
