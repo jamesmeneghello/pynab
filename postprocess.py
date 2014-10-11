@@ -80,7 +80,7 @@ if __name__ == '__main__':
                 deleted = query.delete()
                 db.commit()
                 log.info('postprocess: deleted {} passworded releases'.format(deleted))
-            '''
+
             with concurrent.futures.ThreadPoolExecutor(4) as executor:
                 threads = []
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
                 for t in concurrent.futures.as_completed(threads):
                     data = t.result()
-            '''
+
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)
             scripts.rename_bad_releases.rename_bad_releases(7020)
