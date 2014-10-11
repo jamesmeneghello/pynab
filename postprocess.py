@@ -1,14 +1,13 @@
 import concurrent.futures
 import time
 import traceback
-import psycopg2.extensions
 import datetime
+
+import psycopg2.extensions
 import pytz
-from sqlalchemy import or_
 
 from pynab import log
-from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack
-
+from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack, NZB, NFO, SFV
 import pynab.groups
 import pynab.binaries
 import pynab.releases
@@ -17,10 +16,8 @@ import pynab.rars
 import pynab.nfos
 import pynab.sfvs
 import pynab.imdb
-
 import scripts.quick_postprocess
 import scripts.rename_bad_releases
-
 import config
 
 
@@ -69,7 +66,7 @@ if __name__ == '__main__':
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    #scripts.quick_postprocess.local_postprocess()
+    # scripts.quick_postprocess.local_postprocess()
 
     while True:
         with db_session() as db:
@@ -77,13 +74,13 @@ if __name__ == '__main__':
             if config.postprocess.get('delete_passworded', True):
                 query = db.query(Release)
                 if config.postprocess.get('delete_potentially_passworded', True):
-                    query = query.filter((Release.passworded=='MAYBE')|(Release.passworded=='YES'))
+                    query = query.filter((Release.passworded == 'MAYBE') | (Release.passworded == 'YES'))
                 else:
-                    query = query.filter(Release.passworded=='YES')
+                    query = query.filter(Release.passworded == 'YES')
                 deleted = query.delete()
                 db.commit()
                 log.info('postprocess: deleted {} passworded releases'.format(deleted))
-
+            '''
             with concurrent.futures.ThreadPoolExecutor(4) as executor:
                 threads = []
 
@@ -108,7 +105,7 @@ if __name__ == '__main__':
 
                 for t in concurrent.futures.as_completed(threads):
                     data = t.result()
-
+            '''
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)
             scripts.rename_bad_releases.rename_bad_releases(7020)
@@ -117,7 +114,7 @@ if __name__ == '__main__':
             # assuming it's enabled, of course
             if config.postprocess.get('delete_blacklisted_releases'):
                 deleted = 0
-                for blacklist in db.query(Blacklist).filter(Blacklist.status==True).all():
+                for blacklist in db.query(Blacklist).filter(Blacklist.status == True).all():
                     # remap subject to name, since normal blacklists operate on binaries
                     # this is on releases, and the attribute changes
                     field = 'search_name' if blacklist.field == 'subject' else blacklist.field
@@ -131,25 +128,40 @@ if __name__ == '__main__':
                         db.query(Group.id).filter(Group.name.op('~*')(blacklist.group_name)).subquery()
                     )).filter(getattr(Release, field).op('~*')(blacklist.regex))
                     if config.postprocess.get('delete_blacklisted_days'):
-                        query = query.filter(Release.posted >= (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=config.postprocess.get('delete_blacklisted_days'))))
+                        query = query.filter(Release.posted >= (datetime.datetime.now(pytz.utc) - datetime.timedelta(
+                            days=config.postprocess.get('delete_blacklisted_days'))))
                     deleted += query.delete(False)
                 log.info('postprocess: deleted {} blacklisted releases'.format(deleted))
                 db.commit()
 
             if config.postprocess.get('delete_bad_releases', False):
-                deletes = db.query(Release).filter(Release.unwanted==True).delete()
+                deletes = db.query(Release).filter(Release.unwanted == True).delete()
                 log.info('postprocess: deleted {} bad releases'.format(deletes))
                 db.commit()
 
             # delete any orphan metablacks
             log.info('postprocess: deleting orphan metablacks...')
             db.query(MetaBlack).filter(
-                (MetaBlack.movie==None)&
-                (MetaBlack.tvshow==None)&
-                (MetaBlack.rar==None)&
-                (MetaBlack.nfo==None)&
-                (MetaBlack.sfv==None)
+                (MetaBlack.movie == None) &
+                (MetaBlack.tvshow == None) &
+                (MetaBlack.rar == None) &
+                (MetaBlack.nfo == None) &
+                (MetaBlack.sfv == None)
             ).delete(synchronize_session='fetch')
+
+            # delete any orphan nzbs
+            log.info('postprocess: deleting orphan nzbs...')
+            db.query(NZB.id).filter(NZB.release==None).delete(synchronize_session='fetch')
+
+            # delete any orphan nfos
+            log.info('postprocess: deleting orphan nfos...')
+            db.query(NFO.id).filter(NFO.release==None).delete(synchronize_session='fetch')
+
+            # delete any orphan sfvs
+            log.info('postprocess: deleting orphan sfvs...')
+            db.query(SFV.id).filter(SFV.release==None).delete(synchronize_session='fetch')
+
+            db.commit()
 
             # vacuum the segments, parts and binaries tables
             log.info('postprocess: vacuuming relevant tables...')
