@@ -140,7 +140,10 @@ Select the appropriate package for your version of python (ie. py34 for 3.4, etc
     - sqlalchemy
     - psycopg2
 
-Two packages used in pynab require a compiler, such as [MinGW](http://www.mingw.org/). Install this prior to running the next step:
+Two packages used in pynab require a compiler, such as [MinGW](http://www.mingw.org/). This may also require
+ you to modify some config vars to make pip see the compiler, see [here](http://stackoverflow.com/questions/2817869/error-unable-to-find-vcvarsall-bat/2838827#2838827).
+
+Once the compiler has been installed:
 
     > pip install -r requirements.txt
 
