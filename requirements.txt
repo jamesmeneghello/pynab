@@ -15,5 +15,5 @@ colorlog
 sqlalchemy>=0.9
 alembic
 psycopg2
-pyhashxx
+pyhashxx==0.1.1
 intspan
