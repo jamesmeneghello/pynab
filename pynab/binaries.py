@@ -7,6 +7,7 @@ from sqlalchemy import *
 from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query
 from pynab import log
 import config
+from memory_profiler import profile
 
 
 PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
@@ -19,7 +20,7 @@ def generate_hash(name, group_name, posted_by, total_parts):
     )
 
 
-def save(binaries):
+def save(db, binaries):
     """Helper function to save a set of binaries
     and delete associated parts from the DB. This
     is a lot faster than Newznab's part deletion,
@@ -29,42 +30,41 @@ def save(binaries):
     away and drop the temporary table instead."""
 
     if binaries:
-        with db_session() as db:
-            existing_binaries = dict(
-                ((binary.hash, binary) for binary in
-                    db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
-                )
+        existing_binaries = dict(
+            ((binary.hash, binary) for binary in
+                db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
             )
+        )
 
-            binary_inserts = []
-            for hash, binary in binaries.items():
-                existing_binary = existing_binaries.get(hash, None)
-                if not existing_binary:
-                    binary_inserts.append(binary)
+        binary_inserts = []
+        for hash, binary in binaries.items():
+            existing_binary = existing_binaries.get(hash, None)
+            if not existing_binary:
+                binary_inserts.append(binary)
 
-            if binary_inserts:
-                # this could be optimised slightly with COPY but it's not really worth it
-                # there's usually only a hundred or so rows
-                engine.execute(Binary.__table__.insert(), binary_inserts)
+        if binary_inserts:
+            # this could be optimised slightly with COPY but it's not really worth it
+            # there's usually only a hundred or so rows
+            engine.execute(Binary.__table__.insert(), binary_inserts)
 
-            existing_binaries = dict(
-                ((binary.hash, binary) for binary in
-                    db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
-                )
+        existing_binaries = dict(
+            ((binary.hash, binary) for binary in
+                db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
             )
+        )
 
-            update_parts = []
-            for hash, binary in binaries.items():
-                existing_binary = existing_binaries.get(hash, None)
-                if existing_binary:
-                    for number, part in binary['parts'].items():
-                        update_parts.append({'_id': part.id, '_binary_id': existing_binary.id})
-                else:
-                    log.error('something went horribly wrong')
+        update_parts = []
+        for hash, binary in binaries.items():
+            existing_binary = existing_binaries.get(hash, None)
+            if existing_binary:
+                for number, part in binary['parts'].items():
+                    update_parts.append({'_id': part.id, '_binary_id': existing_binary.id})
+            else:
+                log.error('something went horribly wrong')
 
-            if update_parts:
-                p = Part.__table__.update().where(Part.id==bindparam('_id')).values(binary_id=bindparam('_binary_id'))
-                engine.execute(p, update_parts)
+        if update_parts:
+            p = Part.__table__.update().where(Part.id==bindparam('_id')).values(binary_id=bindparam('_binary_id'))
+            engine.execute(p, update_parts)
 
 
 def process():
@@ -86,7 +86,7 @@ def process():
     # this removes support for "alt.binaries.games.*", but those weren't
     # used anyway, aside from just * (which it does work with)
 
-    with db_session() as db:
+    with db_session(expire_on_commit=False) as db:
         relevant_groups = db.query(Part.group_name).group_by(Part.group_name).all()
         if relevant_groups:
             # grab all relevant regex
@@ -205,7 +205,7 @@ def process():
                     total_parts -= count
                     total_binaries += len(binaries)
 
-                    save(binaries)
+                    save(db, binaries)
                     if dead_parts:
                         deleted = db.query(Part).filter(Part.id.in_(dead_parts)).delete(synchronize_session='fetch')
                     else:
@@ -215,6 +215,7 @@ def process():
                     log.debug('binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries), deleted, total_parts))
 
                     binaries = {}
+                    dead_parts = []
                     count = 0
 
     end = time.time()
