@@ -7,7 +7,6 @@ from sqlalchemy import *
 from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query
 from pynab import log
 import config
-from memory_profiler import profile
 
 
 PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
