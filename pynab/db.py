@@ -19,7 +19,7 @@ Session = scoped_session(sessionmaker(bind=engine))
 
 # enable query debugging
 # very noisy!
-'''
+"""
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 import time
@@ -48,7 +48,7 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
     log.debug("Total Time: %f" % total)
     log.debug("Total Queries: %d" % _q.total)
 # -------------------
-'''
+"""
 
 
 @contextmanager
