@@ -140,11 +140,11 @@ def process():
                 FROM parts
                     INNER JOIN segments ON parts.id = segments.part_id
                 GROUP BY parts.id
-                ORDER BY parts.posted DESC
                 ) as parts
                 ON binaries.id = parts.binary_id
             GROUP BY binaries.id
             HAVING count(*) >= binaries.total_parts AND (sum(parts.available_segments) / sum(parts.total_segments)) * 100 >= {}
+            ORDER BY binaries.posted DESC
         """.format(config.postprocess.get('min_completion', 100))
 
         # pre-cache blacklists and group them
