@@ -52,11 +52,8 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
 
 
 @contextmanager
-def db_session(expire_on_commit=True):
-    if not expire_on_commit:
-        session = Session(expire_on_commit=expire_on_commit)
-    else:
-        session = Session()
+def db_session():
+    session = Session()
 
     try:
         yield session

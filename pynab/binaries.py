@@ -85,7 +85,8 @@ def process():
     # this removes support for "alt.binaries.games.*", but those weren't
     # used anyway, aside from just * (which it does work with)
 
-    with db_session(expire_on_commit=False) as db:
+    with db_session() as db:
+        db.expire_on_commit = False
         relevant_groups = db.query(Part.group_name).group_by(Part.group_name).all()
         if relevant_groups:
             # grab all relevant regex
@@ -216,6 +217,9 @@ def process():
                     binaries = {}
                     dead_parts = []
                     count = 0
+
+        db.expire_on_commit = True
+        db.close()
 
     end = time.time()
 
