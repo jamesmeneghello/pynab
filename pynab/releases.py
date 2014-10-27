@@ -149,6 +149,8 @@ def process():
 
         # pre-cache blacklists and group them
         blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+        for blacklist in blacklists:
+            db.expunge(blacklist)
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
@@ -219,7 +221,6 @@ def process():
                     db.delete(binary)
                     db.commit()
                     continue
-
 
                 # check to make sure we have over the configured minimum files
                 rars = []
