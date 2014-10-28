@@ -100,7 +100,7 @@ Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/w
 
 You also need to install Python 3.3, associated packages and pip3:
 
-    > sudo apt-get install python3 python3-setuptools python3-pip
+    > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev
 
 And a few packages required by psycopg2:
 
