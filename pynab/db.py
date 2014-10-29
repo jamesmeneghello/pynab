@@ -251,8 +251,7 @@ class Binary(Base):
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
-    parts = relationship('Part', cascade='all, delete, delete-orphan', passive_deletes=True,
-                         order_by="asc(Part.subject)")
+    parts = relationship('Part', passive_deletes=True, order_by="asc(Part.subject)")
 
     def size(self):
         size = 0
@@ -282,8 +281,7 @@ class Part(Base):
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
 
-    segments = relationship('Segment', cascade='all, delete, delete-orphan', passive_deletes=True,
-                            order_by="asc(Segment.segment)")
+    segments = relationship('Segment', passive_deletes=True, order_by="asc(Segment.segment)")
 
     # __table_args__ = (UniqueConstraint(subject),)
 
