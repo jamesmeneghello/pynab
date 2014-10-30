@@ -104,7 +104,7 @@ You also need to install Python 3.3, associated packages and pip3:
 
 And a few packages required by psycopg2:
 
-    > sudo apt-get install postgres-server-dev-9.3
+    > sudo apt-get install postgresql-server-dev-9.3
 
 ### General *nix ###
 
