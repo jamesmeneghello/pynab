@@ -226,21 +226,23 @@ def process():
                 rars = []
                 rar_count = 0
                 zip_count = 0
+                nzb_count = 0
 
                 for part in binary.parts:
-                    if regex.search(pynab.nzbs.rar_part_regex, part.subject):
+                    if pynab.nzbs.rar_part_regex.search(part.subject):
                         rar_count += 1
-                    if regex.search(pynab.nzbs.rar_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                             part.subject):
+                    if pynab.nzbs.rar_regex.search(part.subject) and not pynab.nzbs.metadata_regex.search(part.subject):
                         rars.append(part)
-                    if regex.search(pynab.nzbs.zip_regex, part.subject) and not regex.search(pynab.nzbs.metadata_regex,
-                                                                                             part.subject):
+                    if pynab.nzbs.zip_regex.search(part.subject) and not pynab.nzbs.metadata_regex.search(part.subject):
                         zip_count += 1
+                    if pynab.nzbs.nzb_regex.search(part.subject):
+                        nzb_count += 1
 
                 if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    log.info('release: [{}] - removed (less than minimum archives)'.format(
-                        binary.name
-                    ))
+                    if nzb_count > 0:
+                        log.info('release: [{}] - removed (nzb only)'.format(binary.name))
+                    else:
+                        log.info('release: [{}] - removed (less than minimum archives)'.format(binary.name))
                     db.delete(binary)
                     db.commit()
                     continue

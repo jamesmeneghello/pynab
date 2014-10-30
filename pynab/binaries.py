@@ -10,7 +10,7 @@ import config
 
 
 PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
-
+XREF_REGEX = regex.compile('^([a-z0-9\.\-_]+):(\d+)?$', regex.I)
 
 def generate_hash(name, group_name, posted_by, total_parts):
     """Generates a mostly-unique temporary hash for a part."""
@@ -233,7 +233,7 @@ def parse_xref(xref):
     groups = []
     raw_groups = xref.split(' ')
     for raw_group in raw_groups:
-        result = regex.search('^([a-z0-9\.\-_]+):(\d+)?$', raw_group, regex.I)
+        result = XREF_REGEX.search(raw_group)
         if result:
             groups.append(result.group(1))
     return groups

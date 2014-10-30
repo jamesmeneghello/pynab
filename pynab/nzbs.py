@@ -27,6 +27,7 @@ metadata_regex = regex.compile('\.(par2|vol\d+\+|sfv|nzb)', regex.I)
 par2_regex = regex.compile('\.par2(?!\.)', regex.I)
 par_vol_regex = regex.compile('vol\d+\+', regex.I)
 zip_regex = regex.compile('\.zip(?!\.)', regex.I)
+nzb_regex = regex.compile('\.nzb(?!\.)', regex.I)
 
 
 def get_size(nzb):
@@ -160,8 +161,7 @@ def create(name, category, binary):
     return nzb
 
 
-def import_nzb(filepath, quick=True):
-    """Import an NZB and directly load it into releases."""
+def import_nzb_file(filepath):
     file, ext = os.path.splitext(filepath)
 
     if ext == '.gz':
@@ -169,76 +169,80 @@ def import_nzb(filepath, quick=True):
     else:
         f = open(filepath, 'r', encoding='utf-8', errors='ignore')
 
-    if quick:
-        release = {'added': pytz.utc.localize(datetime.datetime.now()), 'size': None, 'spotnab_id': None,
-                   'completion': None, 'grabs': 0, 'passworded': None, 'file_count': None, 'tvrage': None,
-                   'tvdb': None, 'imdb': None, 'nfo': None, 'tv': None, 'total_parts': 0}
+    return import_nzb(filepath, f.read())
 
-        try:
-            for event, elem in cet.iterparse(f):
-                if 'meta' in elem.tag:
-                    release[elem.attrib['type']] = elem.text
-                if 'file' in elem.tag:
-                    release['total_parts'] += 1
-                    release['posted'] = elem.get('date')
-                    release['posted_by'] = elem.get('poster')
-                if 'group' in elem.tag and 'groups' not in elem.tag:
-                    release['group_name'] = elem.text
-        except:
-            log.error('nzb: error parsing NZB files: file appears to be corrupt.')
-            return False
 
-        if 'name' not in release:
-            log.error('nzb: failed to import nzb: {0}'.format(filepath))
-            return False
+def import_nzb(name, nzb_data):
+    """Import an NZB and directly load it into releases."""
 
-        # check that it doesn't exist first
-        with db_session() as db:
-            r = db.query(Release).filter(Release.name == release['name']).one()
-            if not r:
-                r = Release()
-                r.name = release['name']
-                r.search_name = release['name']
 
-                r.posted = release['posted']
-                r.posted_by = release['posted_by']
+    release = {'added': pytz.utc.localize(datetime.datetime.now()), 'size': None, 'spotnab_id': None,
+               'completion': None, 'grabs': 0, 'passworded': None, 'file_count': None, 'tvrage': None,
+               'tvdb': None, 'imdb': None, 'nfo': None, 'tv': None, 'total_parts': 0}
 
-                if 'posted' in release:
-                    r.posted = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
-                else:
-                    r.posted = None
+    try:
+        for event, elem in cet.iterparse(nzb_data):
+            if 'meta' in elem.tag:
+                release[elem.attrib['type']] = elem.text
+            if 'file' in elem.tag:
+                release['total_parts'] += 1
+                release['posted'] = elem.get('date')
+                release['posted_by'] = elem.get('poster')
+            if 'group' in elem.tag and 'groups' not in elem.tag:
+                release['group_name'] = elem.text
+    except:
+        log.error('nzb: error parsing NZB files: file appears to be corrupt.')
+        return False
 
-                if 'category' in release:
-                    parent, child = release['category'].split(' > ')
+    if 'name' not in release:
+        log.error('nzb: failed to import nzb: {0}'.format(name))
+        return False
 
-                    category = db.query(Category).filter(Category.name == parent).filter(Category.name == child).one()
-                    if category:
-                        release.category = category
-                    else:
-                        release.category = None
-                else:
-                    r.category = None
+    # check that it doesn't exist first
+    with db_session() as db:
+        r = db.query(Release).filter(Release.name == release['name']).one()
+        if not r:
+            r = Release()
+            r.name = release['name']
+            r.search_name = release['name']
 
-                # make sure the release belongs to a group we have in our db
-                if 'group_name' in release:
-                    group = db.query(Group).filter(Group.name == release['group_name']).one()
-                    if not group:
-                        log.error(
-                            'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
-                        return False
-                    release.group = group
+            r.posted = release['posted']
+            r.posted_by = release['posted_by']
 
-                # rebuild the nzb, gzipped
-                f.seek(0)
-                nzb = NZB()
-                nzb.data = gzip.compress(f.read().encode('utf-8'))
-                r.nzb = nzb
-
-                db.merge(r)
-                f.close()
-
-                return True
+            if 'posted' in release:
+                r.posted = datetime.datetime.fromtimestamp(int(release['posted']), pytz.utc)
             else:
-                log.error('nzb: release already exists: {0}'.format(release['name']))
-                return False
+                r.posted = None
+
+            if 'category' in release:
+                parent, child = release['category'].split(' > ')
+
+                category = db.query(Category).filter(Category.name == parent).filter(Category.name == child).one()
+                if category:
+                    release.category = category
+                else:
+                    release.category = None
+            else:
+                r.category = None
+
+            # make sure the release belongs to a group we have in our db
+            if 'group_name' in release:
+                group = db.query(Group).filter(Group.name == release['group_name']).one()
+                if not group:
+                    log.error(
+                        'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
+                    return False
+                release.group = group
+
+            # rebuild the nzb, gzipped
+            nzb = NZB()
+            nzb.data = gzip.compress(nzb_data.encode('utf-8'))
+            r.nzb = nzb
+
+            db.merge(r)
+
+            return True
+        else:
+            log.error('nzb: release already exists: {0}'.format(release['name']))
+            return False
 
