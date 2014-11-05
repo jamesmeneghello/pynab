@@ -8,7 +8,7 @@ import pynab.parts
 import config
 
 
-def scan(group_name, direction='forward', date=None):
+def scan(group_name, direction='forward', date=None, limit=None):
     log.info('group: {}: scanning group'.format(group_name))
 
     with Server() as server:
@@ -60,6 +60,7 @@ def scan(group_name, direction='forward', date=None):
                         log.error('group: {}: server doesn\'t carry target article'.format(group_name))
                         return False
 
+                    iterations = 0
                     for i in range(start, target, config.scan.get('message_scan_limit') * mult):
                         # set the beginning and ends of the scan to their respective values
                         begin = i + mult
@@ -104,6 +105,12 @@ def scan(group_name, direction='forward', date=None):
                             to_go
                             )
                         )
+
+                        iterations += 1
+
+                        if limit and iterations * config.scan.get('message_scan_limit') >= limit:
+                            log.info('group: {}: scan limit reached, ending early (will continue later)'.format(group_name))
+                            return True
 
                     log.info('group: {}: scan completed'.format(group_name))
                     return True

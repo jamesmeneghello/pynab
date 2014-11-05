@@ -7,7 +7,7 @@ import traceback
 import psycopg2.extensions
 
 from pynab import log, log_descriptor
-from pynab.db import db_session, Group, Binary, Miss, engine
+from pynab.db import db_session, Group, Binary, Miss, engine, Part, Segment
 
 import pynab.groups
 import pynab.binaries
@@ -20,12 +20,9 @@ import pynab.debug
 import config
 
 
-THREAD_TIMEOUT = 600
-
-
 def update(group_name):
     try:
-        return pynab.groups.scan(group_name)
+        return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit'))
     except Exception as e:
         log.critical(traceback.format_exc())
 
@@ -35,6 +32,16 @@ def scan_missing(group_name):
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
         log.critical(traceback.format_exc())
+
+
+def process():
+    # process binaries
+    log.info('start: processing binaries...')
+    pynab.binaries.process()
+
+    # process releases
+    log.info('start: processing releases...')
+    pynab.releases.process()
 
 
 def daemonize(pidfile):
@@ -62,18 +69,19 @@ def main():
     while True:
         # refresh the db session each iteration, just in case
         with db_session() as db:
+            if db.query(Segment).count() > config.scan.get('early_process_threshold'):
+                log.info('start: backlog of segments detected, processing first')
+                process()
+
             active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
             if active_groups:
-                with concurrent.futures.ThreadPoolExecutor(config.scan.get('update_threads', None)) as executor:
+                with concurrent.futures.ProcessPoolExecutor(config.scan.get('update_threads', None)) as executor:
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
                     result = [executor.submit(update, active_group) for active_group in active_groups]
 
-                    try:
-                        for r in concurrent.futures.as_completed(result, timeout=THREAD_TIMEOUT):
-                            data = r.result()
-                    except concurrent.futures.TimeoutError:
-                        log.info('start: thread took too long, will continue next run')
+                    for r in concurrent.futures.as_completed(result):
+                        data = r.result()
 
                     if config.scan.get('retry_missed'):
                         miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
@@ -83,19 +91,15 @@ def main():
                         for r in concurrent.futures.as_completed(miss_result):
                             data = r.result()
 
-                # process binaries
-                log.info('start: processing binaries...')
-                pynab.binaries.process()
+                process()
 
-                # process releases
-                log.info('start: processing releases...')
-                pynab.releases.process()
-
-                # clean up dead binaries
+                # clean up dead binaries and parts
                 if config.scan.get('dead_binary_age', 3) != 0:
                     dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
                     dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
-                    log.info('start: deleted {} dead binaries'.format(dead_binaries))
+                    dead_parts = db.query(Part).filter(Part.posted<=dead_time).delete()
+                    db.commit()
+                    log.info('start: deleted {} dead binaries and {} dead parts'.format(dead_binaries, dead_parts))
             else:
                 log.info('start: no groups active, cancelling start.py...')
                 break
@@ -108,6 +112,7 @@ def main():
             conn.execute('VACUUM parts')
             conn.execute('VACUUM segments')
             conn.close()
+            db.close()
 
         # wait for the configured amount of time between cycles
         update_wait = config.scan.get('update_wait', 300)

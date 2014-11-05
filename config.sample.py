@@ -65,6 +65,22 @@ scan = {
     # make sure there's no quotes around it
     'message_scan_limit': 20000,
 
+    # group_scan_limit: maximum number of messages to take from each group per scan
+    # useful for very active groups on limited hardware
+    # a scan iteration will only take this many messages per group before processing
+    # hence, 10 groups x 2m messages = 20m segments total in the db
+    # set None to scan forever, if you have a shitload of memory
+    'group_scan_limit': 2000000,
+
+    # early_process_threshold: start processing after a backlog
+    # if each scan is getting too many segments, process them before
+    # scanning. this will force an early process if there are more segments
+    # saved than the number given here.
+    #
+    # this can probably be left at 50m unless you have memory issues
+    # or are scanning very active groups. most people won't use this!
+    'early_process_threshold': 50000000,
+
     # retry_missed: whether to re-scan for missed messages
     # slow, but useful for some providers
     'retry_missed': False,
@@ -88,7 +104,7 @@ scan = {
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so
     # !!WARNING!! if backfilling, set this to 0.
-    'dead_binary_age': 3,
+    'dead_binary_age': 1,
 
     # pid_file: process file for the scanner, if daemonized
     # make sure it's writable, leave blank for nginx

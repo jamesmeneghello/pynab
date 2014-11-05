@@ -188,7 +188,7 @@ def process():
                         field = 'name' if blacklist.field == 'subject' else blacklist.field
                         if regex.search(blacklist.regex, getattr(binary, field)):
                             log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
-                            db.delete(binary)
+                            db.query(Binary).filter(Binary.id==binary.id).delete()
                             db.commit()
                             blacklisted = True
                             break
@@ -218,7 +218,7 @@ def process():
                     log.info('release: [{}] - removed (smaller than minimum size for group)'.format(
                         binary.name
                     ))
-                    db.delete(binary)
+                    db.query(Binary).filter(Binary.id==binary.id).delete()
                     db.commit()
                     continue
 
@@ -243,7 +243,7 @@ def process():
                         log.info('release: [{}] - removed (nzb only)'.format(binary.name))
                     else:
                         log.info('release: [{}] - removed (less than minimum archives)'.format(binary.name))
-                    db.delete(binary)
+                    db.query(Binary).filter(Binary.id==binary.id).delete()
                     db.commit()
                     continue
 
@@ -275,7 +275,7 @@ def process():
                     db.add(release)
 
                     # delete processed binaries
-                    db.delete(binary)
+                    db.query(Binary).filter(Binary.id==binary.id).delete()
 
             db.commit()
 
