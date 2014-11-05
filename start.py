@@ -22,7 +22,7 @@ import config
 
 def update(group_name):
     try:
-        return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit'))
+        return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
         log.critical(traceback.format_exc())
 
@@ -69,7 +69,7 @@ def main():
     while True:
         # refresh the db session each iteration, just in case
         with db_session() as db:
-            if db.query(Segment).count() > config.scan.get('early_process_threshold'):
+            if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
                 log.info('start: backlog of segments detected, processing first')
                 process()
 
@@ -94,7 +94,7 @@ def main():
                 process()
 
                 # clean up dead binaries and parts
-                if config.scan.get('dead_binary_age', 3) != 0:
+                if config.scan.get('dead_binary_age', 1) != 0:
                     dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
                     dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
                     dead_parts = db.query(Part).filter(Part.posted<=dead_time).delete()
