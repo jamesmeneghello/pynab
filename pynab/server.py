@@ -115,8 +115,8 @@ class Server:
 
             else:
                 status, overviews = self.connection.over((first, last))
-        except nntplib.NNTPError as nntpe:
-            log.error('server: [{}]: nntp error: {}'.format(group_name, nntpe))
+        except Exception as e:
+            log.error('server: [{}]: nntp error: {}'.format(group_name, e))
             log.error('server: suspected dead nntp connection, restarting')
 
             # don't even quit, because that'll still break
@@ -124,12 +124,6 @@ class Server:
             self.connection = None
             self.connect()
             return self.scan(group_name, first, last, message_ranges)
-        except socket.timeout:
-            # backfills can sometimes go for so long that everything explodes
-            log.error('server: socket timed out, reconnecting')
-            self.connection = None
-            self.connect()
-            return False, None, None, None
 
         parts = {}
         messages = []
