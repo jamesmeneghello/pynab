@@ -173,7 +173,6 @@ if __name__ == '__main__':
             conn.execute('VACUUM ANALYZE tvshows')
             conn.execute('VACUUM ANALYZE movies')
             conn.execute('VACUUM ANALYZE nfos')
-            conn.execute('VACUUM ANALYZE rars')
             conn.execute('VACUUM ANALYZE sfvs')
             conn.execute('VACUUM ANALYZE files')
             conn.close()
