@@ -56,6 +56,18 @@ scan = {
     # in seconds
     'update_wait': 300,
 
+    # full_vacuum: whether to run full_vacuums
+    # you might not want to do this if your db is on an ssd
+    # it rewrites the whole table to a new file
+    'full_vacuum': True,
+
+    # full_vacuum_iterations: number of iterations between full vacuums
+    # the main tables are vacuumed each iteration of scanning/postproc
+    # full vacuum can be really, really slow though!
+    # and it requires a full-table lock
+    # so if your update_wait is 300 (5 minutes), 288 is vacuum-full once per day
+    'full_vacuum_iterations': 288,
+
     # new_group_scan_days: how many days to scan for a new group
     # make sure there's no quotes around it
     # 'new_group_scan_days': 5,

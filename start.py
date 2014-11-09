@@ -66,7 +66,10 @@ def main():
     log.info('debug enabled: send SIGUSR1 to drop to the shell')
     #pynab.debug.listen()
 
+    iterations = 0
     while True:
+        iterations += 1
+
         # refresh the db session each iteration, just in case
         with db_session() as db:
             if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
@@ -108,9 +111,20 @@ def main():
             log.info('start: vacuuming relevant tables...')
             conn = engine.connect()
             conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.execute('VACUUM binaries')
-            conn.execute('VACUUM parts')
-            conn.execute('VACUUM segments')
+
+            # this may look weird, but we want to reset iterations even if full_vacuums are off
+            # so it doesn't count to infinity
+            if iterations >= config.scan.get('vacuum_full_iterations', 288):
+                if config.scan.get('full_vacuum', True):
+                    conn.execute('VACUUM FULL ANALYZE binaries')
+                    conn.execute('VACUUM FULL ANALYZE parts')
+                    conn.execute('VACUUM FULL ANALYZE segments')
+                iterations = 0
+            else:
+                conn.execute('VACUUM ANALYZE binaries')
+                conn.execute('VACUUM ANALYZE parts')
+                conn.execute('VACUUM ANALYZE segments')
+
             conn.close()
             db.close()
 
