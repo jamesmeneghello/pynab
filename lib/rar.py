@@ -178,7 +178,13 @@ class RarFile(object):
         self.filelist = []
 
         # Actually read the file metadata.
-        self._getContents()
+        try:
+            self._getContents()
+        except:
+            if not self._filePassed:
+                self.fp.close()
+                self.fp = None
+            raise BadRarFile("Problem reading file")
 
     def __del__(self):
         """Close the file handle if we opened it... just in case the underlying
@@ -214,8 +220,11 @@ class RarFile(object):
 
             # TODO: Rework handling of file headers.
             elif head_type == 0x74:
-                unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
-                    _struct_fileHead_add1)
+                try:
+                    unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
+                        _struct_fileHead_add1)
+                except:
+                    raise BadRarFile("Problem reading file")
 
                 # FIXME: What encoding does WinRAR use for filenames?
                 # TODO: Verify that ftime is seconds since the epoch as it seems
