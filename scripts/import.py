@@ -22,7 +22,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(args.directory):
         for name in files:
             print('Importing {0}...'.format(os.path.join(root, name)))
-            if pynab.nzbs.import_nzb(os.path.join(root, name)):
+            if pynab.nzbs.import_nzb_file(os.path.join(root, name)):
                 os.remove(os.path.join(root, name))
 
     log.info('Import completed. Running scripts/recategorise_everything.py to fix release categories...')
