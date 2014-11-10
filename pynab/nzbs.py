@@ -3,6 +3,7 @@ import os
 import datetime
 import regex
 import sys
+import io
 
 import pytz
 from xml.sax.saxutils import escape, quoteattr
@@ -181,7 +182,7 @@ def import_nzb(name, nzb_data):
                'tvdb': None, 'imdb': None, 'nfo': None, 'tv': None, 'total_parts': 0}
 
     try:
-        for event, elem in cet.iterparse(nzb_data):
+        for event, elem in cet.iterparse(io.StringIO(nzb_data)):
             if 'meta' in elem.tag:
                 release[elem.attrib['type']] = elem.text
             if 'file' in elem.tag:
@@ -190,7 +191,7 @@ def import_nzb(name, nzb_data):
                 release['posted_by'] = elem.get('poster')
             if 'group' in elem.tag and 'groups' not in elem.tag:
                 release['group_name'] = elem.text
-    except:
+    except Exception as e:
         log.error('nzb: error parsing NZB files: file appears to be corrupt.')
         return False
 
@@ -200,7 +201,7 @@ def import_nzb(name, nzb_data):
 
     # check that it doesn't exist first
     with db_session() as db:
-        r = db.query(Release).filter(Release.name == release['name']).one()
+        r = db.query(Release).filter(Release.name == release['name']).first()
         if not r:
             r = Release()
             r.name = release['name']
@@ -217,11 +218,11 @@ def import_nzb(name, nzb_data):
             if 'category' in release:
                 parent, child = release['category'].split(' > ')
 
-                category = db.query(Category).filter(Category.name == parent).filter(Category.name == child).one()
+                category = db.query(Category).filter(Category.name == parent).filter(Category.name == child).first()
                 if category:
-                    release.category = category
+                    r.category = category
                 else:
-                    release.category = None
+                    r.category = None
             else:
                 r.category = None
 
@@ -232,7 +233,7 @@ def import_nzb(name, nzb_data):
                     log.error(
                         'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
                     return False
-                release.group = group
+                r.group = group
 
             # rebuild the nzb, gzipped
             nzb = NZB()
