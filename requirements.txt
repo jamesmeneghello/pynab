@@ -17,3 +17,5 @@ alembic
 psycopg2
 pyhashxx==0.1.3
 intspan
+pympler
+psutil

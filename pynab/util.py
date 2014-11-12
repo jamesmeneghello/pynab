@@ -1,5 +1,7 @@
 import regex
 import requests
+from pympler import summary, muppy
+import psutil
 
 from pynab.db import db_session, Regex, Blacklist, engine
 from pynab import log
@@ -116,3 +118,15 @@ def modify_regex(regexes):
     return regexes
 
 
+# both from: http://www.mobify.com/blog/sqlalchemy-memory-magic/
+def get_virtual_memory_usage_kb():
+    """The process's current virtual memory size in Kb, as a float."""
+    return float(psutil.Process().memory_info()[1]) / 1024.0
+
+
+def memory_usage(where):
+    """Print out a basic summary of memory usage."""
+    mem_summary = summary.summarize(muppy.get_objects())
+    log.debug("Memory summary: {}".format(where))
+    summary.print_(mem_summary, limit=2)
+    log.debug("VM: {:2f}Mb".format(get_virtual_memory_usage_kb() / 1024.0))
