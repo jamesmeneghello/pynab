@@ -4,7 +4,6 @@ import datetime
 import regex
 import sys
 import io
-
 import pytz
 from xml.sax.saxutils import escape, quoteattr
 
@@ -126,39 +125,40 @@ def create(name, category, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
 
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n' \
-          '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n' \
-          '<nzb>\n'
-    xml += '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(category.name, escape(name))
+    xml = io.StringIO('<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n'
+        '<nzb>\n'
+        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(category.name, escape(name))
+    )
 
     for part in binary.parts:
         if sys.version_info >= (3, 3):
             timestamp = '{:.0f}'.format(part.posted.replace(tzinfo=pytz.utc).timestamp())
         else:
             timestamp = '{:.0f}'.format(int(part.posted.replace(tzinfo=pytz.utc).strftime("%s")))
-        subject = '{0} (1/{1:d})'.format(part.subject, part.total_segments)
-        xml += '<file poster={} date={} subject={}>\n'.format(
+
+        xml.write('<file poster={} date={} subject={}>\n<groups>'.format(
             quoteattr(binary.posted_by),
             quoteattr(timestamp),
-            quoteattr(subject)
-        )
-        xml += '<groups>'
+            quoteattr('{0} (1/{1:d})'.format(part.subject, part.total_segments))
+        ))
+
         for group in pynab.binaries.parse_xref(binary.xref):
-            xml += '<group>{}</group>'.format(group)
-        xml += '</groups>\n<segments>\n'
+            xml.write('<group>{}</group>\n'.format(group))
+
+        xml.write('</groups>\n<segments>\n')
         for segment in part.segments:
-            xml += '<segment bytes="{}" number="{}">{}</segment>\n'.format(
+            xml.write('<segment bytes="{}" number="{}">{}</segment>\n'.format(
                 segment.size,
                 segment.segment,
                 escape(segment.message_id)
-            )
-        xml += '</segments>\n</file>\n'
-    xml += '</nzb>'
-
-    data = gzip.compress(xml.encode('utf-8'))
+            ))
+        xml.write('</segments>\n</file>\n')
+    xml.write('</nzb>')
 
     nzb = NZB()
-    nzb.data = data
+    nzb.data = gzip.compress(xml.getvalue().encode('utf-8'))
+
     return nzb
 
 
@@ -175,7 +175,6 @@ def import_nzb_file(filepath):
 
 def import_nzb(name, nzb_data):
     """Import an NZB and directly load it into releases."""
-
 
     release = {'added': pytz.utc.localize(datetime.datetime.now()), 'size': None, 'spotnab_id': None,
                'completion': None, 'grabs': 0, 'passworded': None, 'file_count': None, 'tvrage': None,
