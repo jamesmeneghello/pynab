@@ -174,12 +174,45 @@ def process():
                 # if it does, we have a duplicate - delete the binary
                 db.query(Binary).filter(Binary.id == completed_binary[0]).delete()
             else:
-                # otherwise, start loading all the binary details
-                binary = db.query(Binary).options(
-                    subqueryload('parts'),
-                    subqueryload('parts.segments'),
-                    Load(Part).load_only(Part.id, Part.subject, Part.segments),
-                ).filter(Binary.id == completed_binary[0]).first()
+                # get an approx size for the binary without loading everything
+                # if it's a really big file, we want to deal with it differently
+                binary = db.query(Binary).filter(Binary.id == completed_binary[0]).first()
+
+                # this is an estimate, so it doesn't matter too much
+                # 1 part nfo, 1 part sfv or something similar, so ignore two parts
+                # take an estimate from the middle parts, since the first/last
+                # have a good chance of being something tiny
+                # we only care if it's a really big file
+                # abs in case it's a 1 part release (abs(1 - 2) = 1)
+                # int(/2) works fine (int(1/2) = 0, array is 0-indexed)
+                est_size = (abs(binary.total_parts - 2) *
+                            binary.parts[int(binary.total_parts / 2)].total_segments *
+                            binary.parts[int(binary.total_parts / 2)].segments[0].size)
+
+                oversized = est_size > config.postprocess.get('max_process_size', 10*1024*1024*1024)
+
+                if oversized and not config.postprocess.get('max_process_anyway', True):
+                    log.info('release: [{}] - removed (oversized)'.format(binary.name))
+                    db.query(Binary).filter(Binary.id == completed_binary[0]).delete()
+                    db.commit()
+                    continue
+
+                if oversized:
+                    # for giant binaries, we do it differently
+                    # lazyload the segments in parts and expunge when done
+                    # this way we only have to store binary+parts
+                    # and one section of segments at one time
+                    binary = db.query(Binary).options(
+                        subqueryload('parts'),
+                        lazyload('parts.segments'),
+                    ).filter(Binary.id == completed_binary[0]).first()
+                else:
+                    # otherwise, start loading all the binary details
+                    binary = db.query(Binary).options(
+                        subqueryload('parts'),
+                        subqueryload('parts.segments'),
+                        Load(Part).load_only(Part.id, Part.subject, Part.segments),
+                    ).filter(Binary.id == completed_binary[0]).first()
 
                 blacklisted = False
                 for blacklist in blacklists:
@@ -204,7 +237,13 @@ def process():
                 release.posted_by = binary.posted_by
                 release.regex_id = binary.regex_id
                 release.grabs = 0
-                release.size = binary.size()
+
+                # this counts segment sizes, so we can't use it for large releases
+                # use the estimate for min_size and firm it up later during postproc
+                if oversized:
+                    release.size = est_size
+                else:
+                    release.size = binary.size()
 
                 # check against minimum size for this group
                 undersized = False
@@ -223,6 +262,7 @@ def process():
                     continue
 
                 # check to make sure we have over the configured minimum files
+                # this one's okay for big releases, since we're only looking at part-level
                 rars = []
                 rar_count = 0
                 zip_count = 0
@@ -257,7 +297,10 @@ def process():
                 release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
                 category = db.query(Category).filter(Category.id == release.category_id).one()
 
-                # create the nzb, store it in GridFS and link it here
+                # create the nzb, store it and link it here
+                # no need to do anything special for big releases here
+                # if it's set to lazyload, it'll kill rows as they're used
+                # if it's a small release, it'll go straight from memory
                 nzb = pynab.nzbs.create(release.search_name, category, binary)
 
                 if nzb:

@@ -128,6 +128,21 @@ postprocess = {
     # release processing settings
     # ---------------------------
 
+    # max_process_size: maximum size of releases to process
+    # some releases can be really, really big (think 150+gb)
+    # sometimes we don't even want to bother with those releases
+    # since they'll take forever to index and possibly choke the server
+    # this is the upper limit
+    # 'max_process_size': 30*1024*1024*1024, # 30gb
+    'max_process_size': 10*1024*1024*1024,
+
+    # max_process_anyway: try to process huge releases anyway
+    # you can attempt to index massive releases anyway
+    # this will be slow and horrible and might kill everything
+    # if you get memory_errors, disable this
+    # if False, any oversized binaries will be deleted when processing
+    'max_process_anyway': True,
+
     # min_size: minimum size of releases per-group
     # anything smaller than this in a group will be deleted
     # layout is minimum size and then a list of groups to check, ie.
