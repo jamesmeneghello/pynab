@@ -312,6 +312,13 @@ def parse_show(search_name):
             'season': int(match.match_obj.group(2)),
             'episode': 'all'
         }
+    elif match.match('^(.+)\s{1,3}(\d{1,3})\s\[([\w\d]+)\]', search_name, regex.I):
+        # mostly anime
+        show = {
+            'name': match.match_obj.group(1),
+            'season': 1,
+            'episode': int(match.match_obj.group(2))
+        }
 
     if 'name' in show and show['name']:
         # check for country code or name (Biggest Loser Australia etc)
