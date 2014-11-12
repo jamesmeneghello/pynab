@@ -132,6 +132,8 @@ class Server:
         if overviews:
             with db_session() as db:
                 blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+                for blacklist in blacklists:
+                    db.expunge(blacklist)
 
             for (id, overview) in overviews:
                 # keep track of which messages we received so we can
