@@ -12,6 +12,7 @@ down_revision = '4efd6f9680d'
 
 from alembic import op
 import sqlalchemy as sa
+import sqlalchemy.orm
 
 from pynab.db import Release, db_session
 from pynab.nzbs import escape
@@ -24,6 +25,7 @@ def upgrade():
             for release in db.query(Release). \
                     filter(Release.added >= dateutil.parser.parse('2014/11/12 16:37 GMT+8')). \
                     filter(Release.added <= dateutil.parser.parse('2014/11/13 16:20 GMT+8')). \
+                    order_by(Release.added). \
                     all():
                 nzb = gzip.decompress(release.nzb.data).decode('utf-8')
                 if '<?xml' not in nzb:
