@@ -99,9 +99,13 @@ def main():
                 # clean up dead binaries and parts
                 if config.scan.get('dead_binary_age', 1) != 0:
                     dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+
                     dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                    db.commit()
+
                     dead_parts = db.query(Part).filter(Part.posted<=dead_time).delete()
                     db.commit()
+
                     log.info('start: deleted {} dead binaries and {} dead parts'.format(dead_binaries, dead_parts))
             else:
                 log.info('start: no groups active, cancelling start.py...')
