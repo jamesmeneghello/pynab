@@ -103,10 +103,7 @@ def main():
                     dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
                     db.commit()
 
-                    dead_parts = db.query(Part).filter(Part.posted<=dead_time).delete()
-                    db.commit()
-
-                    log.info('start: deleted {} dead binaries and {} dead parts'.format(dead_binaries, dead_parts))
+                    log.info('start: deleted {} dead binaries'.format(dead_binaries))
             else:
                 log.info('start: no groups active, cancelling start.py...')
                 break
