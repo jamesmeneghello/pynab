@@ -11,6 +11,7 @@ from pynab.db import engine, Base, db_session
 import pynab.db
 import pynab.util
 
+
 def mongo_connect():
     return pymongo.MongoClient(config.mongo.get('host'), config.mongo.get('port'))[config.mongo.get('db')]
 
@@ -169,7 +170,10 @@ if __name__ == '__main__':
                 release.pop('imdb')
 
             if release['nfo']:
-                data = fs.get(release['nfo']).read()
+                try:
+                    data = fs.get(release['nfo']).read()
+                except:
+                    continue
                 n = pynab.db.NFO(data=data)
                 release['nfo'] = n
             else:
