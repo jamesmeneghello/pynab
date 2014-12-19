@@ -140,7 +140,7 @@ if __name__ == '__main__':
             if postgre.query(pynab.db.Release).filter(pynab.db.Release.name==release['name']).filter(pynab.db.Release.posted==release['posted']).first():
                 continue
 
-            print('Processing {}...'.format(release['search_name']))
+            print('Processing {}...'.format(release['search_name'].encode('ascii', errors='ignore')))
 
             release.pop('_id')
             release.pop('id')
