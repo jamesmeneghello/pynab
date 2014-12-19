@@ -75,7 +75,7 @@ def convert_groups(mysql):
 
             g.first = r[1]
             g.last = r[2]
-            g.active = r[3]
+            g.active = bool(r[3])
 
             db.add(g)
 
