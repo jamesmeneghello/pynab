@@ -170,9 +170,12 @@ if __name__ == '__main__':
                 release.pop('imdb')
 
             if release['nfo']:
-                data = fs.get(release['nfo']).read()
-                n = pynab.db.NFO(data=data)
-                release['nfo'] = n
+                try:
+                    data = fs.get(release['nfo']).read()
+                    n = pynab.db.NFO(data=data)
+                    release['nfo'] = n
+                except:
+                    release.pop('nfo')
             else:
                 release.pop('nfo')
 
