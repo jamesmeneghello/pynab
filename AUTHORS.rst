@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* James Meneghello <murodese@gmail.com>
+* James Meneghello @murodese <murodese@gmail.com>
 
 Contributors
 ------------
@@ -14,3 +14,5 @@ Contributors
 * @bettse - Various bugfixes
 * @guillp - Group management scripts and bugfixes
 * @ukharley - Logging modifications
+* @traxo-xx - NZB360 compatibility
+* @brookesy2 - Postproc daemonised
