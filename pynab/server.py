@@ -157,9 +157,11 @@ class Server:
                     continue
 
                 # make sure the header contains everything we need
-                if ':bytes' not in overview:
-                    continue
-                elif not overview[':bytes']:
+                try:
+                    size = int(overview[':bytes'])
+                except:
+                    # TODO: cull this later
+                    log.debug('server: bad message: {}'.format(overview))
                     continue
 
                 # assuming everything didn't fuck up, continue
@@ -182,7 +184,7 @@ class Server:
                     segment = {
                         'message_id': overview['message-id'][1:-1],
                         'segment': int(segment_number),
-                        'size': int(overview[':bytes'])
+                        'size': size
                     }
 
                     # if we've already got a binary by this name, add this segment
