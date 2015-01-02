@@ -92,7 +92,7 @@ __all__ = ["NNTP",
 # reading arbitrary length lines. RFC 3977 limits NNTP line length to
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
-_MAXLINE = 2048
+_MAXLINE = 8192
 
 
 # Exceptions raised when an error or invalid response is received
