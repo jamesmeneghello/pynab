@@ -115,7 +115,7 @@ def main():
 
             # this may look weird, but we want to reset iterations even if full_vacuums are off
             # so it doesn't count to infinity
-            if iterations >= config.scan.get('vacuum_full_iterations', 288):
+            if iterations >= config.scan.get('full_vacuum_iterations', 288):
                 if config.scan.get('full_vacuum', True):
                     conn.execute('VACUUM FULL ANALYZE binaries')
                     conn.execute('VACUUM FULL ANALYZE parts')
