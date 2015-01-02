@@ -28,10 +28,7 @@ class Server:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
-            try:
-                self.connection.quit()
-            except Exception as e:
-                pass
+            self.connection.quit()
 
     def group(self, group_name):
         self.connect()
@@ -119,9 +116,7 @@ class Server:
             log.error('server: [{}]: nntp error'.format(group_name))
             log.error('server: suspected dead nntp connection, restarting')
 
-            # don't even quit, because that'll still break
-            # null the connection and restart it
-            self.connection = None
+            self.connection.quit()
             self.connect()
             return self.scan(group_name, first, last, message_ranges)
 
