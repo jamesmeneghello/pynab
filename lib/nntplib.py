@@ -219,6 +219,7 @@ def _parse_overview(lines, fmt, data_process_func=None):
         fields = {}
         article_number, *tokens = line.split('\t')
         article_number = int(article_number)
+        valid = True
         for i, token in enumerate(tokens):
             if i >= len(fmt):
                 # XXX should we raise an error? Some servers might not
@@ -232,10 +233,16 @@ def _parse_overview(lines, fmt, data_process_func=None):
                 # (unless the field is totally empty)
                 h = field_name + ": "
                 if token and token[:len(h)].lower() != h:
-                    raise NNTPDataError("OVER/XOVER response doesn't include "
-                                        "names of additional headers")
+                    # don't throw an exception here, because it blows away everything
+                    # we want to keep any valid headers, so just skip the ones that die
+                    valid = False
+                    break
+                    #raise NNTPDataError("OVER/XOVER response doesn't include "
+                    #                    "names of additional headers")
                 token = token[len(h):] if token else None
             fields[fmt[i]] = token
+        if not valid:
+            continue
         overview.append((article_number, fields))
     return overview
 
