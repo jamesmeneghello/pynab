@@ -92,6 +92,9 @@ __all__ = ["NNTP",
 # reading arbitrary length lines. RFC 3977 limits NNTP line length to
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
+
+# turns out 2048 wasn't safe, so it's been increased further
+
 _MAXLINE = 8192
 
 
@@ -307,7 +310,8 @@ if _have_ssl:
         """
         # Generate a default SSL context if none was passed.
         if context is None:
-            context = ssl._create_stdlib_context()
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.options |= ssl.OP_NO_SSLv2
         return context.wrap_socket(sock, server_hostname=hostname)
 
 
