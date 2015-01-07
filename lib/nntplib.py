@@ -312,6 +312,9 @@ if _have_ssl:
         if context is None:
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             context.options |= ssl.OP_NO_SSLv2
+
+            # v3 has since been killed too
+            context.options |= ssl.OP_NO_SSLv3
         return context.wrap_socket(sock, server_hostname=hostname)
 
 
