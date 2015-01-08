@@ -240,6 +240,8 @@ class Binary(Base):
     hash = Column(BigInteger, index=True)
 
     name = Column(String, index=True)
+    clean_name = Column(String)
+    category = Column(String)
     total_parts = Column(Integer)
 
     posted = Column(DateTime)

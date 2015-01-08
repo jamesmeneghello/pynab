@@ -4,8 +4,10 @@ import pyhashxx
 
 from sqlalchemy import *
 
-from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query
+from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query, Category
 from pynab import log
+import pynab.releases
+import pynab.categories
 import config
 
 
@@ -101,6 +103,11 @@ def process():
                 regex_flags = regex.I if 'i' in flags else 0
                 compiled_regex[reg.id] = regex.compile(r, regex_flags)
 
+            # cache categories
+            categories = {}
+            for category in db.query(Category).all():
+                categories[category.id] = category.parent.name if category.parent else category.name
+
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None)
             total_parts = query.count()
             for part in windowed_query(query, Part.id, config.scan.get('binary_process_chunk_size', 1000)):
@@ -184,6 +191,8 @@ def process():
                                 b = {
                                     'hash': hash,
                                     'name': match['name'],
+                                    'clean_name': pynab.releases.clean_release_name(match['name']),
+                                    'category': categories[pynab.categories.determine_category(match['name'], part.group_name)],
                                     'posted': part.posted,
                                     'posted_by': part.posted_by,
                                     'group_name': part.group_name,

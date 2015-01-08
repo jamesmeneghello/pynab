@@ -5,7 +5,7 @@ import regex
 from sqlalchemy.orm import *
 
 from pynab import log
-from pynab.db import db_session, engine, Binary, Part, Release, Group, Category, Blacklist
+from pynab.db import db_session, engine, Binary, Part, Release, Group, Category, Blacklist, NZB
 import pynab.categories
 import pynab.nzbs
 import pynab.rars
@@ -301,9 +301,10 @@ def process():
                 # no need to do anything special for big releases here
                 # if it's set to lazyload, it'll kill rows as they're used
                 # if it's a small release, it'll go straight from memory
-                nzb = pynab.nzbs.create(release.search_name, category, binary)
+                # nzb = pynab.nzbs.create(release.search_name, category, binary)
+                nzb_id = engine.execute('SELECT create_nzb({})'.format(binary.id)).scalar()
 
-                if nzb:
+                if nzb_id:
                     added_count += 1
 
                     log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
@@ -312,13 +313,10 @@ def process():
                         rar_count
                     ))
 
-                    release.nzb = nzb
+                    release.nzb = NZB(id=nzb_id)
 
                     # save the release
                     db.add(release)
-
-                    # delete processed binaries
-                    db.query(Binary).filter(Binary.id==binary.id).delete()
 
             db.commit()
 
