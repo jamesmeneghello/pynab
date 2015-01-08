@@ -121,7 +121,7 @@ def get_nzb_details(nzb):
     }
 
 
-def create(name, category, binary):
+def create(name, parent_category_name, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
 
@@ -129,7 +129,7 @@ def create(name, category, binary):
     xml.write('<?xml version="1.0" encoding="UTF-8"?>\n'
         '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n'
         '<nzb>\n'
-        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(category.name, escape(name))
+        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(parent_category_name, escape(name))
     )
 
     for part in binary.parts:

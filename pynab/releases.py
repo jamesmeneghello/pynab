@@ -152,6 +152,11 @@ def process():
         for blacklist in blacklists:
             db.expunge(blacklist)
 
+        # cache categories
+        parent_categories = {}
+        for category in db.query(Category).all():
+            parent_categories[category.id] = category.parent.name if category.parent else category.name
+
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
         # no real need to batch it, since this will mostly be run with
@@ -295,13 +300,12 @@ def process():
 
                 # give the release a category
                 release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
-                category = db.query(Category).filter(Category.id == release.category_id).one()
 
                 # create the nzb, store it and link it here
                 # no need to do anything special for big releases here
                 # if it's set to lazyload, it'll kill rows as they're used
                 # if it's a small release, it'll go straight from memory
-                nzb = pynab.nzbs.create(release.search_name, category, binary)
+                nzb = pynab.nzbs.create(release.search_name, parent_categories[release.category_id], binary)
 
                 if nzb:
                     added_count += 1
