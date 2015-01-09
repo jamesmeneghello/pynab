@@ -203,6 +203,9 @@ For most Newznab installations, it'll look like this:
 
     > python3 scripts/import.py /var/www/newznab/nzbfiles
 
+:warning: Run this script against a copy of the nzb folder, since it automatically deletes NZBS
+that were successfully imported.
+
 Allow this to finish before starting normal operation.
 
 ### Converting from pynab-mongo ###
@@ -260,9 +263,9 @@ set in config.py:
     > python3 start.py
 
 start.py is your update script - it'll take care of indexing messages, collating binaries and
-creating releases.
+creating releases. 
 
-### Post-processing Releases ###
+### Start Post-processing Releases ###
 
 Some APIs (sometimes Sickbeard, usually Couchpotato) rely on some post-processed metadata
 to be able to easily find releases. Sickbeard looks for TVRage IDs, CouchPotato for IMDB IDs,
@@ -279,6 +282,18 @@ fix after that (NB: won't do this until I'm satisfied it's safe).
 
 Note that SB/CP will have trouble finding some stuff until it's been post-processed - Sickbeard
 will usually search by name as well, but CP tends not to do so, so keep your releases post-processed.
+
+### Start Everything ###
+
+You can run the script supplied to execute both start and postprocess:
+
+    > ./run.sh
+
+Or, on Windows:
+
+    > run.bat
+
+The Windows batch script will also start the API, since uwsgi is not available.
 
 ### Backfilling Groups ###
 
@@ -326,23 +341,13 @@ By running start.py at the same time as the backfill scripts, start.py will auto
 processing parts created by the backfill scripts at regular intervals, preventing the parts table from
 becoming extremely large.
 
-You can also run the script supplied to execute start and postprocess:
-
-    > ./run.sh
-
-Or, on Windows:
-
-    > run.bat
-
-The Windows batch script will also start the API, since uwsgi is not available.
-
 ### Updating Pynab ###
 
 Run the following to update to the latest version:
 
     > ./update.sh
 
-Requires that alembic is installed and in your path (as well as git, obviously).
+Requires that alembic is installed and in your path (as well as git).
 
 ### Starting the API ###
 
@@ -414,6 +419,28 @@ Update regex (run it every now and then, but it doesn't update that often):
 Categorise all uncategorised releases - this runs automatically after import.
 
     > python3 scripts/process_uncategorised.py
+    
+Fill sizes from NZBs - this should only be used if you were running an old version of pynab 
+(pre-aug-2014).
+
+    > python3 scripts/fill_sizes_from_nzb.py
+
+Quick post-process - this quickly runs an offline post-process of files for imdb/tvrage data.
+This automatically gets called at the start of postprocess.py execution and should only be used
+if you've imported a large dump of imdb/tvrage data or something similar.
+
+    > python3 scripts/quick_postprocess.py
+
+Recategorise everything - as it says. Wipes clean the category slate for all releases and checks them anew.
+Run if there have been major changes to category regex or lots of stuff broke.
+
+    > python3 scripts/recategorise_everything.py
+
+Rename bad releases - automatically run as part of the post-process process (process [process]).
+CLI script that can take badly-named releases and attempt to rename them from nfo, sfv, par or rar.
+Don't run on normal groups, just ebooks and misc.
+
+    > python3 scripts/rename_bad_releases.py
 
 
 ### Building the WebUI ###
@@ -491,7 +518,6 @@ There was a bug in a particular version of the python regex module that could ca
 regex to give incredibly shitty results. This is forced to a correct version in requirements.txt, so just
 run `pip3 install --upgrade regex` if it's happening.
 
-- While running `npm install` to build the WebUI,
 
 Newznab API
 ===========
