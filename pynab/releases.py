@@ -1,6 +1,6 @@
 import time
 import math
-
+import base64
 import regex
 from sqlalchemy.orm import *
 
@@ -44,10 +44,18 @@ def names_from_sfvs(release):
 
 def discover_name(release):
     """Attempts to fix a release name by nfo, filelist or sfv."""
-    potential_names = list(release.search_name)
+    potential_names = [release.search_name,]
 
     # base64-decode the name in case it's that
-    potential_names.append(release.name.decode('base64'))
+    try:
+        n = release.name
+        missing_padding = 4 - len(release.name) % 4
+        if missing_padding:
+            n += '=' * missing_padding
+        n = base64.b64decode(n.encode('utf-8'))
+        potential_names.append(n.decode('utf-8'))
+    except:
+        pass
 
     # add a reversed name, too
     potential_names.append(release.name[::-1])
