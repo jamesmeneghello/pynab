@@ -81,7 +81,7 @@ Installation and execution is reasonably easy.
 Requirements
 ------------
 
-- Python 3.3 or higher (might work on 3.2)
+- Python 3.2 or higher
 - PostgreSQL 9.3 or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
