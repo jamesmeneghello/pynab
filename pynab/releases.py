@@ -44,7 +44,10 @@ def names_from_sfvs(release):
 
 def discover_name(release):
     """Attempts to fix a release name by nfo, filelist or sfv."""
-    potential_names = [release.search_name, ]
+    potential_names = list(release.search_name)
+
+    # base64-decode the name in case it's that
+    potential_names.append(release.name.decode('base64'))
 
     if release.files:
         potential_names += names_from_files(release)
