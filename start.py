@@ -24,14 +24,14 @@ def update(group_name):
     try:
         return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        log.critical(traceback.format_exc())
+        log.error('start: nntp server is flipping out, hopefully they fix their shit')
 
 
 def scan_missing(group_name):
     try:
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
-        log.critical(traceback.format_exc())
+        log.error('start: nntp server is flipping out, hopefully they fix their shit')
 
 
 def process():
