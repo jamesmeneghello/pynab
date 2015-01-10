@@ -49,6 +49,9 @@ def discover_name(release):
     # base64-decode the name in case it's that
     potential_names.append(release.name.decode('base64'))
 
+    # add a reversed name, too
+    potential_names.append(release.name[::-1])
+
     if release.files:
         potential_names += names_from_files(release)
 
