@@ -1,6 +1,7 @@
 import gzip
 import os
 import datetime
+import calendar
 import regex
 import sys
 import io
@@ -133,14 +134,11 @@ def create(name, parent_category_name, binary):
     )
 
     for part in binary.parts:
-        if sys.version_info >= (3, 3):
-            timestamp = '{:.0f}'.format(part.posted.replace(tzinfo=pytz.utc).timestamp())
-        else:
-            timestamp = '{:.0f}'.format(int(part.posted.replace(tzinfo=pytz.utc).strftime("%s")))
+        timestamp = calendar.timegm(part.posted.replace(tzinfo=pytz.utc).utctimetuple())
 
-        xml.write('<file poster={} date={} subject={}>\n<groups>'.format(
+        xml.write('<file poster={} date="{}" subject={}>\n<groups>'.format(
             quoteattr(binary.posted_by),
-            quoteattr(timestamp),
+            timestamp,
             quoteattr('{0} (1/{1:d})'.format(part.subject, part.total_segments))
         ))
 
