@@ -64,7 +64,7 @@ if __name__ == '__main__':
         if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
             print('error: a pid_file or logging_file config option is not set in config.py')
             exit(1)
-    elif not config.monitor.get('type'):
+    elif not config.monitor.get('type') or (config.monitor.get('type') != 'windows' and config.monitor.get('type') != 'zdaemon'):
         print('error: no monitor type set in config.py')
         exit(1)
     PynabCLI()
