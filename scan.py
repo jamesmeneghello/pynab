@@ -24,23 +24,23 @@ def update(group_name):
     try:
         return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        log.error('start: nntp server is flipping out, hopefully they fix their shit')
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
 
 
 def scan_missing(group_name):
     try:
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
-        log.error('start: nntp server is flipping out, hopefully they fix their shit')
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
 
 
 def process():
     # process binaries
-    log.info('start: processing binaries...')
+    log.info('scan: processing binaries...')
     pynab.binaries.process()
 
     # process releases
-    log.info('start: processing releases...')
+    log.info('scan: processing releases...')
     pynab.releases.process()
 
 
@@ -62,7 +62,7 @@ def daemonize(pidfile):
 
 
 def main():
-    log.info('start: starting update...')
+    log.info('scan: starting update...')
     log.info('debug enabled: send SIGUSR1 to drop to the shell')
     #pynab.debug.listen()
 
@@ -73,7 +73,7 @@ def main():
         # refresh the db session each iteration, just in case
         with db_session() as db:
             if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
-                log.info('start: backlog of segments detected, processing first')
+                log.info('scan: backlog of segments detected, processing first')
                 process()
 
             active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
@@ -103,13 +103,13 @@ def main():
                     dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
                     db.commit()
 
-                    log.info('start: deleted {} dead binaries'.format(dead_binaries))
+                    log.info('scan: deleted {} dead binaries'.format(dead_binaries))
             else:
-                log.info('start: no groups active, cancelling start.py...')
+                log.info('scan: no groups active, cancelling pynab.py...')
                 break
 
             # vacuum the segments, parts and binaries tables
-            log.info('start: vacuuming relevant tables...')
+            log.info('scan: vacuuming relevant tables...')
             conn = engine.connect()
             conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
@@ -131,12 +131,12 @@ def main():
 
         # wait for the configured amount of time between cycles
         update_wait = config.scan.get('update_wait', 300)
-        log.info('start: sleeping for {:d} seconds...'.format(update_wait))
+        log.info('scan: sleeping for {:d} seconds...'.format(update_wait))
         time.sleep(update_wait)
 
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description="Pynab main indexer script")
+    argparser = argparse.ArgumentParser(description="Pynab main scanning script")
     argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
     argparser.add_argument('-p', '--pid-file', help='pid file (when -d)')
 
