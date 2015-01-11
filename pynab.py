@@ -2,12 +2,7 @@ import config
 from subprocess import Popen, call
 import argparse
 import sys
-
-try:
-    import zdaemon.zdctl
-except ImportError:
-    print('missing zdaemon, run update.')
-    exit(1)
+import zdaemon.zdctl
 
 class PynabCLI:
     def __init__(self):
