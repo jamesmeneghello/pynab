@@ -1,39 +1,72 @@
 import config
 from subprocess import Popen, call
-import sys
 import argparse
+import sys
+import zdaemon.zdctl
 
-if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description="Pynab main scanning script")
-    argparser.add_argument('-u', '--update', action='store_true', help='update pynab')
-    args = argparser.parse_args()
 
-    if args.update:
+class PynabCLI:
+    def __init__(self):
+        self.monitor = config.monitor.get('type')
+
+        parser = argparse.ArgumentParser(
+            description='A Python/Postgres Usenet Indexer',
+            usage='''pynab <command> [<args>]
+
+            The most commonly used pynab commands are:
+                start       Begin scanning and post-processing
+                stop        Stop any running processes
+                scan        Start scanning (only)
+                postprocess Post-process releases (only)
+                api         Start the API (only if not uwsgi)
+                update      Update pynab
+                user        Manage users
+            '''
+        )
+        parser.add_argument('command', help='Subcommand to run')
+        args = parser.parse_args(sys.argv[1:2])
+        if not hasattr(self, args.command):
+            print('Unrecognised command.')
+            parser.print_help()
+            exit(1)
+        getattr(self, args.command)()
+
+    def start(self):
+        self.scan()
+        self.postprocess()
+
+    def scan(self):
+        if self.monitor == 'zdaemon':
+            Popen('zdaemon -Czdaemon/scan.conf start')
+        elif self.monitor == 'windows':
+            Popen('start python scan.py -d', stdout=None, stderr=None, stdin=None, shell=True)
+
+    def postprocess(self):
+        if self.monitor == 'zdaemon':
+            pass
+        elif self.monitor == 'windows':
+            Popen('start python postprocess.py -d', stdout=None, stderr=None, stdin=None, shell=True)
+
+    def api(self):
+        if self.monitor == 'zdaemon':
+            pass
+        elif self.monitor == 'windows':
+            Popen('start python api.py', stdout=None, stderr=None, stdin=None, shell=True)
+
+    def update(self):
         call('git pull', shell=True)
         call('alembic upgrade head', shell=True)
         call('pip3 install -r requirements.txt', shell=True)
-        print('pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
-        sys.exit()
-    else:
-        if config.monitor.get('type') == 'teamocil':
-            if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
-                print('error: a pid_file or logging_file config option is not set in config.py')
-                sys.exit()
-            Popen('python3 start.py -d', stdout=None, stderr=None, stdin=None, shell=True)
-            Popen('python3 postprocess.py -d', stdout=None, stderr=None, stdin=None, shell=True)
-            print('teamocil started')
-        elif config.monitor.get('type') == 'screen':
-            Popen('screen -d -m -S start python3 start.py', stdout=None, stderr=None, stdin=None, shell=True)
-            Popen('screen -d -m -S postprocess python3 postprocess.py', stdout=None, stderr=None, stdin=None, shell=True)
-            print('Pynab started. If you\'re not using file logging, you can access the shells with screen -r start or screen -r postprocess.')
-            sys.exit()
-        elif config.monitor.get('type') == 'windows':
-            Popen('start python scan.py -d', stdout=None, stderr=None, stdin=None, shell=True)
-            Popen('start python postprocess.py -d', stdout=None, stderr=None, stdin=None, shell=True)
-            Popen('start python api.py', stdout=None, stderr=None, stdin=None, shell=True)
-            print('Pynab started. You can use process manager to kill spawned processes (called python.exe).')
-            print('Make sure that your PATH has python set to a python3 directory.')
-            sys.exit()
-        else:
-            print('error: no monitor type set in config.py')
+        print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
+        exit()
+
+if __name__ == '__main__':
+    if config.monitor.get('type') == 'zdaemon':
+        if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
+            print('error: a pid_file or logging_file config option is not set in config.py')
+            exit(1)
+    elif not config.monitor.get('type'):
+        print('error: no monitor type set in config.py')
+        exit(1)
+    PynabCLI()
 

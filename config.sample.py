@@ -2,15 +2,13 @@ import logging
 
 monitor = {
     # type: monitor type
-    # teamocil, screen or windows
+    # zdaemon, windows
     #
-    # teamocil requires daemons and logs - ensure pid_file and logging_file
+    # zdaemon requires daemons and logs - ensure pid_file and logging_file
     # options are set for scan, postprocess
     #
-    # screen requires *nix and GNU screen installed
-    #
     # windows OSs can only use windows and should also set logging_file etc
-    'type': 'screen',
+    'type': 'zdaemon',
 }
 
 api = {
