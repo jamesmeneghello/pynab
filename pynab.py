@@ -50,7 +50,7 @@ def stop():
 def update():
     call('git pull', shell=True)
     call('alembic upgrade head', shell=True)
-    call('pip3 install -r requirements.txt', shell=True)
+    call('pip3 install -q -r requirements.txt', shell=True)
     print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
     exit()
 
