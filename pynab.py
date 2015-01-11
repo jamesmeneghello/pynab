@@ -3,6 +3,7 @@
 Usage:
     pynab.py start|stop|scan|postprocess|api|update
     pynab.py user (create|delete) <email>
+    pynab.py group (enable|disable) <group>
 
 Options:
     -h --help       Show this screen.
@@ -15,6 +16,7 @@ from subprocess import Popen, call
 from docopt import docopt
 
 import pynab
+from pynab.db import db_session, User, Group
 
 
 def scan():
@@ -62,8 +64,6 @@ def create_user(email):
 
 
 def delete_user(email):
-    from pynab.db import db_session, User
-
     with db_session() as db:
         deleted = db.query(User).filter(User.email==email).delete()
         if deleted:
@@ -71,6 +71,30 @@ def delete_user(email):
             print('user deleted.')
         else:
             print('user not found.')
+
+
+def enable_group(group):
+    with db_session() as db:
+        group = db.query(Group).filter(Group.name==group).first()
+        if group:
+            group.active = True
+            db.add(group)
+            db.commit()
+            print('group enabled.')
+        else:
+            print('group does not exist.')
+
+
+def disable_group(group):
+    with db_session() as db:
+        group = db.query(Group).filter(Group.name==group).first()
+        if group:
+            group.active = False
+            db.add(group)
+            db.commit()
+            print('group disabled.')
+        else:
+            print('group does not exist.')
 
 
 if __name__ == '__main__':
@@ -111,3 +135,8 @@ if __name__ == '__main__':
             create_user(arguments['<email>'])
         elif arguments['delete']:
             delete_user(arguments['<email>'])
+    elif arguments['group']:
+        if arguments['enable']:
+            enable_group(arguments['<group>'])
+        elif arguments['disable']:
+            disable_group(arguments['<group>'])

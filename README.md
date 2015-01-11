@@ -244,56 +244,78 @@ https://github.com/gregs1104/pgtune
 Execution of the indexer works identically to the mongo version - just run start.py and
 postprocess.py.
 
+### Installing Upstart Scripts ###
+
+Pynab comes with an upstart script that can be used to handle automatic startups. To install it:
+
+    > vim init/pynab.conf
+    > [edit home, logdir as necessary]
+    > sudo cp init/pynab.conf /etc/init
+
+This will, by default, run the pynab scan and postprocess daemons automatically on system boot. You
+can also manually control parts of pynab, as seen below.
+
 Operation
 =========
 
-### Start Indexing ###
+Pynab comes with a CLI program that can make administration somewhat easier. Common usage is listed below.
 
-At this point you should manually activate groups to index, and blacklists.
-To kick you off, they look something like this:
+### Enabling Groups ###
 
-    > psql -u pynab [or whatever user is specified]
-    # UPDATE groups SET active=TRUE WHERE name='alt.binaries.teevee'; [or something similar]
+After installation, you should enable groups to be scanned. Pynab comes pre-installed with several
+groups, but none enabled by default. To enable a group:
 
-You can also just use http://www.pgadmin.org/, which makes managing it a lot easier.
+    > python3 pynab.py group enable <group name>
 
-Once desired groups have been activated and new_group_scan_days and backfill_days have been
-set in config.py:
+For example, to enable alt.binaries.linux:
 
-    > python3 start.py
+    > python3 pynab.py group enable alt.binaries.linux
 
-start.py is your update script - it'll take care of indexing messages, collating binaries and
-creating releases. 
+### Adding Users ###
 
-### Start Post-processing Releases ###
+For users to access your API, they need an API key. To add a user:
 
-Some APIs (sometimes Sickbeard, usually Couchpotato) rely on some post-processed metadata
-to be able to easily find releases. Sickbeard looks for TVRage IDs, CouchPotato for IMDB IDs,
-for instance. These don't come from Usenet - we match them against online databases.
+    > python3 pynab.py user create <email>
 
-To run the post-process script, do this:
+This will supply you with an API key for the user. You can also delete a user:
 
-    > python3 postprocess.py
+    > python3 pynab.py user delete <email>
 
-This will run a quick once-over of all releases to match to available local data, then a slow
-process of pulling individual articles off Usenet for NFOs, RARs and other data. Finally, it'll
-rename any shitty releases in Misc-Other and Ebooks, optionally deleting any releases it can't
-fix after that (NB: won't do this until I'm satisfied it's safe).
+### Running Pynab ###
 
-Note that SB/CP will have trouble finding some stuff until it's been post-processed - Sickbeard
-will usually search by name as well, but CP tends not to do so, so keep your releases post-processed.
+The pynab CLI handles execution of daemons and respawning of processes. There are two primary 
+parts of pynab: scanning and post-processing. Scanning indexes usenet posts and builds releases,
+while post-processing enriches releases with metadata useful for the API. This metadata includes
+TVRage IDs, IMDB IDs, whether a release is passworded, release size, etc.
 
-### Start Everything ###
+Before running pynab, you should ensure that you've read and edited config.py (copied from 
+config.sample.py). If log directories are set to unwritable locations, pynab will not run.
 
-You can run the script supplied to execute both start and postprocess:
+The simplest way of starting pynab is:
 
-    > ./run.sh
+    > python3 pynab.py start
 
-Or, on Windows:
+Or, if you've installed the Upstart script:
 
-    > run.bat
+    > sudo start pynab
 
-The Windows batch script will also start the API, since uwsgi is not available.
+This will execute both the scanning and post-processing components of pynab. If you're using Windows,
+this will also execute the API - if you're using a nix OS, you should read down to the section on 
+using uWSGI to operate the API.
+
+These components can also be started individually:
+
+    > python3 pynab.py scan
+    > python3 pynab.py postprocess
+    > python3 pynab.py api
+
+To stop pynab, you can use:
+
+    > python3 pynab.py stop
+
+Or, again, if using Upstart:
+
+    > sudo stop pynab
 
 ### Backfilling Groups ###
 
@@ -345,7 +367,7 @@ becoming extremely large.
 
 Run the following to update to the latest version:
 
-    > ./update.sh
+    > python3 pynab.py update
 
 Requires that alembic is installed and in your path (as well as git).
 
@@ -353,7 +375,7 @@ Requires that alembic is installed and in your path (as well as git).
 
 To activate the API:
 
-    > python3 api.py
+    > python3 pynab.py api
 
 Starting the api.py script will put up a very basic web server, without threading/pooling
 capability.
@@ -407,10 +429,6 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     threads = 2
 
 ### Using the miscellaneous scripts ###
-
-To create a user (will return a generated API key):
-
-	> python3 scripts/create_user.py <email>
 
 Update regex (run it every now and then, but it doesn't update that often):
 
