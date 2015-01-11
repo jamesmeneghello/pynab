@@ -67,6 +67,48 @@ class PynabCLI:
         print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
         exit()
 
+    def user(self):
+        class PynabUserCli:
+            def __init__(self):
+                parser = argparse.ArgumentParser(description='Modify pynab users',
+                                                 usage='''
+                                                 User commands available:
+                                                    create      Creates a user, given an email
+                                                    delete      Deletes a user, given an email
+                                                 ''')
+                parser.add_argument('command', help='Subcommand to run')
+                args = parser.parse_args(sys.argv[2:3])
+                if not hasattr(self, args.command):
+                    print('Unrecognised command.')
+                    parser.print_help()
+                    exit(1)
+                getattr(self, args.command)()
+
+            def create(self):
+                parser = argparse.ArgumentParser(description='Create a user')
+                parser.add_argument('email')
+                args = parser.parse_args(sys.argv[3:])
+                if args.email:
+                    import pynab.users
+                    key = pynab.users.create(args.email)
+                    print('User created. API key is: {}'.format(key))
+
+            def delete(self):
+                parser = argparse.ArgumentParser(description='Delete a user')
+                parser.add_argument('email')
+                args = parser.parse_args(sys.argv[3:])
+                if args.email:
+                    from pynab.db import db_session, User
+                    with db_session() as db:
+                        deleted = db.query(User).filter(User.email==args.email).delete()
+                        if deleted:
+                            print('User deleted.')
+                            db.commit()
+                        else:
+                            print('No user by that email.')
+
+        PynabUserCli()
+
 if __name__ == '__main__':
     if config.monitor.get('type') == 'zdaemon':
         if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
