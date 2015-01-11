@@ -20,3 +20,4 @@ intspan
 pympler
 psutil
 zdaemon
+docopt
