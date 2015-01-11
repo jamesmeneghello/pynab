@@ -2,7 +2,7 @@ import config
 from subprocess import Popen, call
 import argparse
 import sys
-import zdaemon.zdctl
+
 
 class PynabCLI:
     def __init__(self):
@@ -14,7 +14,7 @@ class PynabCLI:
 
             The most commonly used pynab commands are:
                 start       Begin scanning and post-processing
-                stop        Stop any running processes
+                stop        Stop all running processes (scan/postproc/api)
                 scan        Start scanning (only)
                 postprocess Post-process releases (only)
                 api         Start the API (only if not uwsgi)
@@ -36,21 +36,29 @@ class PynabCLI:
 
     def scan(self):
         if self.monitor == 'zdaemon':
-            Popen('zdaemon -Czdaemon/scan.conf start')
+            call('zdaemon -Czdaemon/scan.conf start', shell=True)
         elif self.monitor == 'windows':
             Popen('start python scan.py -d', stdout=None, stderr=None, stdin=None, shell=True)
 
     def postprocess(self):
         if self.monitor == 'zdaemon':
-            pass
+            call('zdaemon -Czdaemon/postprocess.conf start', shell=True)
         elif self.monitor == 'windows':
             Popen('start python postprocess.py -d', stdout=None, stderr=None, stdin=None, shell=True)
 
     def api(self):
         if self.monitor == 'zdaemon':
-            pass
+            call('zdaemon -Czdaemon/api.conf start', shell=True)
         elif self.monitor == 'windows':
             Popen('start python api.py', stdout=None, stderr=None, stdin=None, shell=True)
+
+    def stop(self):
+        if self.monitor == 'zdaemon':
+            call('zdaemon -Czdaemon/scan.conf stop', shell=True)
+            call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
+            call('zdaemon -Czdaemon/api.conf stop', shell=True)
+        elif self.monitor == 'windows':
+            print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
     def update(self):
         call('git pull', shell=True)
