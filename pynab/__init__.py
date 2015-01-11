@@ -42,6 +42,14 @@ if logging_file:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
+
+    try:
+        log.info('log: started pynab logger')
+    except Exception as e:
+        print('error: logfile not accessible.')
+        print(e)
+        exit(1)
+
 else:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
