@@ -3,8 +3,7 @@
 Usage:
     pynab.py start|stop|scan|postprocess|api|update
     pynab.py user (create|delete) <email>
-    pynab.py group (enable|disable) <group>
-
+pynab.py group (enable|disable) <group>
 Options:
     -h --help       Show this screen.
     --version       Show version.
@@ -14,6 +13,7 @@ Options:
 import config
 from subprocess import Popen, call
 from docopt import docopt
+import os
 
 import pynab
 from pynab.db import db_session, User, Group
@@ -98,6 +98,8 @@ def disable_group(group):
 
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(__file__))
+
     monitor = config.monitor.get('type', None)
 
     if monitor and not (monitor == 'windows' or monitor == 'zdaemon'):
@@ -139,4 +141,6 @@ if __name__ == '__main__':
         if arguments['enable']:
             enable_group(arguments['<group>'])
         elif arguments['disable']:
-            disable_group(arguments['<group>'])
+            disable_group(arguments['<group>'])    
+    
+    exit(0)
