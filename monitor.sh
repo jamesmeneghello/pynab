@@ -1,4 +1,3 @@
 #!/bin/bash
 
-tmux
-teamocil --layout teamocil/standard.yml
+tmux new -s pynab \; attach \; new-window "teamocil --layout teamocil/standard.yml"
