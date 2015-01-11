@@ -1,121 +1,113 @@
+"""Pynab, a Python/Postgres Usenet Indexer
+
+Usage:
+    pynab.py start|stop|scan|postprocess|api|update
+    pynab.py user (create|delete) <email>
+
+Options:
+    -h --help       Show this screen.
+    --version       Show version.
+
+"""
+
 import config
 from subprocess import Popen, call
-import argparse
-import sys
+from docopt import docopt
+
+import pynab
 
 
-class PynabCLI:
-    def __init__(self):
-        self.monitor = config.monitor.get('type')
+def scan():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/scan.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab Scan (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
 
-        parser = argparse.ArgumentParser(
-            description='A Python/Postgres Usenet Indexer',
-            usage='''pynab <command> [<args>]
 
-            The most commonly used pynab commands are:
-                start       Begin scanning and post-processing
-                stop        Stop all running processes (scan/postproc/api)
-                scan        Start scanning (only)
-                postprocess Post-process releases (only)
-                api         Start the API (only if not uwsgi)
-                update      Update pynab
-                user        Manage users
-            '''
-        )
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-        if not hasattr(self, args.command):
-            print('Unrecognised command.')
-            parser.print_help()
-            exit(1)
-        getattr(self, args.command)()
+def postprocess():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/postprocess.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab Post-Process (close to quit)" python postprocess.py', stdout=None, stderr=None, stdin=None, shell=True)
 
-    def start(self):
-        self.scan()
-        self.postprocess()
 
-    def scan(self):
-        if self.monitor == 'zdaemon':
-            call('zdaemon -Czdaemon/scan.conf start', shell=True)
-        elif self.monitor == 'windows':
-            Popen('start python scan.py -d', stdout=None, stderr=None, stdin=None, shell=True)
+def api():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/api.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
-    def postprocess(self):
-        if self.monitor == 'zdaemon':
-            call('zdaemon -Czdaemon/postprocess.conf start', shell=True)
-        elif self.monitor == 'windows':
-            Popen('start python postprocess.py -d', stdout=None, stderr=None, stdin=None, shell=True)
 
-    def api(self):
-        if self.monitor == 'zdaemon':
-            call('zdaemon -Czdaemon/api.conf start', shell=True)
-        elif self.monitor == 'windows':
-            Popen('start python api.py', stdout=None, stderr=None, stdin=None, shell=True)
+def stop():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/scan.conf stop', shell=True)
+        call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
+        call('zdaemon -Czdaemon/api.conf stop', shell=True)
+    elif monitor == 'windows':
+        print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
-    def stop(self):
-        if self.monitor == 'zdaemon':
-            call('zdaemon -Czdaemon/scan.conf stop', shell=True)
-            call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
-            call('zdaemon -Czdaemon/api.conf stop', shell=True)
-        elif self.monitor == 'windows':
-            print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
-    def update(self):
-        call('git pull', shell=True)
-        call('alembic upgrade head', shell=True)
-        call('pip3 install -r requirements.txt', shell=True)
-        print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
-        exit()
+def update():
+    call('git pull', shell=True)
+    call('alembic upgrade head', shell=True)
+    call('pip3 install -r requirements.txt', shell=True)
+    print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
+    exit()
 
-    def user(self):
-        class PynabUserCli:
-            def __init__(self):
-                parser = argparse.ArgumentParser(description='Modify pynab users',
-                                                 usage='''
-                                                 User commands available:
-                                                    create      Creates a user, given an email
-                                                    delete      Deletes a user, given an email
-                                                 ''')
-                parser.add_argument('command', help='Subcommand to run')
-                args = parser.parse_args(sys.argv[2:3])
-                if not hasattr(self, args.command):
-                    print('Unrecognised command.')
-                    parser.print_help()
-                    exit(1)
-                getattr(self, args.command)()
 
-            def create(self):
-                parser = argparse.ArgumentParser(description='Create a user')
-                parser.add_argument('email')
-                args = parser.parse_args(sys.argv[3:])
-                if args.email:
-                    import pynab.users
-                    key = pynab.users.create(args.email)
-                    print('User created. API key is: {}'.format(key))
+def create_user(email):
+    import pynab.users
+    key = pynab.users.create(email)
+    print('user created. key: {}'.format(key))
 
-            def delete(self):
-                parser = argparse.ArgumentParser(description='Delete a user')
-                parser.add_argument('email')
-                args = parser.parse_args(sys.argv[3:])
-                if args.email:
-                    from pynab.db import db_session, User
-                    with db_session() as db:
-                        deleted = db.query(User).filter(User.email==args.email).delete()
-                        if deleted:
-                            print('User deleted.')
-                            db.commit()
-                        else:
-                            print('No user by that email.')
 
-        PynabUserCli()
+def delete_user(email):
+    from pynab.db import db_session, User
+
+    with db_session() as db:
+        deleted = db.query(User).filter(User.email==email).delete()
+        if deleted:
+            db.commit()
+            print('user deleted.')
+        else:
+            print('user not found.')
+
 
 if __name__ == '__main__':
-    if config.monitor.get('type') == 'zdaemon':
+    monitor = config.monitor.get('type', None)
+
+    if monitor and not (monitor == 'windows' or monitor == 'zdaemon'):
+        print('error: no monitor type set in config.py')
+        exit(1)
+    elif monitor == 'windows' and config.log.get('logging_file'):
+        print('To view console output in command windows, turn off the logging file!')
+    elif not monitor:
+        print('error: missing monitor in config.py')
+        exit(1)
+    else:
         if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
             print('error: a pid_file or logging_file config option is not set in config.py')
             exit(1)
-    elif not config.monitor.get('type') or (config.monitor.get('type') != 'windows' and config.monitor.get('type') != 'zdaemon'):
-        print('error: no monitor type set in config.py')
-        exit(1)
-    PynabCLI()
 
+    arguments = docopt(__doc__, version=pynab.__version__)
+
+    if arguments['start']:
+        scan()
+        postprocess()
+        if monitor == 'windows':
+            api()
+    elif arguments['stop']:
+        stop()
+    elif arguments['scan']:
+        scan()
+    elif arguments['postprocess']:
+        postprocess()
+    elif arguments['api']:
+        api()
+    elif arguments['update']:
+        update()
+    elif arguments['user']:
+        if arguments['create']:
+            create_user(arguments['<email>'])
+        elif arguments['delete']:
+            delete_user(arguments['<email>'])
