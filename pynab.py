@@ -13,6 +13,7 @@ Options:
 import config
 from subprocess import Popen, call
 from docopt import docopt
+import os
 
 import pynab
 
@@ -74,6 +75,8 @@ def delete_user(email):
 
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(__file__))
+
     monitor = config.monitor.get('type', None)
 
     if monitor and not (monitor == 'windows' or monitor == 'zdaemon'):
@@ -111,3 +114,4 @@ if __name__ == '__main__':
             create_user(arguments['<email>'])
         elif arguments['delete']:
             delete_user(arguments['<email>'])
+    exit(0)
