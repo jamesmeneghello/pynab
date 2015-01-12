@@ -98,9 +98,9 @@ Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodes
 
 Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
 
-You also need to install Python 3.3, associated packages and pip3:
+You also need to install Python 3.3/3.4, associated packages and pip3:
 
-    > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev
+    > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev libyaml-dev
 
 And a few packages required by psycopg2:
 
@@ -316,6 +316,32 @@ To stop pynab, you can use:
 Or, again, if using Upstart:
 
     > sudo stop pynab
+
+### Monitoring Pynab ###
+
+You can optionally use a teamocil layout to set up a window for monitoring (that will show scan/postproc
+progress). 
+
+If you want to use the monitor, you'll need some other packages:
+
+    > sudo apt-get install tmux
+
+Including Ruby 2.0 so that we can install teamocil...
+
+    > \curl -L https://get.rvm.io | bash -s stable --ruby
+    > rvm install ruby --latest
+    > rvm list [find the 2.0.x version]
+    > rvm use ruby-<version>
+    > gem install teamocil
+
+To run the monitor:
+
+    > ./monitor.sh
+
+This will spawn a new tmux session, load the Teamocil layout and then attach to tmux.
+
+Teamocil layouts are in `teamocil/` and can be modified or added as desired (just change monitor.sh).
+If you create a good layout, submit a pull request! :)
 
 ### Backfilling Groups ###
 
