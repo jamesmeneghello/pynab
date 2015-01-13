@@ -102,7 +102,7 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if not hasattr(config, 'monitor'):
-        print('error: missing monitor in config.py')
+        print('error: missing monitor in config.py - have you updated config.py from config.sample.py?')
         exit(1)
 
     monitor = config.monitor.get('type', None)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     elif monitor == 'windows' and config.log.get('logging_file'):
         print('To view console output in command windows, turn off the logging file!')
     elif not monitor:
-        print('error: missing monitor in config.py')
+        print('error: missing monitor in config.py - have you updated config.py from config.sample.py?')
         exit(1)
 
     arguments = docopt(__doc__, version=pynab.__version__)
