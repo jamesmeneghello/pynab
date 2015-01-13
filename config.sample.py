@@ -257,8 +257,8 @@ postprocess = {
     # generally leave alone
     'blacklist_url': 'https://raw.github.com/kevinlekiller/Newznab-Blacklist/master/New/blacklists.txt',
 
-    # pid_file
-    # for daemonising
+    # pid_file: process file for the scanner, if daemonized
+    # make sure it's writable, leave blank for nginx
     'pid_file': '',
 
 }
