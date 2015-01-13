@@ -110,6 +110,7 @@ And a few packages required by psycopg2:
 
     > cd /opt/
     > sudo git clone https://github.com/Murodese/pynab.git
+    > sudo chown -R www-data:www-data pynab
     > cd pynab
     > sudo cp config.sample.py config.py
     > sudo vim config.py [fill in details as appropriate]
