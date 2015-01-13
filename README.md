@@ -533,6 +533,7 @@ F.A.Q.
 ======
 
 - I keep getting errors related to "config.<something>" and start.py stops.
+- e.g. AttributeError: 'module' object has no attribute 'monitor'
 
 This means that your config.py is out of date. Re-copy config.sample.py and re-enter your details.
 Generally speaking this should become less of a problem as time goes on - only new features require new
