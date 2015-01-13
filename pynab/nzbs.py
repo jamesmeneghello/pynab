@@ -228,9 +228,8 @@ def import_nzb(name, nzb_data):
             if 'group_name' in release:
                 group = db.query(Group).filter(Group.name == release['group_name']).first()
                 if not group:
-                    log.error(
-                        'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
-                    return False
+                    group = Group(name=release['group_name'])
+                    db.add(group)
                 r.group = group
 
             # rebuild the nzb, gzipped
