@@ -71,7 +71,7 @@ def api():
 
 def stop():
     if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/scan.conf stop', shell=True)
+        call('zdaemon -Czdaemon/update.conf stop', shell=True)
         call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
         call('zdaemon -Czdaemon/api.conf stop', shell=True)
     elif monitor == 'windows':
