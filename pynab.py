@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
