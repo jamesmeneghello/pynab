@@ -41,12 +41,14 @@ Features
 - Developed around pure API usage
 - Newznab-API compatible (mostly, see below)
 - TVRage/IMDB/Password post-processing
+- Release renaming for most obfuscated releases
 
 In development:
 ---------------
 
-- Release renaming for obfuscated releases (works for misc/books, breaks other stuff)
-- Pre-DB comparisons maybe?
+- Pre-DB comparisons to assist in renaming
+- XMPP PubSub support to push to nzb clients
+- Got an idea? Send it in!
 
 
 Technical Differences to Newznab
