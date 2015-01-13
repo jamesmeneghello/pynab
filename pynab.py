@@ -3,6 +3,7 @@
 
 Usage:
     pynab.py start|stop|scan|postprocess|api|update
+    pynab.py backfill [--group=<group>] [--date=<date>]
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
     pynab.py regex (update)
@@ -24,9 +25,34 @@ from pynab.db import db_session, User, Group
 
 def scan():
     if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/scan.conf start', shell=True)
+        call('zdaemon -Czdaemon/update.conf start', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab Scan (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
+
+
+def backfill(group, date):
+    if monitor == 'zdaemon':
+        program = '-p \'python3 scan.py --backfill'
+        if group:
+            program += ' --group={}'.format(group)
+        if date:
+            program += ' --date={}'.format(date)
+        program += '\''
+        # can't use a conf file, since we're using params...
+        zdp = ' '.join([
+            'zdaemon',
+            program,
+            '--forever',
+            '--socket-name /tmp/pynab.backfill.zdsock'
+        ])
+        call(zdp, shell=True)
+    elif monitor == 'windows':
+        program = 'start "Pynab Backfill (close to quit)" python scan.py --backfill'
+        if group:
+            program += ' --group={}'.format(group)
+        if date:
+            program += ' --date={}'.format(date)
+        Popen(program, stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def postprocess():
@@ -137,8 +163,6 @@ if __name__ == '__main__':
 
     arguments = docopt(__doc__, version=pynab.__version__)
 
-    print(arguments)
-
     if arguments['start']:
         scan()
         postprocess()
@@ -148,6 +172,8 @@ if __name__ == '__main__':
         stop()
     elif arguments['scan']:
         scan()
+    elif arguments['backfill']:
+        backfill(arguments['--group'], arguments['--date'])
     elif arguments['postprocess']:
         postprocess()
     elif arguments['api']:

@@ -3,11 +3,11 @@ import concurrent.futures
 import time
 import pytz
 import datetime
-import traceback
+import dateutil.parser
 import psycopg2.extensions
 
 from pynab import log, log_descriptor
-from pynab.db import db_session, Group, Binary, Miss, engine, Part, Segment
+from pynab.db import db_session, Group, Binary, Miss, engine, Segment
 
 import pynab.groups
 import pynab.binaries
@@ -23,6 +23,17 @@ import config
 def update(group_name):
     try:
         return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
+    except Exception as e:
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
+
+
+def backfill(group_name, date=None):
+    if date:
+        date = pytz.utc.localize(dateutil.parser.parse(args.date))
+    else:
+        date = pytz.utc.localize(datetime.datetime.now() - datetime.timedelta(config.scan.get('backfill_days', 10)))
+    try:
+        return pynab.groups.scan(group_name, direction='backward', date=date, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
         log.error('scan: nntp server is flipping out, hopefully they fix their shit')
 
@@ -61,10 +72,8 @@ def daemonize(pidfile):
         log.critical(traceback.format_exc())
 
 
-def main():
-    log.info('scan: starting update...')
-    log.info('debug enabled: send SIGUSR1 to drop to the shell')
-    #pynab.debug.listen()
+def main(mode='update', group=None, date=None):
+    log.info('scan: starting {}...'.format(mode))
 
     iterations = 0
     while True:
@@ -76,17 +85,29 @@ def main():
                 log.info('scan: backlog of segments detected, processing first')
                 process()
 
-            active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
+            if not group:
+                active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
+            else:
+                if db.query(Group).filter(Group.name==group).first():
+                    active_groups = [group]
+                else:
+                    log.error('scan: no such group exists')
+                    return
+
             if active_groups:
                 with concurrent.futures.ThreadPoolExecutor(config.scan.get('update_threads', None)) as executor:
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
-                    result = [executor.submit(update, active_group) for active_group in active_groups]
+                    if mode == 'backfill':
+                        result = [executor.submit(backfill, active_group, date) for active_group in active_groups]
+                    else:
+                        result = [executor.submit(update, active_group) for active_group in active_groups]
 
                     for r in concurrent.futures.as_completed(result):
                         data = r.result()
 
-                    if config.scan.get('retry_missed'):
+                    # don't retry misses during backfill, it ain't gonna happen
+                    if config.scan.get('retry_missed') and not mode == 'backfill':
                         miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
                         miss_result = [executor.submit(scan_missing, miss_group) for miss_group in miss_groups]
 
@@ -129,16 +150,21 @@ def main():
             conn.close()
             db.close()
 
-        # wait for the configured amount of time between cycles
-        update_wait = config.scan.get('update_wait', 300)
-        log.info('scan: sleeping for {:d} seconds...'.format(update_wait))
-        time.sleep(update_wait)
+        # don't bother waiting if we're backfilling, just keep going
+        if mode == 'update':
+            # wait for the configured amount of time between cycles
+            update_wait = config.scan.get('update_wait', 300)
+            log.info('scan: sleeping for {:d} seconds...'.format(update_wait))
+            time.sleep(update_wait)
 
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description="Pynab main scanning script")
     argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
     argparser.add_argument('-p', '--pid-file', help='pid file (when -d)')
+    argparser.add_argument('-b', '--backfill', action='store_true', help='backfill groups')
+    argparser.add_argument('-g', '--group', help='group to scan')
+    argparser.add_argument('-D', '--date', help='backfill to date')
 
     args = argparser.parse_args()
 
@@ -149,4 +175,8 @@ if __name__ == '__main__':
         else:
             daemonize(pidfile)
     else:
-        main()
+        if args.backfill:
+            mode = 'backfill'
+        else:
+            mode = 'update'
+        main(mode=mode, group=args.group, date=args.date)
