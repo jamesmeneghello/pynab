@@ -4,7 +4,7 @@
 Usage:
     pynab.py start|stop|scan|postprocess|api|update
     pynab.py user (create|delete) <email>
-pynab.py group (enable|disable) <group>
+    pynab.py group (enable|disable|reset) <group>
 Options:
     -h --help       Show this screen.
     --version       Show version.
@@ -98,6 +98,19 @@ def disable_group(group):
             print('group does not exist.')
 
 
+def reset_group(group):
+    with db_session() as db:
+        group = db.query(Group).filter(Group.name==group).first()
+        if group:
+            group.first = 0
+            group.last = 0
+            db.add(group)
+            db.commit()
+            print('group first/last reset.')
+        else:
+            print('group does not exist.')
+
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -142,6 +155,8 @@ if __name__ == '__main__':
         if arguments['enable']:
             enable_group(arguments['<group>'])
         elif arguments['disable']:
-            disable_group(arguments['<group>'])    
+            disable_group(arguments['<group>'])
+        elif arguments['reset']:
+            reset_group(arguments['<group>'])
     
     exit(0)
