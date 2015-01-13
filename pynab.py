@@ -101,6 +101,10 @@ def disable_group(group):
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+    if not hasattr(config, 'monitor'):
+        print('error: missing monitor in config.py')
+        exit(1)
+
     monitor = config.monitor.get('type', None)
 
     if monitor and not (monitor == 'windows' or monitor == 'zdaemon'):
@@ -111,10 +115,6 @@ if __name__ == '__main__':
     elif not monitor:
         print('error: missing monitor in config.py')
         exit(1)
-    else:
-        if not config.scan.get('pid_file') or not config.postprocess.get('pid_file') or not config.log.get('logging_file'):
-            print('error: a pid_file or logging_file config option is not set in config.py')
-            exit(1)
 
     arguments = docopt(__doc__, version=pynab.__version__)
 
