@@ -5,6 +5,7 @@ Usage:
     pynab.py start|stop|scan|postprocess|api|update
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
+    pynab.py regex (update)
 Options:
     -h --help       Show this screen.
     --version       Show version.
@@ -17,6 +18,7 @@ from docopt import docopt
 import os
 
 import pynab
+import pynab.util
 from pynab.db import db_session, User, Group
 
 
@@ -111,6 +113,11 @@ def reset_group(group):
             print('group does not exist.')
 
 
+def update_regex():
+    with db_session() as db:
+        pynab.util.update_regex()
+
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -130,6 +137,8 @@ if __name__ == '__main__':
         exit(1)
 
     arguments = docopt(__doc__, version=pynab.__version__)
+
+    print(arguments)
 
     if arguments['start']:
         scan()
@@ -158,5 +167,8 @@ if __name__ == '__main__':
             disable_group(arguments['<group>'])
         elif arguments['reset']:
             reset_group(arguments['<group>'])
+    elif arguments['regex']:
+        if arguments['update']:
+            update_regex()
     
     exit(0)
