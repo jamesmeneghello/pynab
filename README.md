@@ -108,7 +108,7 @@ And a few packages required by psycopg2:
 
 ### General *nix ###
 
-    > cd /var/www/
+    > cd /opt/
     > sudo git clone https://github.com/Murodese/pynab.git
     > cd pynab
     > sudo cp config.sample.py config.py
@@ -159,7 +159,7 @@ Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-f
 
 Once done:
 
-    > sudo chown -R www-data:www-data /var/www/pynab
+    > sudo chown -R www-data:www-data /opt/pynab
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -216,9 +216,9 @@ than cut over directly:
 
     # don't bother running install.py first, as we're copying everything from mongo
     # you will, of course, need postgres installed
-    > cd /var/www
+    > cd /opt
     > git clone https://github.com/Murodese/pynab.git pynab-postgres
-    > cd /var/www/pynab-postgres
+    > cd /opt/pynab-postgres
     > git checkout development-postgres
     > cp config.sample.py config.py
     > [edit config.py to add mongo and postgres config]
@@ -233,8 +233,8 @@ re-retrieve it.
 Once this is complete, rename the old folder and replace it with the new, then shut down mongo:
 
     > sudo service nginx stop # or whatever you're using
-    > mv /var/www/pynab /var/www/pynab.old
-    > mv /var/www/pynab-postgres /var/www/pynab
+    > mv /opt/pynab /opt/pynab.old
+    > mv /opt/pynab-postgres /opt/pynab
     > sudo service nginx start
     > sudo service mongo stop
 
@@ -382,7 +382,6 @@ Your /etc/nginx/sites-enabled/pynab file should look like this:
     server {
         listen 80;
         server_name some.domain.name.or.ip;
-        root /var/www/pynab;
 
         location / {
             try_files $uri @uwsgi;
@@ -399,7 +398,7 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     [uwsgi]
     socket = /var/run/uwsgi/app/pynab/socket
     master = true
-    chdir = /var/www/pynab
+    chdir = /opt/pynab
     wsgi-file = api.py
     uid = www-data
     gid = www-data
@@ -517,6 +516,14 @@ Delete the webui/node_modules and webui/app/bower_components folder and re-run n
 There was a bug in a particular version of the python regex module that could cause release and binary
 regex to give incredibly shitty results. This is forced to a correct version in requirements.txt, so just
 run `pip3 install --upgrade regex` if it's happening.
+
+- While building the WebUI, I get errors about compass.
+
+Run the following:
+
+    > gem uninstall sass
+    > gem install sass --no-ri --no-rdoc
+    > gem install compass --no-ri --no-rdoc 
 
 
 Newznab API
