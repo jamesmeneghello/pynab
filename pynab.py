@@ -114,8 +114,7 @@ def reset_group(group):
 
 
 def update_regex():
-    with db_session() as db:
-        pynab.util.update_regex()
+    pynab.util.update_regex()
 
 
 if __name__ == '__main__':
