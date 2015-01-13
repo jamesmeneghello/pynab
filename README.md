@@ -571,6 +571,22 @@ Run the following:
     > gem install sass --no-ri --no-rdoc
     > gem install compass --no-ri --no-rdoc 
 
+- Upstart has broken horribly, and `sudo start pynab` or `sudo stop pynab` just hang and do nothing until I reboot.
+
+Particularly annoying, this bug, which is an upstart bug. You should see some output like this:
+
+    > sudo initctl status pynab
+    > pynab stop/killed, process 994 (or some other pid)
+
+Do this:
+
+    > cd ~
+    > wget https://raw.githubusercontent.com/ion1/workaround-upstart-snafu/master/workaround-upstart-snafu
+    > chmod +x workaround-upstart-snafu
+    > ./workaround-upstart-snafu 994 (whatever pid was listed above)
+    
+Let it run. Rebooting also solves this.
+
 
 Newznab API
 ===========
