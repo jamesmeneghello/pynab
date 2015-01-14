@@ -140,8 +140,8 @@ scan = {
 
     # publish_hosts: hosts to send processed release data to
     # include the port and path if necessary
-    # ie. ['127.0.0.1:5678/releases', 'someaddress.com/whatever']
-    'publish_hosts': ['127.0.0.1:5678']
+    # ie. ['http://127.0.0.1:5678/releases', 'http://someaddress.com/whatever']
+    'publish_hosts': ['http://127.0.0.1:8090']
 }
 
 postprocess = {
