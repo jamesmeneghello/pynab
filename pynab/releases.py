@@ -341,7 +341,8 @@ def process(q):
 
                     # publish processed releases?
                     if config.scan.get('publish', False):
-                        grequests.post(config.scan.get('publish_hosts'), data=to_json(release))
+                        grequests.map((grequests.post(host, data=to_json(release)) for host in config.scan.get('publish_hosts')))
+
 
             db.commit()
 
