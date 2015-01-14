@@ -130,7 +130,7 @@ def clean_release_name(name):
     return name.replace('_', ' ').replace('.', ' ').replace('-', ' ')
 
 
-def process():
+def process(q):
     """Helper function to begin processing binaries. Checks
     for 100% completion and will create NZBs/releases for
     each complete release. Will also categorise releases,
@@ -338,7 +338,10 @@ def process():
                     # delete processed binaries
                     db.query(Binary).filter(Binary.id==binary.id).delete()
 
+                    #Send to xmpp
+                    q.put([release.id, release.name, release.category_id])
             db.commit()
+
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(
