@@ -2,10 +2,11 @@ import time
 import math
 import base64
 import regex
+import grequests
 from sqlalchemy.orm import *
 
 from pynab import log
-from pynab.db import db_session, engine, Binary, Part, Release, Group, Category, Blacklist
+from pynab.db import to_json, db_session, engine, Binary, Part, Release, Group, Category, Blacklist
 import pynab.categories
 import pynab.nzbs
 import pynab.rars
@@ -338,8 +339,10 @@ def process(q):
                     # delete processed binaries
                     db.query(Binary).filter(Binary.id==binary.id).delete()
 
-                    #Send to xmpp
-                    q.put([release.id, release.name, release.category_id])
+                    # publish processed releases?
+                    if config.scan.get('publish', False):
+                        grequests.post(config.scan.get('publish_hosts'), data=to_json(release))
+
             db.commit()
 
 

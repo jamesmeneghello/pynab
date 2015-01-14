@@ -43,7 +43,8 @@ def backfill(group, date):
             'zdaemon',
             program,
             '--forever',
-            '--socket-name /tmp/pynab.backfill.zdsock'
+            '--socket-name /tmp/pynab.backfill.zdsock',
+            'start'
         ])
         call(zdp, shell=True)
     elif monitor == 'windows':
@@ -69,11 +70,19 @@ def api():
         Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
+def pubsub():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/pubsub.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
 def stop():
     if monitor == 'zdaemon':
         call('zdaemon -Czdaemon/update.conf stop', shell=True)
         call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
         call('zdaemon -Czdaemon/api.conf stop', shell=True)
+        call('zdaemon -Czdaemon/pubsub.conf stop', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
@@ -168,6 +177,8 @@ if __name__ == '__main__':
         postprocess()
         if monitor == 'windows':
             api()
+        if config.bot.get('enabled', False):
+            pubsub()
     elif arguments['stop']:
         stop()
     elif arguments['scan']:

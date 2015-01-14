@@ -1,4 +1,6 @@
 from contextlib import contextmanager
+import datetime
+import json
 
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
     create_engine, UniqueConstraint, Enum
@@ -116,6 +118,17 @@ def windowed_query(q, column, windowsize):
             column, windowsize):
         for row in q.filter(whereclause).order_by(column):
             yield row
+
+
+def json_serial(obj):
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+
+
+def to_json(obj):
+    del obj['_sa_instance_state']
+    return json.dumps(obj.__dict__, default=json_serial)
 
 
 class Release(Base):
