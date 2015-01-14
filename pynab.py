@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update
+    pynab.py start|stop|scan|postprocess|api|update|pubsub
     pynab.py backfill [--group=<group>] [--date=<date>]
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
@@ -189,6 +189,8 @@ if __name__ == '__main__':
         postprocess()
     elif arguments['api']:
         api()
+    elif arguments['pubsub']:
+        pubsub()
     elif arguments['update']:
         update()
     elif arguments['user']:
