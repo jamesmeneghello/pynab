@@ -267,6 +267,8 @@ log = {
     # logging settings
     # ----------------
     # logging_file: a filepath or None to go to stdout
+    # this should be something like '/var/log/pynab/pynab.log'
+    # it'll automatically split the logfiles for you
     'logging_file': None,
 
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
