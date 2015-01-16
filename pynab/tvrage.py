@@ -142,12 +142,15 @@ def search(session, show):
 
 def extract_names(xmlshow):
     """Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"""
-    yield from XPATH_NAME(xmlshow)
-    yield from XPATH_AKA(xmlshow)
+    for name in XPATH_NAME(xmlshow):
+        yield name
+    for aka in XPATH_AKA(xmlshow):
+        yield aka
     link = XPATH_LINK(xmlshow)[0]
     link_result = RE_LINK.search(link)
     if link_result:
-        yield from link_result.groups()
+        for link in link_result.groups():
+            yield link
 
 
 def search_lxml(show, content):

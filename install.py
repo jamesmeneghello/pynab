@@ -92,4 +92,4 @@ if __name__ == '__main__':
             'Could not update blacklist. Try the URL in config.py manually - if it doesn\'t work, post an issue on Github.')
 
     print('Install complete.')
-    print('Now: activate some groups, activate desired blacklists, and run start.py with python3.')
+    print('Now: activate some groups, activate desired blacklists, and run pynab.py with python3.')

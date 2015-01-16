@@ -1,5 +1,16 @@
 import logging
 
+monitor = {
+    # type: monitor type
+    # zdaemon, windows
+    #
+    # zdaemon requires daemons and logs - ensure pid_file and logging_file
+    # options are set for scan, postprocess
+    #
+    # windows OSs can only use windows and should also set logging_file etc
+    'type': 'zdaemon',
+}
+
 api = {
     # api settings
     # ---------------------
@@ -246,12 +257,18 @@ postprocess = {
     # generally leave alone
     'blacklist_url': 'https://raw.github.com/kevinlekiller/Newznab-Blacklist/master/New/blacklists.txt',
 
+    # pid_file: process file for the scanner, if daemonized
+    # make sure it's writable, leave blank for nginx
+    'pid_file': '',
+
 }
 
 log = {
     # logging settings
     # ----------------
     # logging_file: a filepath or None to go to stdout
+    # this should be something like '/var/log/pynab/pynab.log'
+    # it'll automatically split the logfiles for you
     'logging_file': None,
 
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
