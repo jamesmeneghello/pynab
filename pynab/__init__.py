@@ -42,6 +42,10 @@ if logging_file:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
+elif config.log.get('colors', False):
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    log.addHandler(handler)
 else:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

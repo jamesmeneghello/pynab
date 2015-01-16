@@ -322,3 +322,9 @@ mysql = {
     'passwd': '',
     'db': 'newznab',
 }
+
+# enable/disable color logging to console
+logging = {
+    'colors': 'True',
+}
+
