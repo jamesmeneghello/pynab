@@ -2,7 +2,7 @@ import time
 import math
 import base64
 import regex
-import grequests
+from requests_futures.sessions import FuturesSession
 from sqlalchemy.orm import *
 
 from pynab import log
@@ -131,7 +131,7 @@ def clean_release_name(name):
     return name.replace('_', ' ').replace('.', ' ').replace('-', ' ')
 
 
-def process(q):
+def process():
     """Helper function to begin processing binaries. Checks
     for 100% completion and will create NZBs/releases for
     each complete release. Will also categorise releases,
@@ -141,6 +141,11 @@ def process(q):
 
     binary_count = 0
     added_count = 0
+
+    if config.scan.get('publish', False):
+        request_session = FuturesSession()
+    else:
+        request_session = None
 
     start = time.time()
 
@@ -341,11 +346,9 @@ def process(q):
 
                     # publish processed releases?
                     if config.scan.get('publish', False):
-                        grequests.map((grequests.post(host, data=to_json(release)) for host in config.scan.get('publish_hosts')))
-
+                        futures = [request_session.post(host, data=to_json(release)) for host in config.scan.get('publish_hosts')]
 
             db.commit()
-
 
     end = time.time()
     log.info('release: added {} out of {} binaries in {:.2f}s'.format(

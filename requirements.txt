@@ -23,4 +23,4 @@ zdaemon
 docopt
 sleekxmpp
 eventlet
-grequests
+requests-futures
