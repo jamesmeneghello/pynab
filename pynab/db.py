@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import datetime
 import json
+import copy
 
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
     create_engine, UniqueConstraint, Enum
@@ -127,8 +128,9 @@ def json_serial(obj):
 
 
 def to_json(obj):
-    del obj.__dict__['_sa_instance_state']
-    obj = json.dumps(obj.__dict__, default=json_serial)
+    dict = copy.deepcopy(obj.__dict__)
+    del dict['_sa_instance_state']
+    obj = json.dumps(dict, default=json_serial)
     return obj
 
 
