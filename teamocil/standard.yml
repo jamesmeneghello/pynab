@@ -1,6 +1,6 @@
 windows:
   - name: two-pane
-    root: /var/www/
+    root: /opt/pynab/
     layout: even-vertical
     panes:
       - tail -f /var/log/pynab/pynab_scan.log

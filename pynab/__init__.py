@@ -36,6 +36,17 @@ if logging_file:
     name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
     file, ext = os.path.splitext(config.log.get('logging_file'))
     logging_file = ''.join([file, '_', name, ext])
+    logging_dir = os.path.dirname(os.path.abspath(logging_file))
+
+    try:
+        if os.path.exists(logging_dir):
+            os.makedirs(logging_dir)
+    except Exception as e:
+        print('error: logfile not accessible. permissions error?')
+        print(e)
+        exit(1)
+
+    log.info('log: started pynab logger')
 
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     #handler.setFormatter(formatter)
@@ -43,12 +54,7 @@ if logging_file:
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
 
-    try:
-        log.info('log: started pynab logger')
-    except Exception as e:
-        print('error: logfile not accessible.')
-        print(e)
-        exit(1)
+
 
 else:
     handler = logging.StreamHandler()
