@@ -127,9 +127,9 @@ def json_serial(obj):
 
 
 def to_json(obj):
+    del obj.__dict__['_sa_instance_state']
     obj = json.dumps(obj.__dict__, default=json_serial)
-    del obj['_sa_instance_state']
-    return
+    return obj
 
 
 class Release(Base):
