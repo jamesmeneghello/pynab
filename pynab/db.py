@@ -149,24 +149,29 @@ class Release(Base):
     tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
     tvshow = relationship('TvShow', backref=backref('releases'))
     tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+    tvshow_metablack = relationship('MetaBlack', foreign_keys=[tvshow_metablack_id])
 
     movie_id = Column(String, ForeignKey('movies.id'), index=True)
     movie = relationship('Movie', backref=backref('releases'))
     movie_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+    movie_metablack = relationship('MetaBlack', foreign_keys=[movie_metablack_id])
 
-    nzb_id = Column(Integer, ForeignKey('nzbs.id'), index=True)
+    nzb_id = Column(Integer, ForeignKey('nzbs.id', ondelete='CASCADE'), index=True)
     nzb = relationship('NZB', backref=backref('release', uselist=False))
 
     files = relationship('File', passive_deletes=True, cascade='all, delete, delete-orphan', backref=backref('release'))
     rar_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+    rar_metablack = relationship('MetaBlack', foreign_keys=[rar_metablack_id])
 
-    nfo_id = Column(Integer, ForeignKey('nfos.id'), index=True)
+    nfo_id = Column(Integer, ForeignKey('nfos.id', ondelete='CASCADE'), index=True)
     nfo = relationship('NFO', backref=backref('release', uselist=False))
     nfo_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+    nfo_metablack = relationship('MetaBlack', foreign_keys=[nfo_metablack_id])
 
-    sfv_id = Column(Integer, ForeignKey('sfvs.id'), index=True)
+    sfv_id = Column(Integer, ForeignKey('sfvs.id', ondelete='CASCADE'), index=True)
     sfv = relationship('SFV', backref=backref('release', uselist=False))
     sfv_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
+    sfv_metablack = relationship('MetaBlack', foreign_keys=[sfv_metablack_id])
 
     episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))

@@ -1,6 +1,6 @@
 import time
 import math
-
+import base64
 import regex
 from sqlalchemy.orm import *
 
@@ -44,7 +44,21 @@ def names_from_sfvs(release):
 
 def discover_name(release):
     """Attempts to fix a release name by nfo, filelist or sfv."""
-    potential_names = [release.search_name, ]
+    potential_names = [release.search_name,]
+
+    # base64-decode the name in case it's that
+    try:
+        n = release.name
+        missing_padding = 4 - len(release.name) % 4
+        if missing_padding:
+            n += '=' * missing_padding
+        n = base64.b64decode(n.encode('utf-8'))
+        potential_names.append(n.decode('utf-8'))
+    except:
+        pass
+
+    # add a reversed name, too
+    potential_names.append(release.name[::-1])
 
     if release.files:
         potential_names += names_from_files(release)
@@ -151,6 +165,11 @@ def process():
         blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
         for blacklist in blacklists:
             db.expunge(blacklist)
+
+        # cache categories
+        parent_categories = {}
+        for category in db.query(Category).all():
+            parent_categories[category.id] = category.parent.name if category.parent else category.name
 
         # for interest's sakes, memory usage:
         # 38,000 releases uses 8.9mb of memory here
@@ -295,13 +314,12 @@ def process():
 
                 # give the release a category
                 release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)
-                category = db.query(Category).filter(Category.id == release.category_id).one()
 
                 # create the nzb, store it and link it here
                 # no need to do anything special for big releases here
                 # if it's set to lazyload, it'll kill rows as they're used
                 # if it's a small release, it'll go straight from memory
-                nzb = pynab.nzbs.create(release.search_name, category, binary)
+                nzb = pynab.nzbs.create(release.search_name, parent_categories[release.category_id], binary)
 
                 if nzb:
                     added_count += 1

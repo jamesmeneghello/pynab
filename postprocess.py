@@ -151,7 +151,17 @@ def main():
                 db.commit()
 
             if config.postprocess.get('delete_bad_releases', False):
+                # kill unwanteds
                 deletes = db.query(Release).filter(Release.unwanted == True).delete()
+
+                # and also kill other-miscs that we can't retrieve a rar for
+                sub = db.query(Release.id).join(MetaBlack, Release.rar_metablack).\
+                    filter(Release.category_id==8010).\
+                    filter(MetaBlack.status=='IMPOSSIBLE').\
+                    subquery()
+
+                deletes += db.query(Release).filter(Release.id.in_(sub)).delete(synchronize_session='fetch')
+
                 log.info('postprocess: deleted {} bad releases'.format(deletes))
                 db.commit()
 

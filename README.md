@@ -41,12 +41,14 @@ Features
 - Developed around pure API usage
 - Newznab-API compatible (mostly, see below)
 - TVRage/IMDB/Password post-processing
+- Release renaming for most obfuscated releases
 
 In development:
 ---------------
 
-- Release renaming for obfuscated releases (works for misc/books, breaks other stuff)
-- Pre-DB comparisons maybe?
+- Pre-DB comparisons to assist in renaming
+- XMPP PubSub support to push to nzb clients
+- Got an idea? Send it in!
 
 
 Technical Differences to Newznab
@@ -81,7 +83,7 @@ Installation and execution is reasonably easy.
 Requirements
 ------------
 
-- Python 3.3 or higher (might work on 3.2)
+- Python 3.2 or higher
 - PostgreSQL 9.3 or higher
 - A u/WSGI-capable webserver (or use CherryPy)
 
@@ -98,9 +100,9 @@ Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodes
 
 Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
 
-You also need to install Python 3.3, associated packages and pip3:
+You also need to install Python 3.3/3.4, associated packages and pip3:
 
-    > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev
+    > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev libyaml-dev
 
 And a few packages required by psycopg2:
 
@@ -108,8 +110,9 @@ And a few packages required by psycopg2:
 
 ### General *nix ###
 
-    > cd /var/www/
+    > cd /opt/
     > sudo git clone https://github.com/Murodese/pynab.git
+    > sudo chown -R www-data:www-data pynab
     > cd pynab
     > sudo cp config.sample.py config.py
     > sudo vim config.py [fill in details as appropriate]
@@ -159,7 +162,7 @@ Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-f
 
 Once done:
 
-    > sudo chown -R www-data:www-data /var/www/pynab
+    > sudo chown -R www-data:www-data /opt/pynab
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -203,6 +206,9 @@ For most Newznab installations, it'll look like this:
 
     > python3 scripts/import.py /var/www/newznab/nzbfiles
 
+:warning: Run this script against a copy of the nzb folder, since it automatically deletes NZBS
+that were successfully imported.
+
 Allow this to finish before starting normal operation.
 
 ### Converting from pynab-mongo ###
@@ -213,9 +219,9 @@ than cut over directly:
 
     # don't bother running install.py first, as we're copying everything from mongo
     # you will, of course, need postgres installed
-    > cd /var/www
+    > cd /opt
     > git clone https://github.com/Murodese/pynab.git pynab-postgres
-    > cd /var/www/pynab-postgres
+    > cd /opt/pynab-postgres
     > git checkout development-postgres
     > cp config.sample.py config.py
     > [edit config.py to add mongo and postgres config]
@@ -230,8 +236,8 @@ re-retrieve it.
 Once this is complete, rename the old folder and replace it with the new, then shut down mongo:
 
     > sudo service nginx stop # or whatever you're using
-    > mv /var/www/pynab /var/www/pynab.old
-    > mv /var/www/pynab-postgres /var/www/pynab
+    > mv /opt/pynab /opt/pynab.old
+    > mv /opt/pynab-postgres /opt/pynab
     > sudo service nginx start
     > sudo service mongo stop
 
@@ -241,44 +247,104 @@ https://github.com/gregs1104/pgtune
 Execution of the indexer works identically to the mongo version - just run start.py and
 postprocess.py.
 
+### Installing Upstart Scripts ###
+
+Pynab comes with an upstart script that can be used to handle automatic startups. To install it:
+
+    > vim init/pynab.conf
+    > [edit home, logdir as necessary]
+    > sudo cp init/pynab.conf /etc/init
+
+This will, by default, run the pynab scan and postprocess daemons automatically on system boot. You
+can also manually control parts of pynab, as seen below.
+
 Operation
 =========
 
-### Start Indexing ###
+Pynab comes with a CLI program that can make administration somewhat easier. Common usage is listed below.
 
-At this point you should manually activate groups to index, and blacklists.
-To kick you off, they look something like this:
+### Enabling Groups ###
 
-    > psql -u pynab [or whatever user is specified]
-    # UPDATE groups SET active=TRUE WHERE name='alt.binaries.teevee'; [or something similar]
+After installation, you should enable groups to be scanned. Pynab comes pre-installed with several
+groups, but none enabled by default. To enable a group:
 
-You can also just use http://www.pgadmin.org/, which makes managing it a lot easier.
+    > python3 pynab.py group enable <group name>
 
-Once desired groups have been activated and new_group_scan_days and backfill_days have been
-set in config.py:
+For example, to enable alt.binaries.linux:
 
-    > python3 start.py
+    > python3 pynab.py group enable alt.binaries.linux
 
-start.py is your update script - it'll take care of indexing messages, collating binaries and
-creating releases.
+### Adding Users ###
 
-### Post-processing Releases ###
+For users to access your API, they need an API key. To add a user:
 
-Some APIs (sometimes Sickbeard, usually Couchpotato) rely on some post-processed metadata
-to be able to easily find releases. Sickbeard looks for TVRage IDs, CouchPotato for IMDB IDs,
-for instance. These don't come from Usenet - we match them against online databases.
+    > python3 pynab.py user create <email>
 
-To run the post-process script, do this:
+This will supply you with an API key for the user. You can also delete a user:
 
-    > python3 postprocess.py
+    > python3 pynab.py user delete <email>
 
-This will run a quick once-over of all releases to match to available local data, then a slow
-process of pulling individual articles off Usenet for NFOs, RARs and other data. Finally, it'll
-rename any shitty releases in Misc-Other and Ebooks, optionally deleting any releases it can't
-fix after that (NB: won't do this until I'm satisfied it's safe).
+### Running Pynab ###
 
-Note that SB/CP will have trouble finding some stuff until it's been post-processed - Sickbeard
-will usually search by name as well, but CP tends not to do so, so keep your releases post-processed.
+The pynab CLI handles execution of daemons and respawning of processes. There are two primary 
+parts of pynab: scanning and post-processing. Scanning indexes usenet posts and builds releases,
+while post-processing enriches releases with metadata useful for the API. This metadata includes
+TVRage IDs, IMDB IDs, whether a release is passworded, release size, etc.
+
+Before running pynab, you should ensure that you've read and edited config.py (copied from 
+config.sample.py). If log directories are set to unwritable locations, pynab will not run.
+
+The simplest way of starting pynab is:
+
+    > python3 pynab.py start
+
+Or, if you've installed the Upstart script:
+
+    > sudo start pynab
+
+This will execute both the scanning and post-processing components of pynab. If you're using Windows,
+this will also execute the API - if you're using a nix OS, you should read down to the section on 
+using uWSGI to operate the API.
+
+These components can also be started individually:
+
+    > python3 pynab.py scan
+    > python3 pynab.py postprocess
+    > python3 pynab.py api
+
+To stop pynab, you can use:
+
+    > python3 pynab.py stop
+
+Or, again, if using Upstart:
+
+    > sudo stop pynab
+
+### Monitoring Pynab ###
+
+You can optionally use a teamocil layout to set up a window for monitoring (that will show scan/postproc
+progress). 
+
+If you want to use the monitor, you'll need some other packages:
+
+    > sudo apt-get install tmux
+
+Including Ruby 2.0 so that we can install teamocil...
+
+    > \curl -L https://get.rvm.io | bash -s stable --ruby
+    > rvm install ruby --latest
+    > rvm list [find the 2.0.x version]
+    > rvm use ruby-<version>
+    > gem install teamocil
+
+To run the monitor:
+
+    > ./monitor.sh
+
+This will spawn a new tmux session, load the Teamocil layout and then attach to tmux.
+
+Teamocil layouts are in `teamocil/` and can be modified or added as desired (just change monitor.sh).
+If you create a good layout, submit a pull request! :)
 
 ### Backfilling Groups ###
 
@@ -326,29 +392,19 @@ By running start.py at the same time as the backfill scripts, start.py will auto
 processing parts created by the backfill scripts at regular intervals, preventing the parts table from
 becoming extremely large.
 
-You can also run the script supplied to execute start and postprocess:
-
-    > ./run.sh
-
-Or, on Windows:
-
-    > run.bat
-
-The Windows batch script will also start the API, since uwsgi is not available.
-
 ### Updating Pynab ###
 
 Run the following to update to the latest version:
 
-    > ./update.sh
+    > python3 pynab.py update
 
-Requires that alembic is installed and in your path (as well as git, obviously).
+Requires that alembic is installed and in your path (as well as git).
 
 ### Starting the API ###
 
 To activate the API:
 
-    > python3 api.py
+    > python3 pynab.py api
 
 Starting the api.py script will put up a very basic web server, without threading/pooling
 capability.
@@ -377,7 +433,6 @@ Your /etc/nginx/sites-enabled/pynab file should look like this:
     server {
         listen 80;
         server_name some.domain.name.or.ip;
-        root /var/www/pynab;
 
         location / {
             try_files $uri @uwsgi;
@@ -394,7 +449,7 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     [uwsgi]
     socket = /var/run/uwsgi/app/pynab/socket
     master = true
-    chdir = /var/www/pynab
+    chdir = /opt/pynab
     wsgi-file = api.py
     uid = www-data
     gid = www-data
@@ -403,10 +458,6 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
 
 ### Using the miscellaneous scripts ###
 
-To create a user (will return a generated API key):
-
-	> python3 scripts/create_user.py <email>
-
 Update regex (run it every now and then, but it doesn't update that often):
 
     > python3 scripts/update_regex.py
@@ -414,6 +465,28 @@ Update regex (run it every now and then, but it doesn't update that often):
 Categorise all uncategorised releases - this runs automatically after import.
 
     > python3 scripts/process_uncategorised.py
+    
+Fill sizes from NZBs - this should only be used if you were running an old version of pynab 
+(pre-aug-2014).
+
+    > python3 scripts/fill_sizes_from_nzb.py
+
+Quick post-process - this quickly runs an offline post-process of files for imdb/tvrage data.
+This automatically gets called at the start of postprocess.py execution and should only be used
+if you've imported a large dump of imdb/tvrage data or something similar.
+
+    > python3 scripts/quick_postprocess.py
+
+Recategorise everything - as it says. Wipes clean the category slate for all releases and checks them anew.
+Run if there have been major changes to category regex or lots of stuff broke.
+
+    > python3 scripts/recategorise_everything.py
+
+Rename bad releases - automatically run as part of the post-process process (process [process]).
+CLI script that can take badly-named releases and attempt to rename them from nfo, sfv, par or rar.
+Don't run on normal groups, just ebooks and misc.
+
+    > python3 scripts/rename_bad_releases.py
 
 
 ### Building the WebUI ###
@@ -462,6 +535,7 @@ F.A.Q.
 ======
 
 - I keep getting errors related to "config.<something>" and start.py stops.
+- e.g. AttributeError: 'module' object has no attribute 'monitor'
 
 This means that your config.py is out of date. Re-copy config.sample.py and re-enter your details.
 Generally speaking this should become less of a problem as time goes on - only new features require new
@@ -491,7 +565,30 @@ There was a bug in a particular version of the python regex module that could ca
 regex to give incredibly shitty results. This is forced to a correct version in requirements.txt, so just
 run `pip3 install --upgrade regex` if it's happening.
 
-- While running `npm install` to build the WebUI,
+- While building the WebUI, I get errors about compass.
+
+Run the following:
+
+    > gem uninstall sass
+    > gem install sass --no-ri --no-rdoc
+    > gem install compass --no-ri --no-rdoc 
+
+- Upstart has broken horribly, and `sudo start pynab` or `sudo stop pynab` just hang and do nothing until I reboot.
+
+Particularly annoying, this bug, which is an upstart bug. You should see some output like this:
+
+    > sudo initctl status pynab
+    > pynab stop/killed, process 994 (or some other pid)
+
+Do this:
+
+    > cd ~
+    > wget https://raw.githubusercontent.com/ion1/workaround-upstart-snafu/master/workaround-upstart-snafu
+    > chmod +x workaround-upstart-snafu
+    > ./workaround-upstart-snafu 994 (whatever pid was listed above)
+    
+Let it run. Rebooting also solves this.
+
 
 Newznab API
 ===========

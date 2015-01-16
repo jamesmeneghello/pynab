@@ -1,6 +1,7 @@
 import gzip
 import os
 import datetime
+import calendar
 import regex
 import sys
 import io
@@ -121,7 +122,7 @@ def get_nzb_details(nzb):
     }
 
 
-def create(name, category, binary):
+def create(name, parent_category_name, binary):
     """Create the NZB, store it in GridFS and return the ID
     to be linked to the release."""
 
@@ -129,18 +130,15 @@ def create(name, category, binary):
     xml.write('<?xml version="1.0" encoding="UTF-8"?>\n'
         '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n'
         '<nzb>\n'
-        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(category.name, escape(name))
+        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(parent_category_name, escape(name))
     )
 
     for part in binary.parts:
-        if sys.version_info >= (3, 3):
-            timestamp = '{:.0f}'.format(part.posted.replace(tzinfo=pytz.utc).timestamp())
-        else:
-            timestamp = '{:.0f}'.format(int(part.posted.replace(tzinfo=pytz.utc).strftime("%s")))
+        timestamp = calendar.timegm(part.posted.replace(tzinfo=pytz.utc).utctimetuple())
 
-        xml.write('<file poster={} date={} subject={}>\n<groups>'.format(
+        xml.write('<file poster={} date="{}" subject={}>\n<groups>'.format(
             quoteattr(binary.posted_by),
-            quoteattr(timestamp),
+            timestamp,
             quoteattr('{0} (1/{1:d})'.format(part.subject, part.total_segments))
         ))
 
@@ -230,9 +228,8 @@ def import_nzb(name, nzb_data):
             if 'group_name' in release:
                 group = db.query(Group).filter(Group.name == release['group_name']).first()
                 if not group:
-                    log.error(
-                        'nzb: could not add release - group {0} doesn\'t exist.'.format(release['group_name']))
-                    return False
+                    group = Group(name=release['group_name'])
+                    db.add(group)
                 r.group = group
 
             # rebuild the nzb, gzipped

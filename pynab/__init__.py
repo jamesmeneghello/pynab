@@ -3,7 +3,7 @@
 
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
-__version__ = '1.1.0'
+__version__ = '1.3.0'
 
 import logging
 import config
@@ -36,12 +36,26 @@ if logging_file:
     name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
     file, ext = os.path.splitext(config.log.get('logging_file'))
     logging_file = ''.join([file, '_', name, ext])
+    logging_dir = os.path.dirname(os.path.abspath(logging_file))
+
+    try:
+        if os.path.exists(logging_dir):
+            os.makedirs(logging_dir)
+    except Exception as e:
+        print('error: logfile not accessible. permissions error?')
+        print(e)
+        exit(1)
+
+    log.info('log: started pynab logger')
 
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     #handler.setFormatter(formatter)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
+
+
+
 else:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
