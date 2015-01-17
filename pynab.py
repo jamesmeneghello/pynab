@@ -44,6 +44,7 @@ def backfill(group, date):
             program,
             '--forever',
             '--socket-name /tmp/pynab.backfill.zdsock'
+            'start'
         ])
         call(zdp, shell=True)
     elif monitor == 'windows':
