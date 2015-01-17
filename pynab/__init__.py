@@ -33,13 +33,10 @@ formatter = colorlog.ColoredFormatter(
 )
 
 if logging_file:
-    name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
-    file, ext = os.path.splitext(config.log.get('logging_file'))
-    logging_file = ''.join([file, '_', name, ext])
     logging_dir = os.path.dirname(os.path.abspath(logging_file))
 
     try:
-        if os.path.exists(logging_dir):
+        if not os.path.exists(logging_dir):
             os.makedirs(logging_dir)
     except Exception as e:
         print('error: logfile not accessible. permissions error?')
@@ -53,9 +50,10 @@ if logging_file:
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
-
-
-
+elif config.log.get('colors', False):
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    log.addHandler(handler)
 else:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

@@ -279,6 +279,8 @@ log = {
     # number, in bytes (this is 50mb)
     'max_log_size': 50*1024*1024,
     
+    # enable/disable color logging to console
+    'colors': 'True',
 }
 
 # postgre server config
