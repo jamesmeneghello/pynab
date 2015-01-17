@@ -16,7 +16,7 @@ import sys
 log = logging.getLogger(__name__)
 log.setLevel(config.log.get('logging_level', logging.DEBUG))
 
-logging_file = config.log.get('logging_file')
+logging_dir = config.log.get('logging_dir')
 log_descriptor = None
 
 formatter = colorlog.ColoredFormatter(
@@ -32,11 +32,9 @@ formatter = colorlog.ColoredFormatter(
     }
 )
 
-if logging_file:
+if logging_dir:
     name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
-    file, ext = os.path.splitext(config.log.get('logging_file'))
-    logging_file = ''.join([file, '_', name, ext])
-    logging_dir = os.path.dirname(os.path.abspath(logging_file))
+    logging_file = os.path.join(logging_dir, name + '.log')
 
     try:
         if not os.path.exists(logging_dir):
@@ -49,7 +47,6 @@ if logging_file:
     log.info('log: started pynab logger')
 
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-    #handler.setFormatter(formatter)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()

@@ -266,8 +266,8 @@ postprocess = {
 log = {
     # logging settings
     # ----------------
-    # logging_file: a filepath or None to go to stdout
-    # this should be something like '/var/log/pynab/pynab.log'
+    # logging_dir: a filepath or None to go to stdout
+    # this should be something like '/var/log/pynab'
     # it'll automatically split the logfiles for you
     'logging_file': None,
 
