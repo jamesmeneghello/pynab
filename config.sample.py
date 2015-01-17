@@ -269,7 +269,7 @@ log = {
     # logging_dir: a filepath or None to go to stdout
     # this should be something like '/var/log/pynab'
     # it'll automatically split the logfiles for you
-    'logging_file': None,
+    'logging_dir': None,
 
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
     # generally, debug if something goes wrong, info for normal usage
