@@ -2,8 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update
-    pynab.py backfill [--group=<group>] [--date=<date>]
+    pynab.py start|stop|scan|postprocess|api|update|backfill
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
     pynab.py regex (update)
@@ -30,29 +29,12 @@ def scan():
         Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
-def backfill(group, date):
+def backfill():
     if monitor == 'zdaemon':
-        program = '-p \'python3 scan.py --backfill'
-        if group:
-            program += ' --group={}'.format(group)
-        if date:
-            program += ' --date={}'.format(date)
-        program += '\''
         # can't use a conf file, since we're using params...
-        zdp = ' '.join([
-            'zdaemon',
-            program,
-            '--forever',
-            '--socket-name /tmp/pynab.backfill.zdsock'
-            'start'
-        ])
-        call(zdp, shell=True)
+        call('zdaemon -Czdaemon/backfill.conf start', shell=True)
     elif monitor == 'windows':
-        program = 'start "Pynab Backfill (close to quit)" python scan.py --backfill'
-        if group:
-            program += ' --group={}'.format(group)
-        if date:
-            program += ' --date={}'.format(date)
+        program = 'start "Pynab Backfill (close to quit)" python scan.py backfill'
         Popen(program, stdout=None, stderr=None, stdin=None, shell=True)
 
 
@@ -75,6 +57,7 @@ def stop():
         call('zdaemon -Czdaemon/update.conf stop', shell=True)
         call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
         call('zdaemon -Czdaemon/api.conf stop', shell=True)
+        call('zdaemon -Czdaemon/backfill.conf stop', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
@@ -174,7 +157,7 @@ if __name__ == '__main__':
     elif arguments['scan']:
         scan()
     elif arguments['backfill']:
-        backfill(arguments['--group'], arguments['--date'])
+        backfill()
     elif arguments['postprocess']:
         postprocess()
     elif arguments['api']:
