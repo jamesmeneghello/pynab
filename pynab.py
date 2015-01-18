@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill
+    pynab.py start|stop|restart|scan|postprocess|api|update|backfill
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
     pynab.py regex (update)
@@ -148,6 +148,12 @@ if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)
 
     if arguments['start']:
+        scan()
+        postprocess()
+        if monitor == 'windows':
+            api()
+    elif arguments['restart']:
+        stop()
         scan()
         postprocess()
         if monitor == 'windows':

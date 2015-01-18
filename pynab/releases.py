@@ -112,7 +112,7 @@ def discover_name(release):
                 ))
                 return False, calculated_old_category
 
-    log.info('release: [{}] - no good name candidates'.format(
+    log.info('release: no good name candidates [{}]'.format(
         release.search_name
     ))
     return None, None

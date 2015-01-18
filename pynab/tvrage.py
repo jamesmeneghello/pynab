@@ -81,7 +81,7 @@ def process(limit=None, online=True):
                     time.sleep(1)
 
                 if rage:
-                    log.info('tvrage: add {}: [{}]'.format(
+                    log.info('tvrage: add {} [{}]'.format(
                         method,
                         release.search_name
                     ))
