@@ -192,7 +192,7 @@ class Release(Base):
     episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))
 
-    pre_id = Column(Integer, ForeignKey('pre.id'), index=True)
+    pre_id = Column(Integer, ForeignKey('pres.id'), index=True)
     pre = relationship('Pre', backref=backref('pre'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
