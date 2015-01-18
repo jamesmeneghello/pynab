@@ -303,6 +303,8 @@ class Server:
             interval = math.floor((upper - lower) * 0.5)
             next_date = last_date
 
+            # 95% of the time spent finding posts by date is spent on the last day
+            # so add a tolerance, because we probably don't care
             tolerance = 1
 
             while self.days_old(next_date) < days - tolerance:
