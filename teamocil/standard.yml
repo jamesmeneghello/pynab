@@ -3,5 +3,5 @@ windows:
     root: /opt/pynab/
     layout: even-vertical
     panes:
-      - tail -F /var/log/pynab/pynab_scan.log
-      - tail -F /var/log/pynab/pynab_postprocess.log
+      - tail -F /var/log/pynab/scan.log
+      - tail -F /var/log/pynab/postprocess.log
