@@ -8,7 +8,7 @@ Create Date: 2015-01-18 19:51:20.345279
 
 # revision identifiers, used by Alembic.
 revision = '1de31e1a78b'
-down_revision = '91a9b24e98'
+down_revision = '3821d174074'
 
 from alembic import op
 import sqlalchemy as sa
@@ -30,6 +30,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    op.create_index(op.f('ix_pres_name'), 'pres', ['name'], unique=False)
     op.add_column('releases', sa.Column('pre_id', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'releases', 'pres', ['pre_id'], ['id'])
     ### end Alembic commands ###
