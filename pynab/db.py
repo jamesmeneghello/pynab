@@ -430,7 +430,7 @@ class DataLog(Base):
 
 class Pre(Base):
 
-    __tablename__ = 'pre'
+    __tablename__ = 'pres'
 
     id = Column(BigInteger, primary_key=True)
 
