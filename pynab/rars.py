@@ -257,8 +257,7 @@ def process(limit=None, category=0):
                 if nzb and nzb['rars']:
                     passworded, info = check_release_files(server, release.group.name, nzb)
                     if info:
-                        log.info('rar: [{}] - [{}] - file info: added'.format(
-                            release.id,
+                        log.info('rar: [{}] - file info: added'.format(
                             release.search_name
                         ))
                         release.passworded = passworded
@@ -276,8 +275,7 @@ def process(limit=None, category=0):
                         release.rar_metablack_id = None
                         db.add(release)
                         continue
-                log.warning('rar: [{}] - [{}] - file info: no readable rars in release'.format(
-                    release.id,
+                log.warning('rar: [{}] - file info: no readable rars in release'.format(
                     release.search_name
                 ))
                 mb = MetaBlack(rar=release, status='IMPOSSIBLE')

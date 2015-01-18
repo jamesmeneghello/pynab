@@ -1,7 +1,8 @@
 windows:
-  - name: two-pane
-    root: /opt/pynab/
+  - name: three-pane
+    root: /var/www/pynab/
     layout: even-vertical
     panes:
       - tail -F /var/log/pynab/pynab_scan.log
       - tail -F /var/log/pynab/pynab_postprocess.log
+      - tail -F /var/log/pynab/pynab_stats.log

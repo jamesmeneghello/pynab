@@ -72,16 +72,14 @@ def process(limit=None, category=0):
                             release.nfo_metablack_id = None
                             db.add(release)
 
-                            log.info('nfo: [{}] - [{}] - nfo added'.format(
-                                release.id,
+                            log.info('nfo: [{}] - nfo added'.format(
                                 release.search_name
                             ))
                             found = True
                             break
 
                     if not found:
-                        log.warning('nfo: [{}] - [{}] - no nfos in release'.format(
-                            release.id,
+                        log.warning('nfo: [{}] - no nfos in release'.format(
                             release.search_name
                         ))
                         mb = MetaBlack(nfo=release, status='IMPOSSIBLE')

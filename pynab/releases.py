@@ -93,8 +93,7 @@ def discover_name(release):
                         search_name = name
                         category_id = new_category
 
-                        log.info('release: [{}] - [{}] - rename: {} ({} -> {} -> {})'.format(
-                            release.id,
+                        log.info('release: [{}] - rename: {} ({} -> {} -> {})'.format(
                             release.search_name,
                             search_name,
                             old_category,
@@ -108,14 +107,12 @@ def discover_name(release):
                         continue
             else:
                 # the old name was apparently fine
-                log.info('release: [{}] - [{}] - old name was fine'.format(
-                    release.id,
+                log.info('release: [{}] - old name was fine'.format(
                     release.search_name
                 ))
                 return False, calculated_old_category
 
-    log.info('release: [{}] - [{}] - no good name candidates'.format(
-        release.id,
+    log.info('release: [{}] - no good name candidates'.format(
         release.search_name
     ))
     return None, None

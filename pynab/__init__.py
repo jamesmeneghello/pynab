@@ -32,6 +32,12 @@ formatter = colorlog.ColoredFormatter(
     }
 )
 
+logging.addLevelName(10, "DBUG")
+logging.addLevelName(20, "INFO")
+logging.addLevelName(30, "WARN")
+logging.addLevelName(40, "ERR ")
+logging.addLevelName(50, "CRIT")
+
 if logging_file:
     name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
     file, ext = os.path.splitext(config.log.get('logging_file'))
@@ -50,7 +56,7 @@ if logging_file:
 
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     #handler.setFormatter(formatter)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
 elif config.log.get('colors', False):
