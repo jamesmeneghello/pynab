@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
     pynab.py regex (update)
