@@ -133,6 +133,15 @@ scan = {
     # make sure it's writable, leave blank for nginx
     'pid_file': '',
 
+    # publish: publish release info in json to a host
+    # useful for xmpp pubsub or any listening scripts
+    # it just sends a POST to the server with the json
+    'publish': False,
+
+    # publish_hosts: hosts to send processed release data to
+    # include the port and path if necessary
+    # ie. ['http://127.0.0.1:5678/releases', 'http://someaddress.com/whatever']
+    'publish_hosts': ['http://127.0.0.1:8090']
 }
 
 postprocess = {
@@ -310,6 +319,27 @@ news = {
 
     # ssl: True if you want to use SSL, False if not
     'ssl': True,
+}
+
+# xmpp pubsub bot
+# used to push nzbs, rather than waiting for rss updates
+bot = {
+    # enabled: whether to enable the xmpp pubsub bot
+    'enabled': False,
+
+    # host: jabber server hostname
+    'host': '',
+
+    # jid: jabber_id
+    'jid': '',
+
+    # password: jabber password
+    'password': '',
+
+    # listen: host/port to listen on for releases in json
+    # should be a tuple, eg. for localhost:8090
+    # ('', 8090)
+    'listen': ('', 8090)
 }
 
 # used in convert_mongo_to_postgre.py

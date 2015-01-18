@@ -52,6 +52,13 @@ def api():
         Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
+def pubsub():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/pubsub.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
 def stop():
     if monitor == 'zdaemon':
         call('zdaemon -Czdaemon/update.conf stop', shell=True)
@@ -152,6 +159,8 @@ if __name__ == '__main__':
         postprocess()
         if monitor == 'windows':
             api()
+        if config.bot.get('enabled', False):
+            pubsub()
     elif arguments['stop']:
         stop()
     elif arguments['scan']:
@@ -162,6 +171,8 @@ if __name__ == '__main__':
         postprocess()
     elif arguments['api']:
         api()
+    elif arguments['pubsub']:
+        pubsub()
     elif arguments['update']:
         update()
     elif arguments['user']:

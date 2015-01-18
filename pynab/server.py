@@ -284,6 +284,7 @@ class Server:
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
+        log.info('server: finding post {} days old...'.format(days))
 
         _, count, first, last, _ = self.connection.group(group_name)
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
@@ -302,7 +303,10 @@ class Server:
             interval = math.floor((upper - lower) * 0.5)
             next_date = last_date
 
-            while self.days_old(next_date) < days:
+            tolerance = 1
+
+            while self.days_old(next_date) < days - tolerance:
+                log.debug('server: post was {} days old, continuing'.format(self.days_old(next_date)))
                 skip = 1
                 temp_date = self.post_date(group_name, upper - interval)
                 if temp_date:
