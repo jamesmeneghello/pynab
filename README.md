@@ -385,7 +385,7 @@ Note that you can combine the backfill script with Screen to backfill multiple g
 	> (press ctrl-a then d)
 	> tail -f pynab.log
 
-The last line will enable you to see output from all the windows, if logging_file is enabled.
+The last line will enable you to see output from all the windows, if logging_dir is enabled.
 This is pretty spammy and unreadable, though. Watchdog to come with summarised stats for the DB.
 
 By running start.py at the same time as the backfill scripts, start.py will automatically take care of 

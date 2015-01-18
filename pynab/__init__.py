@@ -32,6 +32,9 @@ formatter = colorlog.ColoredFormatter(
     }
 )
 
+if config.log.get('logging_file') and not config.log.get('logging_dir'):
+    logging_dir = os.path.abspath(os.path.realpath(config.log.get('logging_file')))
+
 if logging_dir:
     name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
     logging_file = os.path.join(logging_dir, name + '.log')
