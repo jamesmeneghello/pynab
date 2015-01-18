@@ -24,3 +24,4 @@ docopt
 sleekxmpp
 eventlet
 requests-futures
+irc
