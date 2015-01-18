@@ -21,3 +21,6 @@ pympler
 psutil
 zdaemon
 docopt
+sleekxmpp
+eventlet
+requests-futures
