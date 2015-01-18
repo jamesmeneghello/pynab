@@ -30,7 +30,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    op.create_index(op.f('ix_pres_name'), 'pres', ['name'], unique=False)
     op.add_column('releases', sa.Column('pre_id', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'releases', 'pres', ['pre_id'], ['id'])
     ### end Alembic commands ###
