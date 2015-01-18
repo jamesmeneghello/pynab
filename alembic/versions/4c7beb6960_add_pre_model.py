@@ -23,8 +23,6 @@ def upgrade():
         sa.Column('searchname', sa.String(), nullable=True),
     )
     op.create_index(op.f('ix_pre_name'), 'pres', ['name'], unique=False)
-    op.drop_constraint('pre_name_key', 'pres', type_='unique')
-    op.drop_index('pre_title', table_name='pres')
     op.create_index(op.f('ix_releases_pre_id'), 'releases', ['pre_id'], unique=False)
     ### end Alembic commands ###
 
