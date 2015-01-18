@@ -1,6 +1,6 @@
 import config
 import random
-import time
+import os, sys, time
 from colorama import init, Fore
 init()
 from pynab.db import Part, Binary, Release, db_session
@@ -44,16 +44,15 @@ loop_num = 1
 printHeader()
 
 
-if config.stats.get('write_csv', True):
-    logging_dir = os.path.dirname(config.log.get('logging_file'))
-    csv_path = os.path.join(logging_dir, "stats.csv")
+logging_dir = os.path.dirname(config.log.get('logging_file'))
+csv_path = os.path.join(logging_dir, "stats.csv")
 
-    if os.path.exists(csv_path):
+# write header if we are creating the file
+if config.stats.get('write_csv', True):
+    if not os.path.exists(csv_path):
         csv = open(csv_path, 'a')
-    else:
-        # write header if we are creating the file
-        csv = open(csv_path, 'a')
-        csv.write("Parts,part_diff,Binaries,bin_diff,Releases,rel_diff")
+        csv.write("Parts,part_diff,Binaries,bin_diff,Releases,rel_diff\n")
+        csv.close()
 
 while True:
     parts, binaries, releases = getStats()    
@@ -75,7 +74,9 @@ while True:
 
     # write to csv file
     if config.stats.get('write_csv', True):
+        csv = open(csv_path, 'a')
         csv.write("%d,%d,%d,%d,%d,%d\n" % (parts, p_diff, binaries, b_diff, releases, r_diff))
+        csv.close()
 
     last_parts    = parts
     last_binaries = binaries
@@ -83,5 +84,3 @@ while True:
     loop_num += 1
 
     time.sleep(config.stats.get('sleep_time', 300))
-
-csv.close()
