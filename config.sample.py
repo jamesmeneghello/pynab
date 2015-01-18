@@ -1,5 +1,19 @@
 import logging
 
+stats = {
+    # stats seettings
+    # ---------------------
+
+    # how long to sleep in seconds between stats reports
+    'sleep_time': 300,
+
+    # print header every nth report
+    'header_every_nth': 20,
+
+    # write a separate .csv file for use in excel.
+    'write_csv': False,
+}
+
 monitor = {
     # type: monitor type
     # zdaemon, windows

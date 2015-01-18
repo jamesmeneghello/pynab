@@ -34,6 +34,7 @@ def colored(num):
 def printHeader():
     print ("%-21s|%-21s|%s" % (" Parts", " Binaries", " Releases"))
 
+
 last_parts = 0
 last_binaries = 0
 last_releases = 0
@@ -41,6 +42,18 @@ first_loop = True
 loop_num = 1
 
 printHeader()
+
+
+if config.stats.get('write_csv', True):
+    logging_dir = os.path.dirname(config.log.get('logging_file'))
+    csv_path = os.path.join(logging_dir, "stats.csv")
+
+    if os.path.exists(csv_path):
+        csv = open(csv_path, 'a')
+    else:
+        # write header if we are creating the file
+        csv = open(csv_path, 'a')
+        csv.write("Parts,part_diff,Binaries,bin_diff,Releases,rel_diff")
 
 while True:
     parts, binaries, releases = getStats()    
@@ -55,13 +68,20 @@ while True:
         b_diff = 0
         r_diff = 0
 
-    if loop_num % 20 == 0:
+    if loop_num % config.stats.get('header_every_nth', 0) == 0:
         printHeader()
 
     print ("%10d %20s|%10d %20s|%10d %6s" % (parts, colored(p_diff), binaries, colored(b_diff), releases, colored(r_diff)))
 
+    # write to csv file
+    if config.stats.get('write_csv', True):
+        csv.write("%d,%d,%d,%d,%d,%d\n" % (parts, p_diff, binaries, b_diff, releases, r_diff))
+
     last_parts    = parts
     last_binaries = binaries
     last_releases = releases
+    loop_num += 1
 
-    time.sleep(300)
+    time.sleep(config.stats.get('sleep_time', 300))
+
+csv.close()
