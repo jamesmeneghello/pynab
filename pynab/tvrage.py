@@ -81,9 +81,9 @@ def process(limit=None, online=True):
                     time.sleep(1)
 
                 if rage:
-                    log.info('tvrage: [{}] - tvrage added: {}'.format(
-                        release.search_name,
-                        method
+                    log.info('tvrage: add {}: [{}]'.format(
+                        method,
+                        release.search_name
                     ))
 
                     e = db.query(Episode).filter(Episode.tvshow_id==rage.id).filter(Episode.series_full==show['series_full']).first()
@@ -101,7 +101,7 @@ def process(limit=None, online=True):
                     release.episode = e
                     db.add(release)
                 elif not rage and online:
-                    log.warning('tvrage: [{}] - tvrage failed: {}'.format(
+                    log.debug('tvrage: [{}] - tvrage failed: {}'.format(
                         release.search_name,
                         'no show found (online)'
                     ))
@@ -109,12 +109,12 @@ def process(limit=None, online=True):
                     mb = MetaBlack(tvshow=release, status='ATTEMPTED')
                     db.add(mb)
                 else:
-                    log.warning('tvrage: [{}] - tvrage failed: {}'.format(
+                    log.debug('tvrage: [{}] - tvrage failed: {}'.format(
                         release.search_name,
                         'no show found (local)'
                     ))
             else:
-                log.error('tvrage: [{}] - tvrage failed: {}'.format(
+                log.debug('tvrage: [{}] - tvrage failed: {}'.format(
                     release.search_name,
                     'no suitable regex for show name'
                 ))

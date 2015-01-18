@@ -52,7 +52,8 @@ def process(limit=None, online=True):
                             imdb.year = movie['Year']
                             db.add(imdb)
                 if imdb:
-                    log.info('imdb: [{}] - movie data added: {}'.format(
+                    log.debug('imdb: [{}] - [{}] - movie data added: {}'.format(
+                        release.id,
                         release.search_name,
                         method
                     ))
@@ -60,18 +61,20 @@ def process(limit=None, online=True):
                     release.movie_metablack_id = None
                     db.add(release)
                 elif not imdb and online:
-                    log.warning('imdb: [{}] - movie data not found: online'.format(
+                    log.debug('imdb: [{}] - movie data not found: online'.format(
                         release.search_name
                     ))
 
                     mb = MetaBlack(status='ATTEMPTED', movie=release)
                     db.add(mb)
                 else:
-                    log.warning('imdb: [{}] - movie data not found: local'.format(
+                    log.debug('imdb: [{}] - [{}] - movie data not found: local'.format(
+                        release.id,
                         release.search_name
                     ))
             else:
-                log.error('imdb: [{}] - movie data not found: no suitable regex for movie name'.format(
+                log.debug('imdb: [{}] - [{}] - movie data not found: no suitable regex for movie name'.format(
+                    release.id,
                     release.search_name
                 ))
                 db.add(MetaBlack(status='IMPOSSIBLE', movie=release))

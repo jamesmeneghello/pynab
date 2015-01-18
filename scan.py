@@ -24,7 +24,7 @@ def update(group_name):
     try:
         return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
+        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
 
 
 def backfill(group_name, date=None):
@@ -35,14 +35,14 @@ def backfill(group_name, date=None):
     try:
         return pynab.groups.scan(group_name, direction='backward', date=date, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
+        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
 
 
 def scan_missing(group_name):
     try:
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit')
+        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
 
 
 def process():

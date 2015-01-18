@@ -569,7 +569,7 @@ def determine_category(name, group_name=''):
     if not category:
         category = CAT_MISC_OTHER
 
-    log.info('category: ({}) [{}]: {}'.format(
+    log.debug('category: ({}) [{}]: {}'.format(
         group_name,
         name,
         category

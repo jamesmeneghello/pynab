@@ -202,7 +202,7 @@ def check_release_files(server, group_name, nzb):
                             if group_name in config.postprocess.get('delete_spam_groups', []):
                                 result = SPAM_REGEX.search(file['name'])
                                 if result:
-                                    log.info('rar: [{}] - [{}] - release is spam')
+                                    log.debug('rar: [{}] - [{}] - release is spam')
                                     highest_password = 'YES'
                                     break
 
@@ -210,14 +210,14 @@ def check_release_files(server, group_name, nzb):
                         # whether "maybe" releases get deleted or not is a config option
                         result = MAYBE_PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO'):
-                            log.info('rar: [{}] - [{}] - release might be passworded')
+                            log.debug('rar: [{}] - [{}] - release might be passworded')
                             highest_password = 'MAYBE'
                             break
 
                         # as is definitely-deleted
                         result = PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO' or highest_password == 'MAYBE'):
-                            log.info('rar: [{}] - [{}] - release is passworded')
+                            log.debug('rar: [{}] - [{}] - release is passworded')
                             highest_password = 'YES'
                             break
 
@@ -257,7 +257,7 @@ def process(limit=None, category=0):
                 if nzb and nzb['rars']:
                     passworded, info = check_release_files(server, release.group.name, nzb)
                     if info:
-                        log.info('rar: [{}] - file info: added'.format(
+                        log.info('rar: fileinfo add: [{}]'.format(
                             release.search_name
                         ))
                         release.passworded = passworded
@@ -275,7 +275,7 @@ def process(limit=None, category=0):
                         release.rar_metablack_id = None
                         db.add(release)
                         continue
-                log.warning('rar: [{}] - file info: no readable rars in release'.format(
+                log.debug('rar: [{}] - file info: no readable rars in release'.format(
                     release.search_name
                 ))
                 mb = MetaBlack(rar=release, status='IMPOSSIBLE')
