@@ -3,14 +3,19 @@ import regex
 import time
 import datetime
 import math
+import socket
 
 import dateutil.parser
 import pytz
 
 from pynab import log
+from pynab.db import db_session, Blacklist
 import pynab.parts
 import pynab.yenc
 import config
+
+
+SEGMENT_REGEX = regex.compile('\((\d+)[\/](\d+)\)', regex.I)
 
 
 class Server:
@@ -23,20 +28,16 @@ class Server:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
-            try:
-                self.connection.quit()
-            except Exception as e:
-                pass
-
+            self.connection.quit()
 
     def group(self, group_name):
         self.connect()
 
         try:
             response, count, first, last, name = self.connection.group(group_name)
-        except nntplib.NNTPError:
-            log.error('server: Problem sending group command to server.')
-            return False
+        except Exception as e:
+            log.error('server: could not send group command: {}'.format(e))
+            return None, False, None, None, None
 
         return response, count, first, last, name
 
@@ -54,7 +55,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('server: Could not connect to news server: {}'.format(e))
+                log.error('server: could not connect to news server: {}'.format(e))
                 return False
 
         return True
@@ -75,103 +76,156 @@ class Server:
                     else:
                         return None
             except nntplib.NNTPError as nntpe:
-                log.error('server: [{}]: Problem retrieving messages: {}.'.format(group_name, nntpe))
+                log.error('server: [{}]: problem retrieving messages: {}.'.format(group_name, nntpe))
+                self.connection = None
+                self.connect()
+                return None
+            except socket.timeout:
+                log.error('server: socket timed out, reconnecting')
+                self.connection = None
+                self.connect()
                 return None
 
             return data
         else:
             return None
 
-    def scan(self, group_name, first, last):
+    def scan(self, group_name, first=None, last=None, message_ranges=None):
         """Scan a group for segments and return a list."""
+
+        messages_missed = []
 
         start = time.time()
         try:
             # grab the headers we're after
             self.connection.group(group_name)
-            status, overviews = self.connection.over((first, last))
-        except nntplib.NNTPError as nntpe:
-            log.debug('NNTP Error: ' + str(nntpe))
-            return {}
+            if message_ranges:
+                overviews = []
+                for first, last in message_ranges:
+                    log.debug('server: getting range {}-{}'.format(first, last))
+                    status, range_overviews = self.connection.over((first, last))
+                    if range_overviews:
+                        overviews += range_overviews
+                    else:
+                        # we missed them
+                        messages_missed += range(first, last + 1)
 
-        messages = {}
-        ignored = 0
-        received = []
-        for (id, overview) in overviews:
-            # keep track of which messages we received so we can
-            # optionally check for ones we missed later
-            received.append(id)
-
-            # get the current segment number
-            results = regex.findall('\((\d+)[\/](\d+)\)', overview['subject'])
-
-            # it might match twice, so just get the last one
-            # the first is generally the part number
-            if results:
-                (segment_number, total_segments) = results[-1]
             else:
-                # if there's no match at all, it's probably not a binary
-                ignored += 1
-                continue
+                status, overviews = self.connection.over((first, last))
+        except Exception as e:
+            log.error('server: [{}]: nntp error'.format(group_name))
+            log.error('server: suspected dead nntp connection, restarting')
 
-            # make sure the header contains everything we need
-            if ':bytes' not in overview:
-                continue
+            self.connection.quit()
+            self.connect()
+            return self.scan(group_name, first, last, message_ranges)
 
-            # assuming everything didn't fuck up, continue
-            if int(segment_number) > 0 and int(total_segments) > 0:
-                # strip the segment number off the subject so
-                # we can match binary parts together
-                subject = nntplib.decode_header(overview['subject'].replace(
-                    '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
-                ).strip()).encode('utf-8', 'replace').decode('latin-1')
+        parts = {}
+        messages = []
+        ignored = 0
 
-                # this is spammy as shit, for obvious reasons
-                #pynab.log.debug('Binary part found: ' + subject)
+        if overviews:
+            with db_session() as db:
+                blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+                for blacklist in blacklists:
+                    db.expunge(blacklist)
 
-                # build the segment, make sure segment number and size are ints
-                segment = {
-                    'message_id': overview['message-id'][1:-1],
-                    'segment': int(segment_number),
-                    'size': int(overview[':bytes']),
-                }
+            for (id, overview) in overviews:
+                # keep track of which messages we received so we can
+                # optionally check for ones we missed later
+                messages.append(id)
 
-                # if we've already got a binary by this name, add this segment
-                if subject in messages:
-                    messages[subject]['segments'][segment_number] = segment
-                    messages[subject]['available_segments'] += 1
+                # some messages don't have subjects? who knew
+                if 'subject' not in overview:
+                    continue
+
+                # get the current segment number
+                results = SEGMENT_REGEX.findall(overview['subject'])
+
+                # it might match twice, so just get the last one
+                # the first is generally the part number
+                if results:
+                    (segment_number, total_segments) = results[-1]
                 else:
-                    # dateutil will parse the date as whatever and convert to UTC
-                    # some subjects/posters have odd encoding, which will break pymongo
-                    # so we make sure it doesn't
-                    message = {
-                        'subject': subject,
-                        'posted': dateutil.parser.parse(overview['date']),
-                        'posted_by': nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode(
-                            'latin-1'),
-                        'group_name': group_name,
-                        'xref': overview['xref'],
-                        'total_segments': int(total_segments),
-                        'available_segments': 1,
-                        'segments': {segment_number: segment, },
+                    # if there's no match at all, it's probably not a binary
+                    ignored += 1
+                    continue
+
+                # make sure the header contains everything we need
+                try:
+                    size = int(overview[':bytes'])
+                except:
+                    # TODO: cull this later
+                    log.debug('server: bad message: {}'.format(overview))
+                    continue
+
+                # assuming everything didn't fuck up, continue
+                if int(segment_number) > 0 and int(total_segments) > 0:
+                    # strip the segment number off the subject so
+                    # we can match binary parts together
+                    subject = nntplib.decode_header(overview['subject'].replace(
+                        '(' + str(segment_number) + '/' + str(total_segments) + ')', ''
+                    ).strip()).encode('utf-8', 'replace').decode('latin-1')
+
+                    posted_by = nntplib.decode_header(overview['from']).encode('utf-8', 'replace').decode('latin-1')
+
+                    # generate a hash to perform matching
+                    hash = pynab.parts.generate_hash(subject, posted_by, group_name, int(total_segments))
+
+                    # this is spammy as shit, for obvious reasons
+                    #pynab.log.debug('Binary part found: ' + subject)
+
+                    # build the segment, make sure segment number and size are ints
+                    segment = {
+                        'message_id': overview['message-id'][1:-1],
+                        'segment': int(segment_number),
+                        'size': size
                     }
 
-                    messages[subject] = message
-            else:
-                # :getout:
-                ignored += 1
+                    # if we've already got a binary by this name, add this segment
+                    if hash in parts:
+                        parts[hash]['segments'][segment_number] = segment
+                        parts[hash]['available_segments'] += 1
+                    else:
+                        # dateutil will parse the date as whatever and convert to UTC
+                        # some subjects/posters have odd encoding, which will break pymongo
+                        # so we make sure it doesn't
+                        try:
+                            message = {
+                                'hash': hash,
+                                'subject': subject,
+                                'posted': dateutil.parser.parse(overview['date']),
+                                'posted_by': posted_by,
+                                'group_name': group_name,
+                                'xref': overview['xref'],
+                                'total_segments': int(total_segments),
+                                'available_segments': 1,
+                                'segments': {segment_number: segment, },
+                            }
 
-        # instead of checking every single individual segment, package them first
-        # so we typically only end up checking the blacklist for ~150 parts instead of thousands
-        blacklist = [k for k in messages if pynab.parts.is_blacklisted(k, group_name)]
-        blacklisted_parts = len(blacklist)
-        total_parts = len(messages)
-        for k in blacklist:
-            del messages[k]
+                            parts[hash] = message
+                        except Exception as e:
+                            log.error('server: bad message parse: {}'.format(e))
+                            continue
+                else:
+                    # :getout:
+                    ignored += 1
 
-        # TODO: implement re-checking of missed messages, or maybe not
-        # most parts that get ko'd these days aren't coming back anyway
-        messages_missed = list(set(range(first, last)) - set(received))
+            # instead of checking every single individual segment, package them first
+            # so we typically only end up checking the blacklist for ~150 parts instead of thousands
+            blacklist = [k for k, v in parts.items() if pynab.parts.is_blacklisted(v, group_name, blacklists)]
+            blacklisted_parts = len(blacklist)
+            total_parts = len(parts)
+            for k in blacklist:
+                del parts[k]
+        else:
+            total_parts = 0
+            blacklisted_parts = 0
+
+        # check for missing messages if desired
+        # don't do this if we're grabbing ranges, because it won't work
+        if not message_ranges:
+            messages_missed = list(set(range(first, last)) - set(messages))
 
         end = time.time()
 
@@ -179,13 +233,19 @@ class Server:
             group_name,
             first, last,
             end - start,
-            len(received),
+            len(messages),
             total_parts,
             ignored,
             blacklisted_parts
         ))
 
-        return messages
+        # check to see if we at least got some messages - they might've been ignored
+        if len(messages) > 0:
+            status = True
+        else:
+            status = False
+
+        return status, parts, messages, messages_missed
 
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""
@@ -213,12 +273,18 @@ class Server:
                 continue
 
             if art_num and overview:
-                return dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
+                try:
+                    date = dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
+                except Exception as e:
+                    log.error('server: date parse failed while dating message: {}'.format(e))
+                    return None
+                return date
             else:
                 return None
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
+        log.info('server: finding post {} days old...'.format(days))
 
         _, count, first, last, _ = self.connection.group(group_name)
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
@@ -237,14 +303,23 @@ class Server:
             interval = math.floor((upper - lower) * 0.5)
             next_date = last_date
 
-            while self.days_old(next_date) < days:
+            # 95% of the time spent finding posts by date is spent on the last day
+            # so add a tolerance, because we probably don't care
+            tolerance = 1
+
+            while self.days_old(next_date) < days - tolerance:
+                log.debug('server: post was {} days old, continuing'.format(self.days_old(next_date)))
                 skip = 1
                 temp_date = self.post_date(group_name, upper - interval)
                 if temp_date:
                     while temp_date > target_date:
                         upper = upper - interval - (skip - 1)
                         skip *= 2
-                        temp_date = self.post_date(group_name, upper - interval)
+                        date = self.post_date(group_name, upper - interval)
+                        # if we couldn't get the date, skip this one
+                        if date:
+                            temp_date = date
+
 
                 interval = math.ceil(interval / 2)
                 if interval <= 0:

@@ -4,7 +4,6 @@ import regex
 import bottle
 from bottle import request, response
 import xmltodict
-import traceback
 
 from pynab import log
 import pynab.api

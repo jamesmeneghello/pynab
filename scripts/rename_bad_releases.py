@@ -5,49 +5,44 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import pynab.releases
-from pynab.db import db
+from pynab.db import db_session, Release
 from pynab import log
 
 
 def rename_bad_releases(category):
     count = 0
     s_count = 0
-    for release in db.releases.find({'category._id': int(category), 'unwanted': {'$ne': True}, '$or': [{'nfo': {'$nin': [None, False]}}, {'files.count': {'$exists': True}}]}):
-        count += 1
-        name, category_id = pynab.releases.discover_name(release)
+    with db_session() as db:
+        query = db.query(Release).filter(Release.category_id==int(category)).filter((Release.files.any())|(Release.nfo!=None)|(Release.sfv!=None)).filter((Release.status!=1)|(Release.status==None))
+        for release in query.all():
+            count += 1
+            name, category_id = pynab.releases.discover_name(release)
 
-        if name and not category_id:
-            # don't change anything, it was fine
-            pass
-        elif name and category_id:
-            # we found a new name!
-            s_count += 1
+            if not name and category_id:
+                # don't change the name, but the category might need changing
+                release.category_id = category_id
 
-            category = db.categories.find_one({'_id': category_id})
-            category['parent'] = db.categories.find_one({'_id': category['parent_id']})
+                # we're done with this release
+                release.status = 1
 
-            db.releases.update({'_id': release['_id']},
-                {
-                    '$set': {
-                        'search_name': pynab.releases.clean_release_name(name),
-                        'category': category,
-                    }
-                }
-            )
+                db.add(release)
+            elif name and category_id:
+                # we found a new name!
+                s_count += 1
 
-        else:
-            # bad release!
-            log.info('Noting unwanted release {} ({:d})...'.format(
-                release['search_name'], release['category']['_id'],
-            ))
+                release.search_name = pynab.releases.clean_release_name(name)
+                release.category_id = category_id
 
-            db.releases.update({'_id': release['_id']},
-                {
-                    '$set': {
-                        'unwanted': True
-                    }
-                }
-            )
+                # we're done with this release
+                release.status = 1
+
+                db.add(release)
+            else:
+                # bad release!
+                release.status = 0
+                release.unwanted = True
+                db.add(release)
+        db.commit()
 
     log.info('rename: successfully renamed {} of {} releases'.format(s_count, count))
 

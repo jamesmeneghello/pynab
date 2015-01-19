@@ -32,7 +32,7 @@ are strings, not numbers, since they are rarely used for calculations.
 
 # Incompatible changes from the 2.x nntplib:
 # - all commands are encoded as UTF-8 data (using the "surrogateescape"
-#   error handler), except for raw message data (POST, IHAVE)
+# error handler), except for raw message data (POST, IHAVE)
 # - all responses are decoded as UTF-8 data (using the "surrogateescape"
 #   error handler), except for raw message data (ARTICLE, HEAD, BODY)
 # - the `file` argument to various methods is keyword-only
@@ -63,12 +63,14 @@ are strings, not numbers, since they are rarely used for calculations.
 # - support HDR
 
 # Imports
-import regex
 import socket
 import collections
 import datetime
 import warnings
 import zlib
+
+import regex
+
 
 try:
     import ssl
@@ -81,10 +83,20 @@ from email.header import decode_header as _email_decode_header
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["NNTP",
-           "NNTPReplyError", "NNTPTemporaryError", "NNTPPermanentError",
-           "NNTPProtocolError", "NNTPDataError",
+           "NNTPError", "NNTPReplyError", "NNTPTemporaryError",
+           "NNTPPermanentError", "NNTPProtocolError", "NNTPDataError",
            "decode_header",
            ]
+
+# maximal line length when calling readline(). This is to prevent
+# reading arbitrary length lines. RFC 3977 limits NNTP line length to
+# 512 characters, including CRLF. We have selected 2048 just to be on
+# the safe side.
+
+# turns out 2048 wasn't safe, so it's been increased further
+
+_MAXLINE = 8192
+
 
 # Exceptions raised when an error or invalid response is received
 class NNTPError(Exception):
@@ -96,21 +108,26 @@ class NNTPError(Exception):
         except IndexError:
             self.response = 'No response given'
 
+
 class NNTPReplyError(NNTPError):
     """Unexpected [123]xx reply"""
     pass
+
 
 class NNTPTemporaryError(NNTPError):
     """4xx errors"""
     pass
 
+
 class NNTPPermanentError(NNTPError):
     """5xx errors"""
     pass
 
+
 class NNTPProtocolError(NNTPError):
     """Response does not begin with [1-5]"""
     pass
+
 
 class NNTPDataError(NNTPError):
     """Error in response data"""
@@ -123,18 +140,18 @@ NNTP_SSL_PORT = 563
 
 # Response numbers that are followed by additional text (e.g. article)
 _LONGRESP = {
-    '100',   # HELP
-    '101',   # CAPABILITIES
-    '211',   # LISTGROUP   (also not multi-line with GROUP)
-    '215',   # LIST
-    '220',   # ARTICLE
-    '221',   # HEAD, XHDR
-    '222',   # BODY
-    '224',   # OVER, XOVER
-    '225',   # HDR
-    '230',   # NEWNEWS
-    '231',   # NEWGROUPS
-    '282',   # XGTITLE
+    '100',  # HELP
+    '101',  # CAPABILITIES
+    '211',  # LISTGROUP   (also not multi-line with GROUP)
+    '215',  # LIST
+    '220',  # ARTICLE
+    '221',  # HEAD, XHDR
+    '222',  # BODY
+    '224',  # OVER, XOVER
+    '225',  # HDR
+    '230',  # NEWNEWS
+    '231',  # NEWGROUPS
+    '282',  # XGTITLE
 }
 
 # Default decoded value for LIST OVERVIEW.FMT if not supported
@@ -169,6 +186,7 @@ def decode_header(header_str):
             parts.append(v)
     return ''.join(parts)
 
+
 def _parse_overview_fmt(lines):
     """Parse a list of string representing the response to LIST OVERVIEW.FMT
     and return a list of header/metadata names.
@@ -194,6 +212,7 @@ def _parse_overview_fmt(lines):
         raise NNTPDataError("LIST OVERVIEW.FMT redefines default fields")
     return fmt
 
+
 def _parse_overview(lines, fmt, data_process_func=None):
     """Parse the response to a OVER or XOVER command according to the
     overview format `fmt`."""
@@ -203,6 +222,7 @@ def _parse_overview(lines, fmt, data_process_func=None):
         fields = {}
         article_number, *tokens = line.split('\t')
         article_number = int(article_number)
+        valid = True
         for i, token in enumerate(tokens):
             if i >= len(fmt):
                 # XXX should we raise an error? Some servers might not
@@ -216,12 +236,19 @@ def _parse_overview(lines, fmt, data_process_func=None):
                 # (unless the field is totally empty)
                 h = field_name + ": "
                 if token and token[:len(h)].lower() != h:
-                    raise NNTPDataError("OVER/XOVER response doesn't include "
-                                        "names of additional headers")
+                    # don't throw an exception here, because it blows away everything
+                    # we want to keep any valid headers, so just skip the ones that die
+                    valid = False
+                    break
+                    #raise NNTPDataError("OVER/XOVER response doesn't include "
+                    #                    "names of additional headers")
                 token = token[len(h):] if token else None
             fields[fmt[i]] = token
+        if not valid:
+            continue
         overview.append((article_number, fields))
     return overview
+
 
 def _parse_datetime(date_str, time_str=None):
     """Parse a pair of (date, time) strings, and return a datetime object.
@@ -244,6 +271,7 @@ def _parse_datetime(date_str, time_str=None):
     elif year < 100:
         year += 1900
     return datetime.datetime(year, month, day, hours, minutes, seconds)
+
 
 def _unparse_datetime(dt, legacy=False):
     """Format a date or datetime object as a pair of (date, time) strings
@@ -273,7 +301,7 @@ def _unparse_datetime(dt, legacy=False):
 
 if _have_ssl:
 
-    def _encrypt_on(sock, context):
+    def _encrypt_on(sock, context, hostname):
         """Wrap a socket in SSL/TLS. Arguments:
         - sock: Socket to wrap
         - context: SSL context to use for the encrypted connection
@@ -283,9 +311,11 @@ if _have_ssl:
         # Generate a default SSL context if none was passed.
         if context is None:
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            # SSLv2 considered harmful.
             context.options |= ssl.OP_NO_SSLv2
-        return context.wrap_socket(sock)
+
+            # v3 has since been killed too
+            context.options |= ssl.OP_NO_SSLv3
+        return context.wrap_socket(sock, server_hostname=hostname)
 
 
 # The classes themselves
@@ -360,7 +390,7 @@ class _NNTPBase:
         if is_connected():
             try:
                 self.quit()
-            except (socket.error, EOFError):
+            except (OSError, EOFError):
                 pass
             finally:
                 if is_connected():
@@ -425,7 +455,9 @@ class _NNTPBase:
         """Internal: return one line from the server, stripping _CRLF.
         Raise EOFError if the connection is closed.
         Returns a bytes object."""
-        line = self.file.readline()
+        line = self.file.readline(_MAXLINE +1)
+        if len(line) > _MAXLINE:
+            raise NNTPDataError('line too long')
         if self.debugging > 1:
             print('*get*', repr(line))
         if not line: raise EOFError
@@ -567,7 +599,7 @@ class _NNTPBase:
 
         # Check if the decompressed string is not empty.
         if decomp[0] == b'':
-            raise NNTPDataError('Data from NNTP is empty gzip string.')
+            decomp = []
 
         openedFile = None
         try:
@@ -878,9 +910,11 @@ class _NNTPBase:
         """
         pat = regex.compile('^([0-9]+) ?(.*)\n?')
         resp, lines = self._longcmdstring('XHDR {0} {1}'.format(hdr, str), file)
+
         def remove_number(line):
             m = pat.match(line)
             return m.group(1, 2) if m else line
+
         return resp, [remove_number(line) for line in lines]
 
     def compression(self):
@@ -1060,12 +1094,13 @@ class _NNTPBase:
         try:
             if usenetrc and not user:
                 import netrc
+
                 credentials = netrc.netrc()
                 auth = credentials.authenticators(self.host)
                 if auth:
                     user = auth[0]
                     password = auth[2]
-        except IOError:
+        except OSError:
             pass
         # Perform NNTP authentication if needed.
         if not user:
@@ -1116,7 +1151,7 @@ class _NNTPBase:
             resp = self._shortcmd('STARTTLS')
             if resp.startswith('382'):
                 self.file.close()
-                self.sock = _encrypt_on(self.sock, context)
+                self.sock = _encrypt_on(self.sock, context, self.host)
                 self.file = self.sock.makefile("rwb")
                 self.tls_on = True
                 # Capabilities may change after TLS starts up, so ask for them
@@ -1175,14 +1210,14 @@ if _have_ssl:
     class NNTP_SSL(_NNTPBase):
 
         def __init__(self, host, port=NNTP_SSL_PORT,
-                    user=None, password=None, ssl_context=None,
-                    readermode=None, usenetrc=False,
-                    timeout=_GLOBAL_DEFAULT_TIMEOUT, compression=True):
+                     user=None, password=None, ssl_context=None,
+                     readermode=None, usenetrc=False,
+                     timeout=_GLOBAL_DEFAULT_TIMEOUT, compression=True):
             """This works identically to NNTP.__init__, except for the change
             in default port and the `ssl_context` argument for SSL connections.
             """
             self.sock = socket.create_connection((host, port), timeout)
-            self.sock = _encrypt_on(self.sock, ssl_context)
+            self.sock = _encrypt_on(self.sock, ssl_context, host)
             file = self.sock.makefile("rwb")
             _NNTPBase.__init__(self, file, host,
                                readermode=readermode, timeout=timeout)
@@ -1206,7 +1241,6 @@ if _have_ssl:
 # Test retrieval when run as a script.
 if __name__ == '__main__':
     import argparse
-    from email.utils import parsedate
 
     parser = argparse.ArgumentParser(description="""\
         nntplib built-in demo - display the latest articles in a newsgroup""")
@@ -1250,8 +1284,8 @@ if __name__ == '__main__':
         subject = decode_header(over['subject'])
         lines = int(over[':lines'])
         print("{:7} {:20} {:42} ({})".format(
-              artnum, cut(author, 20), cut(subject, 42), lines)
-              )
+            artnum, cut(author, 20), cut(subject, 42), lines)
+        )
 
     s.quit()
     

@@ -7,11 +7,10 @@ import roman
 import requests
 import xmltodict
 import pytz
-import pymongo
 from lxml import etree
 from collections import defaultdict
 
-from pynab.db import db
+from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog
 from pynab import log
 import pynab.util
 import config
@@ -30,111 +29,109 @@ XPATH_COUNTRY = etree.XPath('country/text()')
 RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
 
 
-def process(limit=100, online=True):
+def process(limit=None, online=True):
     """Processes [limit] releases to add TVRage information."""
-
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
+    api_session = requests.Session()
 
-    query = {
-        'tvrage._id': {'$exists': False},
-        'category.parent_id': 5000,
-    }
+    with db_session() as db:
+        # clear expired metablacks
+        db.query(MetaBlack).filter(MetaBlack.tvshow!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
-    if online:
-        query.update({
-            'tvrage.possible': {'$exists': False},
-            '$or': [
-             {'tvrage.attempted': {'$exists': False}},
-             {'tvrage.attempted': {'$lte': expiry}}
-            ]
-        })
+        query = db.query(Release).filter((Release.tvshow==None)|(Release.episode==None)).join(Category).filter(Category.parent_id==5000)
 
-    for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(25):
-        method = ''
+        if online:
+            query = query.filter(Release.tvshow_metablack_id==None)
 
-        show = parse_show(release['search_name'])
-        if show:
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'tv': show
-                }
-            })
-
-            rage = db.tvrage.find_one({'name': show['clean_name']})
-            if not rage and 'and' in show['clean_name']:
-                rage = db.tvrage.find_one({'name': show['clean_name'].replace(' and ', ' & ')})
-
-            if rage:
-                method = 'local'
-            elif not rage and online:
-                rage_data = search(show)
-                if rage_data:
-                    method = 'online'
-                    db.tvrage.update(
-                        {'_id': int(rage_data['showid'])},
-                        {
-                            '$set': {
-                                'name': rage_data['name']
-                            }
-                        },
-                        upsert=True
-                    )
-                    rage = db.tvrage.find_one({'_id': int(rage_data['showid'])})
-
-                # wait slightly so we don't smash the api
-                time.sleep(1)
-
-            if rage:
-                log.info('tvrage: [{}] - [{}] - tvrage added: {}'.format(
-                    release['_id'],
-                    release['search_name'],
-                    method
-                ))
-
-                db.releases.update({'_id': release['_id']}, {
-                    '$set': {
-                        'tvrage': rage
-                    }
-                })
-            elif not rage and online:
-                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
-                    release['_id'],
-                    release['search_name'],
-                    'no show found (online)'
-                ))
-
-                db.releases.update({'_id': release['_id']}, {
-                    '$set': {
-                        'tvrage': {
-                            'attempted': datetime.datetime.now(pytz.utc)
-                        },
-                    }
-                })
-            else:
-                log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
-                    release['_id'],
-                    release['search_name'],
-                    'no show found (local)'
-                ))
+        if limit:
+            releases = query.order_by(Release.posted.desc()).limit(limit)
         else:
-            log.error('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
-                    release['_id'],
-                    release['search_name'],
+            releases = query.order_by(Release.posted.desc()).all()
+
+        for release in releases:
+            method = ''
+
+            show = parse_show(release.search_name)
+            if not show:
+                show = parse_show(release.name)
+
+            if show:
+                if release.tvshow:
+                    rage = release.tvshow
+                else:
+                    rage = db.query(TvShow).filter(
+                        TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
+                    ).first()
+
+                if not rage and 'and' in show['clean_name']:
+                    rage = db.query(TvShow).filter(TvShow.name==show['clean_name'].replace(' and ', ' & ')).first()
+
+                if rage:
+                    method = 'local'
+                elif not rage and online:
+                    rage_data = search(api_session, show)
+                    if rage_data:
+                        method = 'online'
+                        rage = db.query(TvShow).filter(TvShow.id==rage_data['showid']).first()
+                        if not rage:
+                            rage = TvShow(id=rage_data['showid'], name=rage_data['name'], country=rage_data['country'])
+                            db.add(rage)
+
+                    # wait slightly so we don't smash the api
+                    time.sleep(1)
+
+                if rage:
+                    log.info('tvrage: [{}] - [{}] - tvrage added: {}'.format(
+                        release.id,
+                        release.search_name,
+                        method
+                    ))
+
+                    e = db.query(Episode).filter(Episode.tvshow_id==rage.id).filter(Episode.series_full==show['series_full']).first()
+                    if not e:
+                        e = Episode(
+                            season=show.get('season'),
+                            episode=show.get('episode'),
+                            series_full=show.get('series_full'),
+                            air_date=show.get('air_date'),
+                            year=show.get('year'),
+                            tvshow_id=rage.id
+                        )
+                    release.tvshow = rage
+                    release.tvshow_metablack_id = None
+                    release.episode = e
+                    db.add(release)
+                elif not rage and online:
+                    log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                        release.id,
+                        release.search_name,
+                        'no show found (online)'
+                    ))
+
+                    mb = MetaBlack(tvshow=release, status='ATTEMPTED')
+                    db.add(mb)
+                else:
+                    log.warning('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                        release.id,
+                        release.search_name,
+                        'no show found (local)'
+                    ))
+            else:
+                log.error('tvrage: [{}] - [{}] - tvrage failed: {}'.format(
+                    release.id,
+                    release.search_name,
                     'no suitable regex for show name'
                 ))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'tvrage': {
-                        'possible': False
-                    },
-                }
-            })
+                db.add(MetaBlack(tvshow=release, status='IMPOSSIBLE'))
+                db.add(DataLog(description='tvrage parse_show regex', data=release.search_name))
+
+            db.commit()
 
 
-def search(show):
+def search(session, show):
     """Search TVRage's online API for show data."""
     try:
-        r = requests.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
+        r = session.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
     except Exception as e:
         log.error(e)
         return None
@@ -145,12 +142,15 @@ def search(show):
 
 def extract_names(xmlshow):
     """Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"""
-    yield from XPATH_NAME(xmlshow)
-    yield from XPATH_AKA(xmlshow)
+    for name in XPATH_NAME(xmlshow):
+        yield name
+    for aka in XPATH_AKA(xmlshow):
+        yield aka
     link = XPATH_LINK(xmlshow)[0]
     link_result = RE_LINK.search(link)
     if link_result:
-        yield from link_result.groups()
+        for link in link_result.groups():
+            yield link
 
 
 def search_lxml(show, content):
@@ -182,7 +182,7 @@ def search_lxml(show, content):
 
 
 def clean_name(name):
-    """Cleans a show name for searching (against tvrage)."""
+    """Cleans a show name for searching."""
     name = unicodedata.normalize('NFKD', name)
 
     name = regex.sub('[._\-]', ' ', name)
@@ -314,6 +314,13 @@ def parse_show(search_name):
             'name': match.match_obj.group(1),
             'season': int(match.match_obj.group(2)),
             'episode': 'all'
+        }
+    elif match.match('^(.+)\s{1,3}(\d{1,3})\s\[([\w\d]+)\]', search_name, regex.I):
+        # mostly anime
+        show = {
+            'name': match.match_obj.group(1),
+            'season': 1,
+            'episode': int(match.match_obj.group(2))
         }
 
     if 'name' in show and show['name']:

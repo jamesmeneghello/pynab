@@ -1,16 +1,19 @@
 import datetime
 import os
 import gzip
-import pymongo
-import pprint
 
 from mako.template import Template
 from mako import exceptions
 from bottle import request, response
+from sqlalchemy.orm import aliased
+from sqlalchemy import or_, func, desc
 
-from pynab.db import db, fs
+from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode, File
 from pynab import log, root_dir
 import config
+
+
+RESULT_TEMPLATE = Template(filename=os.path.join(root_dir, 'templates/api/result.mako'))
 
 
 def api_error(code):
@@ -45,18 +48,19 @@ def api_error(code):
 
 def get_nfo(dataset=None):
     if auth():
-        guid = request.query.guid or None
-        if guid:
-            release = db.releases.find_one({'id': guid})
-            if release:
-                data = fs.get(release['nfo']).read()
-                response.set_header('Content-type', 'application/x-nfo')
-                response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                .format(release['search_name'].replace(' ', '_') + '.nfo')
-                )
-                return gzip.decompress(data)
-            else:
-                return api_error(300)
+        id = request.query.guid or None
+        if id:
+            with db_session() as db:
+                release = db.query(Release).join(NFO).filter(Release.id==id).one()
+                if release:
+                    data = release.nfo.data
+                    response.set_header('Content-type', 'application/x-nfo')
+                    response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                        .format(release.search_name.replace(' ', '_') + '.nfo')
+                    )
+                    return gzip.decompress(data)
+                else:
+                    return api_error(300)
         else:
             return api_error(200)
     else:
@@ -64,24 +68,32 @@ def get_nfo(dataset=None):
 
 
 def get_nzb(dataset=None):
-    if auth():
-        guid = request.query.guid or None
-        if not guid:
-            guid = request.query.id or None
+    user = auth()
+    if user:
+        id = request.query.guid or None
+        if not id:
+            id = request.query.id or None
 
-        if guid:
-            release = db.releases.find_one({'id': guid})
-            if release:
-                data = fs.get(release['nzb']).read()
-                response.set_header('Content-type', 'application/x-nzb')
-                response.set_header('X-DNZB-Name', release['search_name'])
-                response.set_header('X-DNZB-Category', release['category']['name'])
-                response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                .format(release['search_name'].replace(' ', '_') + '.nzb')
-                )
-                return gzip.decompress(data)
-            else:
-                return api_error(300)
+        if id:
+            with db_session() as db:
+                release = db.query(Release).join(NZB).join(Category).filter(Release.id==id).one()
+                if release:
+                    release.grabs += 1
+                    user.grabs += 1
+                    db.merge(release)
+                    db.merge(user)
+                    db.commit()
+
+                    data = release.nzb.data
+                    response.set_header('Content-type', 'application/x-nzb')
+                    response.set_header('X-DNZB-Name', release.search_name)
+                    response.set_header('X-DNZB-Category', release.category.name)
+                    response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                        .format(release.search_name.replace(' ', '_') + '.nzb')
+                    )
+                    return gzip.decompress(data)
+                else:
+                    return api_error(300)
         else:
             return api_error(200)
     else:
@@ -91,62 +103,73 @@ def get_nzb(dataset=None):
 def auth():
     api_key = request.query.apikey or ''
 
-    user = db.users.find_one({'api_key': api_key})
-    if user:
-        return api_key
-    else:
-        return False
+    with db_session() as db:
+        user = db.query(User).filter(User.api_key==api_key).first()
+        if user:
+            return user
+        else:
+            return False
 
 
 def movie_search(dataset=None):
     if auth():
-        query = dict()
-        query['category._id'] = {'$in': [2020, 2030, 2040, 2050, 2060]}
+        with db_session() as db:
+            query = db.query(Release)
 
-        try:
-            imdb_id = request.query.imdbid or None
-            if imdb_id:
-                query['imdb._id'] = 'tt' + imdb_id
+            try:
+                imdb_id = request.query.imdbid or None
+                if imdb_id:
+                    query = query.join(Movie).filter(Movie.id=='tt'+imdb_id)
 
-            genres = request.query.genre or None
-            if genres:
-                genres = genres.split(',')
-                query['imdb.genre'] = {'$in': genres}
-        except:
-            return api_error(201)
+                genres = request.query.genre or None
+                if genres:
+                    query = query.join(Movie)
+                    for genre in genres.split(','):
+                        query = query.filter(or_(Movie.genre.ilike('%{}%'.format(genre))))
+            except:
+                return api_error(201)
 
-        return search(dataset, query)
+            return search(dataset, query)
     else:
         return api_error(100)
 
 
 def tv_search(dataset=None):
     if auth():
-        query = dict()
-        query['category._id'] = {'$in': [5030, 5040, 5050, 5060, 5070, 5080]}
+        with db_session() as db:
+            query = db.query(Release)
 
-        try:
-            tvrage_id = request.query.rid or None
-            if tvrage_id:
-                query['tvrage._id'] = int(tvrage_id)
+            try:
+                tvrage_id = request.query.rid or None
+                if tvrage_id:
+                    query = query.join(TvShow).filter(TvShow.id==int(tvrage_id))
 
-            season = request.query.season or None
-            if season:
-                if season.isdigit():
-                    query['tv.season'] = 'S{:02d}'.format(int(season))
-                else:
-                    query['tv.season'] = season
+                season = request.query.season or None
+                episode = request.query.ep or None
 
-            episode = request.query.ep or None
-            if episode:
-                if episode.isdigit():
-                    query['tv.episode'] = 'E{:02d}'.format(int(episode))
-                else:
-                    query['tv.episode'] = episode
-        except:
-            return api_error(201)
+                if season or episode:
+                    query = query.join(Episode, Release)
 
-        return search(dataset, query)
+                    if season:
+                        # 2014, do nothing
+                        if season.isdigit() and len(season) <= 2:
+                            # 2, convert to S02
+                            season = 'S{:02d}'.format(int(season))
+
+                        query = query.filter(Episode.season==season)
+
+                    if episode:
+                        # 23/10, do nothing
+                        if episode.isdigit() and '/' not in episode:
+                            # 15, convert to E15
+                            episode = 'E{:02d}'.format(int(episode))
+
+                        query = query.filter(Episode.episode==episode)
+            except Exception as e:
+                log.error('API Error: {}'.format(e))
+                return api_error(201)
+
+            return search(dataset, query)
     else:
         return api_error(100)
 
@@ -154,21 +177,22 @@ def tv_search(dataset=None):
 def details(dataset=None):
     if auth():
         if request.query.id:
-            release = db.releases.find_one({'id': request.query.id})
-            if release:
-                dataset['releases'] = [release]
-                dataset['detail'] = True
-                dataset['api_key'] = request.query.apikey
+            with db_session() as db:
+                release = db.query(Release).filter(Release.id==request.query.id).one()
+                if release:
+                    dataset['releases'] = [release]
+                    dataset['detail'] = True
+                    dataset['api_key'] = request.query.apikey
 
-                try:
-                    tmpl = Template(
-                        filename=os.path.join(root_dir, 'templates/api/result.mako'))
-                    return tmpl.render(**dataset)
-                except:
-                    log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
-                    return None
-            else:
-                return api_error(300)
+                    try:
+                        tmpl = Template(
+                            filename=os.path.join(root_dir, 'templates/api/result.mako'))
+                        return tmpl.render(**dataset)
+                    except:
+                        log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+                        return None
+                else:
+                    return api_error(300)
         else:
             return api_error(200)
     else:
@@ -176,139 +200,156 @@ def details(dataset=None):
 
 
 def caps(dataset=None):
+    if not dataset:
+        dataset = {}
+
     dataset['app_version'] = config.api.get('version', '1.0.0')
     dataset['api_version'] = config.api.get('api_version', '0.2.3')
     dataset['email'] = config.api.get('email', '')
     dataset['result_limit'] = config.api.get('result_limit', 20)
     dataset['result_default'] = config.api.get('result_default', 20)
 
-    categories = {}
-    for category in db.categories.find():
-        if category.get('parent_id'):
-            categories[category.get('parent_id')]['categories'].append(category)
-        else:
-            categories[category.get('_id')] = category
-            categories[category.get('_id')]['categories'] = []
-    dataset['categories'] = categories
-
-    try:
-        tmpl = Template(
-            filename=os.path.join(root_dir, 'templates/api/caps.mako'))
-        return tmpl.render(**dataset)
-    except:
-        log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
-        return None
-
-
-def search(dataset=None, params=None):
-    if auth():
-        # build the mongo query
-        # add params if coming from a tv-search or something
-        if params:
-            query = dict(params)
-        else:
-            query = dict()
-
-        try:
-            # set limit to request or default
-            # this will also match limit == 0, which would be infinite
-            limit = request.query.limit or None
-            if limit and int(limit) <= int(config.api.get('result_limit', 100)):
-                limit = int(limit)
-            else:
-                limit = int(config.api.get('result_default', 20))
-
-            # offset is only available for rss searches and won't work with text
-            offset = request.query.offset or None
-            if offset and int(offset) > 0:
-                offset = int(offset)
-            else:
-                offset = 0
-
-            # get categories
-            cat_ids = request.query.cat or []
-            if cat_ids:
-                cat_ids = [int(c) for c in cat_ids.split(',')]
-                categories = []
-                for category in db.categories.find({'_id': {'$in': cat_ids}}):
-                    if 'parent_id' not in category:
-                        for child in db.categories.find({'parent_id': category['_id']}):
-                            categories.append(child['_id'])
-                    else:
-                        categories.append(category['_id'])
-                if 'category._id' in query:
-                    query['category._id'].update({'$in': categories})
-                else:
-                    query['category._id'] = {'$in': categories}
-
-            # group names
-            grp_names = request.query.group or []
-            if grp_names:
-                grp_names = grp_names.split(',')
-                groups = [g['_id'] for g in db.groups.find({'name': {'$in': grp_names}})]
-                query['group._id'] = {'$in': groups}
-
-            # max age
-            max_age = request.query.maxage or None
-            if max_age:
-                oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
-                query['posted'] = {'$gte': oldest}
-        except Exception as e:
-            # normally a try block this long would make me shudder
-            # but we don't distinguish between errors, so it's fine
-            log.error('Incorrect API Paramter or parsing error: {}'.format(e))
-            return api_error(201)
-
-        log.debug('Query parameters: {0}'.format(query))
-
-        search_terms = request.query.q or None
-        if search_terms:
-            # we're searching specifically for a show or something
-
-            # mash search terms into a single string
-            # we remove carets because mongo's FT search is probably smart enough
-            terms = ''
-            if search_terms:
-                terms = ' '.join(['\"{}\"'.format(term) for term in search_terms.replace('^', '').split(' ')])
-
-            # build the full query - db.command() uses a different format
-            full = {
-                'command': 'text',
-                'value': 'releases',
-                'search': terms,
-                'filter': query,
-                'limit': limit,
-            }
-
-            results = db.command(**full)['results']
-
-            if results:
-                results = [r['obj'] for r in results]
-            else:
-                results = []
-
-            # since FT searches don't support offsets
-            total = limit
-            offset = 0
-        else:
-            # we're looking for an rss feed
-            # return results and sort by postdate ascending
-            total = db.releases.find(query).count()
-            results = db.releases.find(query, limit=int(limit), skip=int(offset)).sort('posted', pymongo.DESCENDING)
-
-        dataset['releases'] = results
-        dataset['offset'] = offset
-        dataset['total'] = total
-        dataset['search'] = True
-        dataset['api_key'] = request.query.apikey
-
+    with db_session() as db:
+        category_alias = aliased(Category)
+        dataset['categories'] = db.query(Category).filter(Category.parent_id==None).join(category_alias, Category.children).all()
         try:
             tmpl = Template(
-                filename=os.path.join(root_dir, 'templates/api/result.mako'))
+                filename=os.path.join(root_dir, 'templates/api/caps.mako'))
             return tmpl.render(**dataset)
         except:
             log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
             return None
+
+
+def stats(dataset=None):
+    if not dataset:
+        dataset = {}
+
+    with db_session() as db:
+        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.tvshow_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
+        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.movie_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
+        nfo_total = db.query(func.count(Release.nfo_id), func.count(Release.nfo_metablack_id)).one()
+        file_total = db.query(Release.id).filter((Release.files.any())|(Release.passworded!='UNKNOWN')).count()
+        file_failed_total = db.query(func.count(Release.rar_metablack_id)).one()
+        release_total = db.query(Release.id).count()
+
+        dataset['totals'] = {
+            'TV': {
+                'processed': tv_totals[0],
+                'failed': tv_totals[1],
+                'total': tv_totals[2]
+            },
+            'Movies': {
+                'processed': movie_totals[0],
+                'failed': movie_totals[1],
+                'total': movie_totals[2]
+            },
+            'NFOs': {
+                'processed': nfo_total[0],
+                'failed': nfo_total[1],
+                'total': release_total
+            },
+            'File Info': {
+                'processed': file_total,
+                'failed': file_failed_total[0],
+                'total': release_total
+            }
+        }
+
+        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(desc(func.count(Release.id))).all()
+
+        try:
+            tmpl = Template(
+                filename=os.path.join(root_dir, 'templates/api/stats.mako'))
+            return tmpl.render(**dataset)
+        except:
+            log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+            return None
+
+
+def search(dataset=None, query=None):
+    if auth():
+        # build the mongo query
+        # add params if coming from a tv-search or something
+        with db_session() as db:
+            if not query:
+                query = db.query(Release)
+
+            try:
+                # get categories
+                cat_ids = request.query.cat or []
+                if cat_ids:
+                    query = query.join(Category)
+                    cat_ids = cat_ids.split(',')
+                    query = query.filter(Category.id.in_(cat_ids) | Category.parent_id.in_(cat_ids))
+
+                # group names
+                group_names = request.query.group or []
+                if group_names:
+                    query = query.join(Group)
+                    group_names = group_names.split(',')
+                    for group in group_names:
+                        query = query.filter(Group.name==group)
+
+                # max age
+                max_age = request.query.maxage or None
+                if max_age:
+                    oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
+                    query = query.filter(Release.posted>oldest)
+
+                # more info?
+                extended = request.query.extended or None
+                if extended:
+                    dataset['extended'] = True
+                else:
+                    dataset['extended'] = False
+
+                # set limit to request or default
+                # this will also match limit == 0, which would be infinite
+                limit = request.query.limit or None
+                if limit and int(limit) <= int(config.api.get('result_limit', 100)):
+                    limit = int(limit)
+                else:
+                    limit = int(config.api.get('result_default', 20))
+
+                # offset is only available for rss searches and won't work with text
+                offset = request.query.offset or None
+                if offset and int(offset) > 0:
+                    offset = int(offset)
+                else:
+                    offset = 0
+
+            except Exception as e:
+                # normally a try block this long would make me shudder
+                # but we don't distinguish between errors, so it's fine
+                log.error('Incorrect API Parameter or parsing error: {}'.format(e))
+                return api_error(201)
+
+            search_terms = request.query.q or None
+            if search_terms:
+                # we're searching specifically for a show or something
+                if search_terms:
+                    for term in search_terms.split(' '):
+                        query = query.filter(Release.search_name.ilike('%{}%'.format(term)))
+
+            query = query.order_by(Release.posted.desc())
+
+            query = query.limit(limit)
+            query = query.offset(offset)
+
+            total = query.count()
+            results = query.all()
+
+            dataset['releases'] = results
+            dataset['offset'] = offset
+            dataset['total'] = total
+            dataset['api_key'] = request.query.apikey
+
+            try:
+                return RESULT_TEMPLATE.render(**dataset)
+            except:
+                log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+                return None
     else:
         return api_error(100)
 
@@ -321,4 +362,5 @@ functions = {
     'm|movie': movie_search,
     'g|get': get_nzb,
     'gn|getnfo': get_nfo,
+    'stats': stats,
 }

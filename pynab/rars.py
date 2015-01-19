@@ -3,11 +3,10 @@ import os
 import regex
 import shutil
 import subprocess
-import pymongo
 
 import lib.rar
 from pynab import log
-from pynab.db import db
+from pynab.db import db_session, Release, Group, File, MetaBlack, NZB
 import pynab.nzbs
 import pynab.releases
 import pynab.util
@@ -17,6 +16,7 @@ import config
 
 MAYBE_PASSWORDED_REGEX = regex.compile('\.(ace|cab|tar|gz|url)$', regex.I)
 PASSWORDED_REGEX = regex.compile('password\.url', regex.I)
+SPAM_REGEX = regex.compile('.(ace|cab|tar|gz|url|exe|zip|msi|com)$', regex.I)
 
 
 def attempt_parse(file):
@@ -81,6 +81,7 @@ def check_rar(filename):
         if any([r.is_encrypted for r in rar.infolist()]):
             return False
         else:
+            #TODO: doublecheck return from this for names
             return rar.infolist()
     else:
         # probably an encrypted rar!
@@ -104,23 +105,14 @@ def get_rar_info(server, group_name, messages):
             files = check_rar(t.name)
         except lib.rar.BadRarFile:
             os.remove(t.name)
-            return None
+            return False, None
 
-        # build a summary to return
-
-        info = {
-            'files.count': 0,
-            'files.size': 0,
-            'files.names': []
-        }
+        # build a list of files to return
+        info = []
 
         passworded = False
         if files:
-            info = {
-                'files.count': len(files),
-                'files.size': sum([r.file_size for r in files]),
-                'files.names': [r.filename for r in files]
-            }
+            info = [{'size': r.file_size, 'name': r.filename} for r in files]
 
             unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
             if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
@@ -140,7 +132,10 @@ def get_rar_info(server, group_name, messages):
                 try:
                     subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
                 except subprocess.CalledProcessError as cpe:
-                    log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    # almost every rar piece we get will throw an error
+                    # we're only getting the first segment
+                    #log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    pass
 
                 inner_passwords = []
                 for file in files:
@@ -165,87 +160,126 @@ def get_rar_info(server, group_name, messages):
             passworded = True
             os.remove(t.name)
 
-        info['passworded'] = passworded
+        return passworded, info
 
-        return info
+    # couldn't get article
+    return False, None
 
 
 def check_release_files(server, group_name, nzb):
     """Retrieves rar metadata for release files."""
 
+    # we want to get the highest level of password
+    highest_password = False
+
+    # but also return file info from everything we can get to
+    all_info = []
+
     for rar in nzb['rars']:
-        messages = []
+        # if the rar has no segments, the release is fucked and we should ignore it
         if not rar['segments']:
             continue
 
-        if not isinstance(rar['segments']['segment'], list):
-            rar['segments']['segment'] = [rar['segments']['segment'], ]
+        for s in rar['segments']:
+            if s['message_id']:
+                # get the rar info of the first segment of the rarfile
+                # this should be enough to get a file list
+                passworded, info = get_rar_info(server, group_name, [s['message_id']])
 
-        for s in rar['segments']['segment']:
-            messages.append(s['#text'])
-            break
+                # if any file info was returned, add it to the pile
+                if info:
+                    all_info += info
 
-        if messages:
-            info = get_rar_info(server, group_name, messages)
-
-            if info and not info['passworded']:
-                passworded = False
-                for file in info['files.names']:
-                    result = MAYBE_PASSWORDED_REGEX.search(file)
-                    if result:
-                        passworded = 'potentially'
-                        break
-
-                    result = PASSWORDED_REGEX.search(file)
-                    if result:
-                        passworded = True
-                        break
-
+                # if the rar itself is passworded, skip everything else
                 if passworded:
-                    info['passworded'] = passworded
+                    highest_password = 'YES'
 
-            return info
+                # if we got file info and we're not yet 100% certain, have a look
+                if info and highest_password != 'YES':
+                    for file in info:
+                        # if we want to delete spam, check the group and peek inside
+                        if config.postprocess.get('delete_spam', False):
+                            if group_name in config.postprocess.get('delete_spam_groups', []):
+                                result = SPAM_REGEX.search(file['name'])
+                                if result:
+                                    log.info('rar: [{}] - [{}] - release is spam')
+                                    highest_password = 'YES'
+                                    break
 
-    return None
+
+                        # whether "maybe" releases get deleted or not is a config option
+                        result = MAYBE_PASSWORDED_REGEX.search(file['name'])
+                        if result and (not highest_password or highest_password == 'NO'):
+                            log.info('rar: [{}] - [{}] - release might be passworded')
+                            highest_password = 'MAYBE'
+                            break
+
+                        # as is definitely-deleted
+                        result = PASSWORDED_REGEX.search(file['name'])
+                        if result and (not highest_password or highest_password == 'NO' or highest_password == 'MAYBE'):
+                            log.info('rar: [{}] - [{}] - release is passworded')
+                            highest_password = 'YES'
+                            break
+
+                # if we got this far, we got some file info
+                # so we don't want the function to return False, None
+                if not highest_password:
+                    highest_password = 'NO'
+
+                # skip the rest of the segments, we don't want or need them
+                break
+
+    # if we got info from at least one segment, return what we found
+    if highest_password:
+        return highest_password, all_info
+
+    # otherwise, the release was dead
+    return False, None
 
 
-def process(limit=20, category=0):
+def process(limit=None, category=0):
     """Processes release rarfiles to check for passwords and filecounts."""
 
     with Server() as server:
-        query = {'passworded': None}
-        if category:
-            query['category._id'] = int(category)
-        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-            nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
+        with db_session() as db:
+            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()).filter(Release.passworded=='UNKNOWN').filter(Release.rar_metablack_id==None)
+            if category:
+                query = query.filter(Release.category_id==int(category))
 
-            if nzb and 'rars' in nzb:
-                info = check_release_files(server, release['group']['name'], nzb)
-                if info:
-                    log.info('[{}] - [{}] - file info: added'.format(
-                        release['_id'],
-                        release['search_name']
-                    ))
-                    db.releases.update({'_id': release['_id']}, {
-                        '$set': {
-                            'files.count': info['files.count'],
-                            'files.size': info['files.size'],
-                            'files.names': info['files.names'],
-                            'passworded': info['passworded']
-                        }
-                    })
+            if limit:
+                releases = query.order_by(Release.posted.desc()).limit(limit)
+            else:
+                releases = query.order_by(Release.posted.desc()).all()
 
-                    continue
+            for release in releases:
+                nzb = pynab.nzbs.get_nzb_details(release.nzb)
 
-            log.warning('rar: [{}] - [{}] - file info: no rars in release'.format(
-                release['_id'],
-                release['search_name']
-            ))
-            db.releases.update({'_id': release['_id']}, {
-                '$set': {
-                    'files.count': 0,
-                    'files.size': 0,
-                    'files.names': [],
-                    'passworded': 'unknown'
-                }
-            })
+                if nzb and nzb['rars']:
+                    passworded, info = check_release_files(server, release.group.name, nzb)
+                    if info:
+                        log.info('rar: [{}] - [{}] - file info: added'.format(
+                            release.id,
+                            release.search_name
+                        ))
+                        release.passworded = passworded
+
+                        size = 0
+                        for file in info:
+                            f = File(name=file['name'], size=file['size'])
+                            f.release = release
+                            size += file['size']
+                            db.add(f)
+
+                        if size != 0:
+                            release.size = size
+
+                        release.rar_metablack_id = None
+                        db.add(release)
+                        continue
+                log.warning('rar: [{}] - [{}] - file info: no readable rars in release'.format(
+                    release.id,
+                    release.search_name
+                ))
+                mb = MetaBlack(rar=release, status='IMPOSSIBLE')
+                db.add(mb)
+                db.commit()

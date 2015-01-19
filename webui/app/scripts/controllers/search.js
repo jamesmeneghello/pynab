@@ -1,6 +1,29 @@
 'use strict';
 
 angular.module('pynabWebuiApp')
+    .controller('IndexCtrl', function ($scope, $http, PYNAB_CONFIG) {
+        var params = {
+			t: 'stats',
+			o: 'json',
+			callback:'JSON_CALLBACK'
+		};
+
+        $http.jsonp(PYNAB_CONFIG.hostUrl + 'api', {params:params}).then(function(response) {
+			var totals = [];
+			response.data.stats.totals.total.forEach(function(total) {
+                totals.push(total);
+			});
+
+            $scope.totals = totals;
+
+            var categories = [];
+            response.data.stats.categories.category.forEach(function(category) {
+				categories.push(category);
+			});
+
+			$scope.categories = categories;
+		});
+    })
 	.controller('SearchCtrl', function ($scope, $http, $cookieStore, PYNAB_CONFIG) {
 		$scope.searchForm = {};
 

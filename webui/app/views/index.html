@@ -2,5 +2,41 @@
 	<h1>Pynab WebUI</h1>
 	<hr>
 	<p>This interface will somewhat simplify searching for files on a Pynab Indexer.</p>
+    <hr>
+    <h3>Post-processing Status</h3>
+    <table class="table table-striped">
+        <tr>
+            <th>Type</th>
+            <th>Processed</th>
+            <th>Failed</th>
+            <th>Total</th>
+            <th>Completion</th>
+        </tr>
+        <tr ng-repeat="total in totals">
+            <td>{{total.label}}</td>
+            <td>{{total.processed}}</td>
+            <td>{{total.failed}}</td>
+            <td>{{total.total}}</td>
+            <td>
+                <progress class="progress-striped" max="total.total">
+                    <bar type="success" value="total.processed"><span style="color:black;">{{total.processed/total.total*100|number:0}}%</span></bar>
+                    <bar type="warning" value="total.failed"><span style="color:black;">{{total.failed/total.total*100|number:0}}%</span></bar>
+                </progress>
+            </td>
+        </tr>
+    </table>
+    <hr>
+    <h3>Releases</h3>
+    <table class="table table-striped">
+        <tr>
+            <th>Category</th>
+            <th>Releases</th>
+        </tr>
+        <tr ng-repeat="category in categories">
+            <td>{{category.label}}</td>
+            <td>{{category.value}}</td>
+        </tr>
+    </table>
+    <hr>
 	<a class=".btn" href="#/search">Click here to begin searching.</a>
 </div>

@@ -1,20 +1,19 @@
 import gzip
-import pymongo
 import regex
 
 import pynab.nzbs
 import pynab.util
 
 from pynab import log
-from pynab.db import db, fs
+from pynab.db import db_session, Release, NFO, Group, MetaBlack, NZB
 from pynab.server import Server
 
 NFO_MAX_FILESIZE = 50000
 
 NFO_REGEX = [
     regex.compile('((?>\w+[.\-_])+(?:\w+-\d*[a-zA-Z][a-zA-Z0-9]*))', regex.I),
-
 ]
+
 
 def attempt_parse(nfo):
     potential_names = []
@@ -27,72 +26,64 @@ def attempt_parse(nfo):
     return potential_names
 
 
-def get(nfo_id):
-    """Retrieves and un-gzips an NFO from GridFS."""
-    if nfo_id:
-        return gzip.decompress(fs.get(nfo_id).read())
-    else:
-        return None
+def get(nfo):
+    """Un-gzips an NFO."""
+    return gzip.decompress(nfo.data)
 
 
-def process(limit=5, category=0):
+def process(limit=None, category=0):
     """Process releases for NFO parts and download them."""
 
     with Server() as server:
-        query = {'nfo': None}
-        if category:
-            query['category._id'] = int(category)
+        with db_session() as db:
+            query = db.query(Release).join(Group).join(NZB).filter(Release.nfo==None).filter(Release.nfo_metablack_id==None)
+            if category:
+                query = query.filter(Release.category_id==int(category))
 
-        for release in db.releases.find(query).limit(limit).sort('posted', pymongo.DESCENDING).batch_size(50):
-            nzb = pynab.nzbs.get_nzb_dict(release['nzb'])
+            if limit:
+                releases = query.order_by(Release.posted.desc()).limit(limit)
+            else:
+                releases = query.order_by(Release.posted.desc()).all()
 
-            if nzb:
-                nfos = []
-                if nzb['nfos']:
+            for release in releases:
+                found = False
+                nzb = pynab.nzbs.get_nzb_details(release.nzb)
+
+                if nzb:
+                    nfos = []
                     for nfo in nzb['nfos']:
-                        if not isinstance(nfo['segments']['segment'], list):
-                            nfo['segments']['segment'] = [nfo['segments']['segment'], ]
-                        for part in nfo['segments']['segment']:
-                            if int(part['@bytes']) > NFO_MAX_FILESIZE:
+                        for part in nfo['segments']:
+                            if int(part['size']) > NFO_MAX_FILESIZE:
                                 continue
                             nfos.append(part)
 
-                if nfos:
                     for nfo in nfos:
                         try:
-                            article = server.get(release['group']['name'], [nfo['#text'], ])
+                            article = server.get(release.group.name, [nfo['message_id'], ])
                         except:
                             article = None
 
                         if article:
                             data = gzip.compress(article.encode('utf-8'))
-                            nfo_file = fs.put(data, filename='.'.join([release['name'], 'nfo', 'gz']))
+                            nfo = NFO(data=data)
+                            db.add(nfo)
 
-                            if nfo_file:
-                                db.releases.update({'_id': release['_id']}, {
-                                    '$set': {
-                                        'nfo': nfo_file
-                                    }
-                                })
+                            release.nfo = nfo
+                            release.nfo_metablack_id = None
+                            db.add(release)
 
-                                log.info('nfo: [{}] - [{}] - nfo added'.format(
-                                    release['_id'],
-                                    release['search_name']
-                                ))
-                                break
-                        else:
-                            log.warning('nfo: [{}] - [{}] - nfo unavailable'.format(
-                                release['_id'],
-                                release['search_name']
+                            log.info('nfo: [{}] - [{}] - nfo added'.format(
+                                release.id,
+                                release.search_name
                             ))
-                            continue
-                else:
-                    log.warning('nfo: [{}] - [{}] - no nfo in release'.format(
-                        release['_id'],
-                        release['search_name']
-                    ))
-                    db.releases.update({'_id': release['_id']}, {
-                        '$set': {
-                            'nfo': False
-                        }
-                    })
+                            found = True
+                            break
+
+                    if not found:
+                        log.warning('nfo: [{}] - [{}] - no nfos in release'.format(
+                            release.id,
+                            release.search_name
+                        ))
+                        mb = MetaBlack(nfo=release, status='IMPOSSIBLE')
+                        db.add(mb)
+                db.commit()

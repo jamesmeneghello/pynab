@@ -1,7 +1,6 @@
 import regex
 import collections
 from pynab import log
-from pynab.db import db
 
 # category codes
 # these are stored in the db, as well
@@ -242,7 +241,7 @@ group_regex = {
         CAT_PARENT_MUSIC, CAT_MISC_OTHER
     ],
     regex.compile('alt\.binaries\.(teevee|tv|tvseries)', regex.I): [
-        CAT_PARENT_TV, CAT_PARENT_MOVIE, CAT_PARENT_XXX, CAT_MISC_OTHER
+        CAT_PARENT_TV, CAT_PARENT_XXX, CAT_PARENT_MOVIE, CAT_MISC_OTHER
     ],
     regex.compile('alt\.binaries\.multimedia$', regex.I): [
         CAT_PARENT_XXX, CAT_PARENT_GAME, CAT_PARENT_MUSIC, CAT_PARENT_TV, CAT_PARENT_PC, CAT_PARENT_MOVIE,
@@ -271,12 +270,12 @@ it'll be returned to whatever called it for further processing.
 parent_category_regex = {
     CAT_PARENT_TV: collections.OrderedDict([
         (regex.compile('(S?(\d{1,2})\.?(E|X|D)(\d{1,2})[\. _-]+)|(dsr|pdtv|hdtv)[\.\-_]', regex.I), [
-            CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_OTHER
+            CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD
         ]),
         (regex.compile(
             '( S\d{1,2} |\.S\d{2}\.|\.S\d{2}|s\d{1,2}e\d{1,2}|(\.| |\b|\-)EP\d{1,2}\.|\.E\d{1,2}\.|special.*?HDTV|HDTV.*?special|PDTV|\.\d{3}\.DVDrip|History( |\.|\-)Channel|trollhd|trollsd|HDTV.*?BTL|C4TV|WEB DL|web\.dl|WWE|season \d{1,2}|(?!collectors).*?series|\.TV\.|\.dtv\.|UFC|TNA|staffel|episode|special\.\d{4})',
             regex.I), [
-             CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD, CAT_TV_OTHER
+             CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD
         ]),
         (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
@@ -289,8 +288,8 @@ parent_category_regex = {
         ]),
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
-        (regex.compile('[-._ ]AVC|[-._ ]|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|BR|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|Untouched|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
-            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD, CAT_MOVIE_OTHER
+        (regex.compile('[-._ ]AVC|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
+            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
         ])
     ]),
     CAT_PARENT_PC: collections.OrderedDict([
@@ -303,10 +302,10 @@ parent_category_regex = {
         (regex.compile(
             '(XXX|Porn|PORNOLATiON|SWE6RUS|masturbation|masturebate|lesbian|Imageset|Squirt|Transsexual|a\.b\.erotica|pictures\.erotica\.anime|cumming|ClubSeventeen|Errotica|Erotica|EroticaX|nymph|sexontv|My_Stepfather_Made_Me|slut|\bwhore\b)',
             regex.I), [
-             CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID, CAT_XXX_OTHER
+             CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID
          ]),
         (regex.compile('^Penthouse', regex.I), [
-            CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID, CAT_XXX_OTHER
+            CAT_XXX_DVD, CAT_XXX_IMAGESET, CAT_XXX_PACK, CAT_XXX_WMV, CAT_XXX_X264, CAT_XXX_XVID
         ])
     ]),
     CAT_PARENT_GAME: collections.OrderedDict([
@@ -395,7 +394,6 @@ category_regex = {
         regex.compile('^london(\.| )2012', regex.I)
     ],
     CAT_TV_DOCU: [
-        (regex.compile('\-DOCUMENT', regex.I), False),
         regex.compile(
             '(?!.*?S\d{2}.*?)(?!.*?EP?\d{2}.*?)(48\.Hours\.Mystery|Discovery.Channel|BBC|History.Channel|National.Geographic|Nat Geo|Shark.Week)',
             regex.I),
@@ -551,14 +549,6 @@ category_regex = {
     ]
 }
 
-
-def get_category_name(id):
-    category = db.categories.find_one({'_id': id})
-    parent_category = db.categories.find_one({'_id': category['parent_id']})
-
-    return '{} > {}'.format(parent_category['name'], category['name'])
-
-
 def determine_category(name, group_name=''):
     """Categorise release based on release name and group name."""
 
@@ -579,10 +569,9 @@ def determine_category(name, group_name=''):
     if not category:
         category = CAT_MISC_OTHER
 
-    log.info('category: ({}) [{}]: {} ({})'.format(
+    log.info('category: ({}) [{}]: {}'.format(
         group_name,
         name,
-        get_category_name(category),
         category
     ))
     return category
@@ -626,8 +615,6 @@ def check_parent_category(name, parent_category):
 
 def check_single_category(name, category):
     """Check release against a single category."""
-
-    log.info('checking {}'.format(category))
 
     for regex in category_regex[category]:
         if isinstance(regex, collections.Mapping):

@@ -3,54 +3,60 @@
 
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 import logging
 import config
 import logging.handlers
 import os
 import colorlog
-import inspect
 import sys
+
 
 log = logging.getLogger(__name__)
 log.setLevel(config.log.get('logging_level', logging.DEBUG))
 
-logging_file = config.log.get('logging_file')
+logging_dir = config.log.get('logging_dir')
 log_descriptor = None
 
 formatter = colorlog.ColoredFormatter(
-        "%(log_color)s%(asctime)s - %(levelname)s - %(reset)s %(blue)s%(message)s",
-        datefmt=None,
-        reset=True,
-        log_colors={
-                'DEBUG':    'cyan',
-                'INFO':     'green',
-                'WARNING':  'yellow',
-                'ERROR':    'red',
-                'CRITICAL': 'red',
-        }
+    "%(log_color)s%(asctime)s - %(levelname)s - %(reset)s %(blue)s%(message)s",
+    datefmt=None,
+    reset=True,
+    log_colors={
+        'DEBUG':    'cyan',
+        'INFO':     'green',
+        'WARNING':  'yellow',
+        'ERROR':    'red',
+        'CRITICAL': 'red',
+    }
 )
 
-if logging_file:
-    frame = inspect.currentframe()
-    info=inspect.getouterframes(frame)
-    c=0
-    for n in info:
-        if n[4] and c > 1: # c > 1 skips this module itself
-            if n[3] == '<module>': # from my testing (on Windows), the first module found is the calling module
-                break
-        c += 1
-    if c >= len(info):
-        sys.exit(1)
-    name, _ = os.path.splitext(os.path.basename(inspect.stack()[c][1].rstrip(os.sep)))
-    file, ext = os.path.splitext(config.log.get('logging_file'))
-    logging_file = ''.join([file, '_', name, ext])
+if config.log.get('logging_file') and not config.log.get('logging_dir'):
+    logging_dir = os.path.dirname(os.path.abspath(config.log.get('logging_file')))
+
+if logging_dir:
+    name, _ = os.path.splitext(os.path.basename(sys.argv[0].rstrip(os.sep)))
+    logging_file = os.path.join(logging_dir, name + '.log')
+
+    try:
+        if not os.path.exists(logging_dir):
+            os.makedirs(logging_dir)
+    except Exception as e:
+        print('error: logfile not accessible. permissions error?')
+        print(e)
+        exit(1)
+
+    log.info('log: started pynab logger')
 
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-    handler.setFormatter(formatter)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
+elif config.log.get('colors', False):
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    log.addHandler(handler)
 else:
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

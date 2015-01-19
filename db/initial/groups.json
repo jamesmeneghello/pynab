@@ -1,553 +1,553 @@
 [
     {
         "name": "alt.binaries.0day.stuffz",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.anime",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.blu-ray",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.cd.image",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.cd.image.linux",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.cd.lossless",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.classic.tv.shows",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.comics.dcp",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.console.ps3",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.cores",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.country.mp3",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.documentaries",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.dvd.anime",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.dvd.movies",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.dvd.music",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.dvdr",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.e-book",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.e-book.flood",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.e-book.technical",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.ebook",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.ftn",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.games",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.games.nintendods",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.games.wii",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.games.xbox",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.games.xbox360",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.hdtv",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.hdtv.x264",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.highspeed",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.inner-sanctum",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.ipod.videos",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.linux.iso",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mac",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mma",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mom",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.moovee",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.movies",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.movies.divx",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.movies.xvid",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mp3",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mp3.audiobooks",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mp3.bootlegs",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mp3.full_alt.binaries.ms",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.mpeg.video.music",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.anime",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.anime.highspeed",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.anime.repost",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.cartoons",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.comedy.british",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.disney",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.documentaries",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.scifi",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.sports",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.multimedia.tv",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.music.flac",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.nintendo.ds",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.paranormal",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.pictures.comics.complete",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.pro-wrestling",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.scary.exe.files",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sony.psp",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sound.audiobooks",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sound.mp3",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.flac",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.lossless",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.lossless.classical",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.acoustic",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.classical",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.comedy",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.complete_cd",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.dance",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.full_alt.binaries.ms",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.heavy-metal",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.musicals",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.opera",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.rap-hiphop",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.rap-hiphop.full-alt.binaries.ms",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.mp3.rock",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.sounds.radio.bbc",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.teevee",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.tv",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.tvseries",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.ufo.files",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.warez",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.warez.ibm-pc.0-day",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.warez.quebec-hackers",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.warez.smartphone",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.wii",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.wmvhd",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     },
     {
         "name": "alt.binaries.x264",
-        "active": 0,
+        "active": false,
         "first": 0,
         "last": 0
     }
