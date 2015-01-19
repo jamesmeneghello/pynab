@@ -1,8 +1,9 @@
 import logging
 
 stats = {
-    # stats seettings
-    # ---------------------
+    # stats settings
+    # settings in this section will take effect on the fly. no need to restart
+    # ------------------------------------------------------------------------
 
     # how long to sleep in seconds between stats reports
     'sleep_time': 300,
@@ -11,7 +12,7 @@ stats = {
     'header_every_nth': 20,
 
     # write a separate .csv file for use in excel.
-    'write_csv': False,
+    'write_csv': True,
 }
 
 monitor = {
