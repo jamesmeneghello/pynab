@@ -65,7 +65,7 @@ class NabBot:
         data = "<name>{}</name><guid>{}</guid>".format(escape(name), guid)
         log.info("nabbot: publishing {} to {}[{}] at {}".format(data, categories[catid], catid, datetime.now()))
         try:
-            #self.xmpp.publish(str(catid), data)
+            self.xmpp.publish(str(catid), data)
             pass
         except:
             pass
