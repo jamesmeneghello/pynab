@@ -67,7 +67,7 @@ def process(limit=None, online=True):
                     rage = db.query(TvShow).filter(TvShow.name==show['clean_name'].replace(' and ', ' & ')).first()
 
                 if rage:
-                    method = 'local'
+                    method = 'local '
                 elif not rage and online:
                     rage_data = search(api_session, show)
                     if rage_data:

@@ -257,7 +257,7 @@ def process(limit=None, category=0):
                 if nzb and nzb['rars']:
                     passworded, info = check_release_files(server, release.group.name, nzb)
                     if info:
-                        log.info('rar: fileinfo add [{}]'.format(
+                        log.info('rar: file info add [{}]'.format(
                             release.search_name
                         ))
                         release.passworded = passworded
