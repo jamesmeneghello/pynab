@@ -4,6 +4,6 @@ windows:
     layout: main-vertical
     panes:
       - commands:
-         - python3 /var/www/pynab/stats.py
+         - python3 /var/www/pynab/scripts/stats.py
       - tail -F /var/log/pynab/pynab_scan.log
       - tail -F /var/log/pynab/pynab_postprocess.log
