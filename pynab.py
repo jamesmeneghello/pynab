@@ -2,10 +2,10 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
-    pynab.py regex (update)
+
 Options:
     -h --help       Show this screen.
     --version       Show version.
@@ -188,7 +188,6 @@ if __name__ == '__main__':
         elif arguments['reset']:
             reset_group(arguments['<group>'])
     elif arguments['regex']:
-        if arguments['update']:
-            update_regex()
+        update_regex()
     
     exit(0)
