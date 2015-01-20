@@ -497,7 +497,7 @@ binaries an releases in the database.  Let it run and it also shows how many of 
 and removed every few mins.  Preferences for this, including writing to a .csv file, are in 
 config.py.
 
-    > python3 stats.py
+    > python3 scripts/stats.py
 
 
 ### Building the WebUI ###
