@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
 
@@ -57,6 +57,13 @@ def pubsub():
         call('zdaemon -Czdaemon/pubsub.conf start', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
+def prebot():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/prebot.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def stop():
@@ -173,6 +180,8 @@ if __name__ == '__main__':
         api()
     elif arguments['pubsub']:
         pubsub()
+    elif arguments['prebot']:
+        prebot()
     elif arguments['update']:
         update()
     elif arguments['user']:
