@@ -3,10 +3,10 @@
 
 import irc.bot
 import irc.strings
-from irc.client import ip_numstr_to_quad, ip_quad_to_numstr
 import string
 import random
 import pynab.pre
+from pynab import log_init
 
 
 class TestBot(irc.bot.SingleServerIRCBot):
@@ -33,4 +33,5 @@ def main():
     bot.start()
 
 if __name__ == "__main__":
+    log_init('prebot')
     main()

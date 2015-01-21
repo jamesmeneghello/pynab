@@ -13,11 +13,16 @@ Options:
 
 """
 
-import pynab.xmpp
 from docopt import docopt
+
+import pynab.xmpp
+
+from pynab import log_init
+
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)
     if arguments['start']:
+        log_init('pubsub')
         server = pynab.xmpp.JSONPub()
         server.start()

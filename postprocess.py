@@ -6,7 +6,7 @@ import datetime
 import psycopg2.extensions
 import pytz
 
-from pynab import log
+from pynab import log, log_init
 from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack, NZB, NFO, SFV
 import pynab.groups
 import pynab.binaries
@@ -193,4 +193,5 @@ def main():
         time.sleep(postprocess_wait)
 
 if __name__ == '__main__':
+    log_init('postprocess')
     main()

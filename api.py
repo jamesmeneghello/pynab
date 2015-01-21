@@ -4,7 +4,7 @@ import bottle
 from bottle import request, response
 import xmltodict
 
-from pynab import log
+from pynab import log, log_init
 import pynab.api
 import config
 
@@ -117,4 +117,5 @@ def main():
     
 
 if __name__ == '__main__':
+    log_init('api')
     main()

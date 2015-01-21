@@ -19,7 +19,7 @@ import dateutil.parser
 import psycopg2.extensions
 from docopt import docopt
 
-from pynab import log
+from pynab import log, log_init
 from pynab.db import db_session, Group, Binary, Miss, engine, Segment
 
 import pynab.groups
@@ -158,8 +158,10 @@ if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)
 
     if arguments['backfill']:
+        log_init('backfill')
         mode = 'backfill'
     else:
+        log_init('update')
         mode = 'update'
 
     main(mode=mode, group=arguments['<group>'], date=arguments['--date'])
