@@ -1,7 +1,7 @@
 """
 Pynab Prebot
 
-Starts a prebot that listens on the #nZEDbPRE channel
+Starts a prebot that listens on the #nZEDbPRE channel.
 
 Usage:
     prebot.py start
