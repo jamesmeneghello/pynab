@@ -20,7 +20,7 @@ import string
 import random
 import pynab.pre
 from docopt import docopt
-from pynab import log_init
+from pynab import log_init, log
 
 class TestBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
