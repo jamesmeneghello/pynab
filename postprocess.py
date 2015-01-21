@@ -1,4 +1,3 @@
-import argparse
 import concurrent.futures
 import time
 import traceback
@@ -7,7 +6,7 @@ import datetime
 import psycopg2.extensions
 import pytz
 
-from pynab import log, log_descriptor
+from pynab import log
 from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack, NZB, NFO, SFV
 import pynab.groups
 import pynab.binaries
@@ -61,21 +60,6 @@ def process_imdb():
         log.critical(traceback.format_exc())
         raise Exception
 
-def daemonize(pidfile):
-    try:
-        import traceback
-        from daemonize import Daemonize
-
-        fds = []
-        if log_descriptor:
-            fds = [log_descriptor]
-
-        daemon = Daemonize(app='pynab', pid=pidfile, action=main, keep_fds=fds)
-        daemon.start()
-    except SystemExit:
-        raise
-    except:
-        log.critical(traceback.format_exc())
 
 def main():
     log.info('postprocess: starting post-processing...')
@@ -209,16 +193,4 @@ def main():
         time.sleep(postprocess_wait)
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description="Pynab post processing script")
-    argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
-    argparser.add_argument('-p', '--pid-file', help='pid file (when -d)')
-
-    args = argparser.parse_args()
-    if args.daemonize:
-        pidfile = args.pid_file or config.scan.get('pid_file')
-        if not pidfile:
-            log.error("A pid file is required to run as a daemon, please supply one either in the config file '{}' or as argument".format(config.__file__))
-        else:
-            daemonize(pidfile)
-    else:
-        main()
+    main()
