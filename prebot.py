@@ -1,3 +1,16 @@
+"""
+Pynab Prebot
+
+Starts a prebot that listens on the #nZEDbPRE channel.
+
+Usage:
+    prebot.py start
+
+Options:
+    -h --help       Show this screen.
+    --version       Show version.
+
+"""
 # Thanks to Joel Rosdahl <joel@rosdahl.net> for this script
 # Taken from https://bitbucket.org/jaraco/irc/src
 
@@ -6,8 +19,8 @@ import irc.strings
 import string
 import random
 import pynab.pre
-from pynab import log_init
-
+from docopt import docopt
+from pynab import log_init, log
 
 class TestBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
@@ -28,10 +41,12 @@ class TestBot(irc.bot.SingleServerIRCBot):
 def main():
     channel = "#nZEDbPRE"
     nickname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
-    print(nickname)
+    log.info("Pre: Bot Nick - {}".format(nickname))
     bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
     bot.start()
 
-if __name__ == "__main__":
-    log_init('prebot')
-    main()
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version=pynab.__version__)
+    if arguments['start']:
+        log_init('prebot')
+        main()
