@@ -19,6 +19,7 @@ import irc.strings
 import string
 import random
 import pynab.pre
+from docopt import docopt
 from pynab import log_init
 
 class TestBot(irc.bot.SingleServerIRCBot):
@@ -44,6 +45,8 @@ def main():
     bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
     bot.start()
 
-if __name__ == "__main__":
-    log_init('prebot')
-    main()
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version=pynab.__version__)
+    if arguments['start']:
+        log_init('prebot')
+        main()
