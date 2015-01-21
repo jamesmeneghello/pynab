@@ -19,6 +19,7 @@ def log_init(log_name):
     logging_file = os.path.join(logging_dir, log_name + '.log')
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    log.handlers = []
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()
     log.info('log: started pynab logger')

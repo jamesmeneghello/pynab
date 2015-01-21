@@ -47,11 +47,7 @@ api = {
 
     # api_port: port number to bind the api
     # usually 8080
-    'api_port': 8080,
-
-    # pid_file: process file for the api, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': ''
+    'api_port': 8080
 }
 
 scan = {
@@ -128,10 +124,6 @@ scan = {
     # set this to 3 days or so
     # !!WARNING!! if backfilling, set this to 0.
     'dead_binary_age': 1,
-
-    # pid_file: process file for the scanner, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': '',
 
     # publish: publish release info in json to a host
     # useful for xmpp pubsub or any listening scripts
@@ -265,11 +257,6 @@ postprocess = {
     # blacklist_url: url to retrieve blacklists from
     # generally leave alone
     'blacklist_url': 'https://raw.github.com/kevinlekiller/Newznab-Blacklist/master/New/blacklists.txt',
-
-    # pid_file: process file for the scanner, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': '',
-
 }
 
 log = {
