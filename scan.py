@@ -1,10 +1,23 @@
-import argparse
+"""Pynab Scanner, for indexing groups
+
+Usage:
+    pynab.py update <group>
+    pynab.py backfill <group> [--date=<date>]
+
+Options:
+    -h --help       Show this screen.
+    --version       Show version.
+    --date=<date>   The date to backfill to.
+
+"""
+
 import concurrent.futures
 import time
 import pytz
 import datetime
 import dateutil.parser
 import psycopg2.extensions
+from docopt import docopt
 
 from pynab import log
 from pynab.db import db_session, Group, Binary, Miss, engine, Segment
@@ -29,7 +42,7 @@ def update(group_name):
 
 def backfill(group_name, date=None):
     if date:
-        date = pytz.utc.localize(dateutil.parser.parse(args.date))
+        date = pytz.utc.localize(dateutil.parser.parse(date))
     else:
         date = pytz.utc.localize(datetime.datetime.now() - datetime.timedelta(config.scan.get('backfill_days', 10)))
     try:
@@ -142,15 +155,11 @@ def main(mode='update', group=None, date=None):
 
 
 if __name__ == '__main__':
-    argparser = argparse.ArgumentParser(description="Pynab main scanning script")
-    argparser.add_argument('-b', '--backfill', action='store_true', help='backfill groups')
-    argparser.add_argument('-g', '--group', help='group to scan')
-    argparser.add_argument('-D', '--date', help='backfill to date')
-    args = argparser.parse_args()
+    arguments = docopt(__doc__, version=pynab.__version__)
 
-    if args.backfill:
+    if arguments['backfill']:
         mode = 'backfill'
     else:
         mode = 'update'
 
-    main(mode=mode, group=args.group, date=args.date)
+    main(mode=mode, group=arguments['<group>'], date=arguments['--date'])

@@ -8,6 +8,7 @@ import string
 import random
 import pynab.pre
 
+
 class TestBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
@@ -23,9 +24,8 @@ class TestBot(irc.bot.SingleServerIRCBot):
         a = e.arguments[0]
         pynab.pre.nzedbirc(a)
 
-def main():
-    import sys
 
+def main():
     channel = "#nZEDbPRE"
     nickname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
     print(nickname)
