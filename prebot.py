@@ -16,12 +16,10 @@ Options:
 
 import irc.bot
 import irc.strings
-from irc.client import ip_numstr_to_quad, ip_quad_to_numstr
 import string
 import random
 import pynab.pre
-from pynab import log, log_descriptor
-from docopt import docopt
+from pynab import log_init
 
 class TestBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
@@ -38,15 +36,14 @@ class TestBot(irc.bot.SingleServerIRCBot):
         a = e.arguments[0]
         pynab.pre.nzedbirc(a)
 
-def main():
 
+def main():
     channel = "#nZEDbPRE"
     nickname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
     log.info("Pre: Bot Nick - {}".format(nickname))
     bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
     bot.start()
 
-if __name__ == '__main__':
-    arguments = docopt(__doc__, version=pynab.__version__)
-    if arguments['start']:
-        main()
+if __name__ == "__main__":
+    log_init('prebot')
+    main()
