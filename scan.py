@@ -6,7 +6,7 @@ import datetime
 import dateutil.parser
 import psycopg2.extensions
 
-from pynab import log, log_descriptor
+from pynab import log
 from pynab.db import db_session, Group, Binary, Miss, engine, Segment
 
 import pynab.groups
@@ -53,23 +53,6 @@ def process():
     # process releases
     log.info('scan: processing releases...')
     pynab.releases.process()
-
-
-def daemonize(pidfile):
-    try:
-        import traceback
-        from daemonize import Daemonize
-
-        fds = []
-        if log_descriptor:
-            fds = [log_descriptor]
-
-        daemon = Daemonize(app='pynab', pid=pidfile, action=main, keep_fds=fds)
-        daemon.start()
-    except SystemExit:
-        raise
-    except:
-        log.critical(traceback.format_exc())
 
 
 def main(mode='update', group=None, date=None):
@@ -160,23 +143,14 @@ def main(mode='update', group=None, date=None):
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description="Pynab main scanning script")
-    argparser.add_argument('-d', '--daemonize', action='store_true', help='run as a daemon')
-    argparser.add_argument('-p', '--pid-file', help='pid file (when -d)')
     argparser.add_argument('-b', '--backfill', action='store_true', help='backfill groups')
     argparser.add_argument('-g', '--group', help='group to scan')
     argparser.add_argument('-D', '--date', help='backfill to date')
-
     args = argparser.parse_args()
 
-    if args.daemonize:
-        pidfile = args.pid_file or config.scan.get('pid_file')
-        if not pidfile:
-            log.error("A pid file is required to run as a daemon, please supply one either in the config file '{}' or as argument".format(config.__file__))
-        else:
-            daemonize(pidfile)
+    if args.backfill:
+        mode = 'backfill'
     else:
-        if args.backfill:
-            mode = 'backfill'
-        else:
-            mode = 'update'
-        main(mode=mode, group=args.group, date=args.date)
+        mode = 'update'
+
+    main(mode=mode, group=args.group, date=args.date)
