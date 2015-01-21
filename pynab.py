@@ -2,10 +2,10 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
-    pynab.py regex (update)
+
 Options:
     -h --help       Show this screen.
     --version       Show version.
@@ -52,12 +52,28 @@ def api():
         Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
+def pubsub():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/pubsub.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
+def prebot():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/prebot.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
 def stop():
     if monitor == 'zdaemon':
         call('zdaemon -Czdaemon/update.conf stop', shell=True)
         call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
         call('zdaemon -Czdaemon/api.conf stop', shell=True)
         call('zdaemon -Czdaemon/backfill.conf stop', shell=True)
+        call('zdaemon -Czdaemon/prebot.conf stop', shell=True)
+        call('zdaemon -Czdaemon/pubsub.conf stop', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
@@ -152,6 +168,8 @@ if __name__ == '__main__':
         postprocess()
         if monitor == 'windows':
             api()
+        if config.bot.get('enabled', False):
+            pubsub()
     elif arguments['stop']:
         stop()
     elif arguments['scan']:
@@ -162,6 +180,10 @@ if __name__ == '__main__':
         postprocess()
     elif arguments['api']:
         api()
+    elif arguments['pubsub']:
+        pubsub()
+    elif arguments['prebot']:
+        prebot()
     elif arguments['update']:
         update()
     elif arguments['user']:
@@ -177,7 +199,6 @@ if __name__ == '__main__':
         elif arguments['reset']:
             reset_group(arguments['<group>'])
     elif arguments['regex']:
-        if arguments['update']:
-            update_regex()
+        update_regex()
     
     exit(0)

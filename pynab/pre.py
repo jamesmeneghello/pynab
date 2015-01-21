@@ -1,0 +1,105 @@
+#import re
+import regex
+from pynab.db import db_session, engine, Pre
+from pynab import log
+from sqlalchemy import *
+
+def nzedbirc(unformattedPre):
+	
+	formattedPre = parseNzedbirc(unformattedPre)
+	
+	with db_session() as db:
+
+		p = db.query(Pre).filter(Pre.name==formattedPre['name']).first() 
+		
+		if not p:
+			p = Pre(**formattedPre)	
+		else:
+			for k, v in formattedPre.items():
+				setattr(p,k,v)
+		
+		try:
+			db.add(p)
+			log.info("Pre: Inserted/Updated - {}".format(formattedPre["name"]))
+		except Exception as e:
+			log.debug("Pre: Error - {}".format(e))
+
+	
+#Message legend: DT: PRE Time(UTC) | TT: Title | SC: Source | CT: Category | RQ: Requestid | SZ: Size | FL: Files | FN: Filename
+#Sample: NEW: [DT: 2015-01-09 16:08:45][TT: Sample-Release][SC: sample-source][CT: 0DAY][RQ: N/A][SZ: N/A][FL: N/A][FN: N/A]
+def parseNzedbirc(unformattedPre):
+
+	PRE_REGEX = regex.compile('(?P<preType>.+): \[DT: (?<pretime>.+)\]\[TT: (?P<name>.+)\]\[SC: (?P<source>.+)\]\[CT: (?P<category>.+)\]\[RQ: (?P<request>.+)\]\[SZ: (?P<size>.+)\]\[FL: (?P<files>.+)\]\[FN: (?P<filename>.+)\]')
+
+	cleanRegex = regex.compile('[\W_]+')
+	formattedPre = {}
+
+	try:
+		formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
+	except Exception as e:
+		log.debug("Pre: Error parsing nzedbirc - {}".format(e))
+
+
+	if formattedPre['preType'] == "NUK":
+		formattedPre['nuked'] = True
+	else:
+		formattedPre['nuked'] = False
+
+	#Deal with splitting out requests if they exist
+	if formattedPre['request'] != "N/A":
+		formattedPre['requestid'] = formattedPre['request'].split(":")[0]
+		formattedPre['requestgroup'] = formattedPre['request'].split(":")[1]
+	else:
+		formattedPre['requestid'] = None
+	
+	formattedPre['searchname'] = cleanRegex.sub(' ', formattedPre['name']).strip()
+
+	#remove any columns we dont need. Perhaps a way to filter these out via regex? Or a way to ignore via sqlalchemy
+	formattedPre.pop("preType", None)
+	formattedPre.pop("size", None)
+	formattedPre.pop("files", None)
+	formattedPre.pop("request", None)
+
+	return formattedPre
+
+#orlydb scraping
+#Returns the category of a pre if there is a match
+def orlydb(name, search_name):
+	
+	#BeautifulSoup is required
+	try:
+		from bs4 import BeautifulSoup
+	except:
+		log.error("BeautifulSoup is required to use orlydb scraping: pip install beautifulsoup4")
+
+	try:
+		preHTML = urllib.request.urlopen("http://orlydb.com/?q={search_name}".format(search_name=urllib.parse.quote(search_name)))		
+	except:
+		log.debug("Error connecting to orlydb")
+		return False
+
+	soup = BeautifulSoup(preHTML.read())
+	releases = soup.find(id="releases").findAll("div")
+
+	rlsDict = {}
+	for rls in releases:
+		#Try/except used to filter out None types
+		#pretime left as may be used later
+		try:
+			rlsname = rls.find("span", {"class" : "release"}).get_text()
+			#pretime = rls.find("span", {"class" : "timestamp"}).get_text()
+			category = rls.find("span", {"class" : "section"}).find("a").get_text()
+			
+			#If the release matches what is passed, return the category in a dict
+			#This could be a problem if 2 pre's have the same name but different categories, chances are slim though
+			if rlsname == name:
+				rlsDict["category"] = category
+		except Exception as e:
+			log.debug("Error parsing to orlydb reponse: {}".format(e))
+			return False
+
+	if bool(rlsDict):
+		log.info("Orlydb pre found: {}".format(rlsname))
+		return rlsDict
+	else:
+		return False

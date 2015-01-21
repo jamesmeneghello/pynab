@@ -56,8 +56,7 @@ loop_num = 1
 
 printHeader()
 
-
-logging_dir = os.path.dirname(config.log.get('logging_file'))
+logging_dir = config.log.get('logging_dir')
 csv_path = os.path.join(logging_dir, "stats.csv")
 
 # write header if we are creating the file

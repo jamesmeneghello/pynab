@@ -2,10 +2,11 @@ import time
 import math
 import base64
 import regex
+from requests_futures.sessions import FuturesSession
 from sqlalchemy.orm import *
 
 from pynab import log
-from pynab.db import db_session, engine, Binary, Part, Release, Group, Category, Blacklist
+from pynab.db import to_json, db_session, engine, Binary, Part, Release, Group, Category, Blacklist
 import pynab.categories
 import pynab.nzbs
 import pynab.rars
@@ -140,6 +141,11 @@ def process():
 
     binary_count = 0
     added_count = 0
+
+    if config.scan.get('publish', False):
+        request_session = FuturesSession()
+    else:
+        request_session = None
 
     start = time.time()
 
@@ -337,6 +343,10 @@ def process():
 
                     # delete processed binaries
                     db.query(Binary).filter(Binary.id==binary.id).delete()
+
+                    # publish processed releases?
+                    if config.scan.get('publish', False):
+                        futures = [request_session.post(host, data=to_json(release)) for host in config.scan.get('publish_hosts')]
 
             db.commit()
 

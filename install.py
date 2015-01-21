@@ -62,7 +62,8 @@ if __name__ == '__main__':
     with open('db/initial/tvshows.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
-            engine.execute(TvShow.__table__.insert(), data)
+            for row in data:
+                engine.execute(TvShow.__table__.insert(), row)
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
@@ -71,7 +72,8 @@ if __name__ == '__main__':
     with open('db/initial/movies.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         try:
-            engine.execute(Movie.__table__.insert(), data)
+            for row in data:
+                engine.execute(Movie.__table__.insert(), row)
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
