@@ -1,4 +1,7 @@
 from contextlib import contextmanager
+import datetime
+import json
+import copy
 
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
     create_engine, UniqueConstraint, Enum
@@ -118,6 +121,19 @@ def windowed_query(q, column, windowsize):
             yield row
 
 
+def json_serial(obj):
+    if isinstance(obj, datetime.datetime):
+        serial = obj.isoformat()
+        return serial
+
+
+def to_json(obj):
+    dict = copy.deepcopy(obj.__dict__)
+    del dict['_sa_instance_state']
+    obj = json.dumps(dict, default=json_serial)
+    return obj
+
+
 class Release(Base):
     __tablename__ = 'releases'
 
@@ -175,6 +191,9 @@ class Release(Base):
 
     episode_id = Column(Integer, ForeignKey('episodes.id'), index=True)
     episode = relationship('Episode', backref=backref('releases'))
+
+    pre_id = Column(Integer, ForeignKey('pres.id'), index=True)
+    pre = relationship('Pre', backref=backref('pre'))
 
     __table_args__ = (UniqueConstraint(name, posted),)
 
@@ -237,7 +256,6 @@ class Group(Base):
     last = Column(BigInteger)
     name = Column(String)
 
-
 class Binary(Base):
     __tablename__ = 'binaries'
 
@@ -265,7 +283,6 @@ class Binary(Base):
                 size += segment.size
 
         return size
-
 
 # it's unlikely these will ever be used in sqlalchemy
 # for performance reasons, but keep them to create tables etc
@@ -410,3 +427,21 @@ class DataLog(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String, index=True)
     data = Column(Text)
+
+class Pre(Base):
+
+    __tablename__ = 'pres'
+
+    id = Column(BigInteger, primary_key=True)
+
+    pretime = Column(DateTime)
+    name = Column(String, index=True)
+    searchname = Column(String)
+    category = Column(String)
+    source = Column(String)
+    requestid = Column(BigInteger)
+    requestgroup = Column(String)
+    filename = Column(String)
+    nuked = Column(Boolean, default=False)
+
+    __table_args__ = (UniqueConstraint(name),)

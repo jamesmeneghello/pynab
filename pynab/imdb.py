@@ -2,7 +2,6 @@ import regex
 import unicodedata
 import difflib
 import datetime
-import pymongo
 import requests
 import pytz
 

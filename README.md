@@ -284,6 +284,13 @@ This will supply you with an API key for the user. You can also delete a user:
 
     > python3 pynab.py user delete <email>
 
+### Updating Regex ###
+
+This is run automatically as part of install, but if you miss it for whatever reason (if you forgot
+to add your NN+ ID to the config file before installation?), you can re-call it here:
+
+    > python3 pynab.py regex
+
 ### Running Pynab ###
 
 The pynab CLI handles execution of daemons and respawning of processes. There are two primary 
@@ -385,7 +392,7 @@ Note that you can combine the backfill script with Screen to backfill multiple g
 	> (press ctrl-a then d)
 	> tail -f pynab.log
 
-The last line will enable you to see output from all the windows, if logging_file is enabled.
+The last line will enable you to see output from all the windows, if logging_dir is enabled.
 This is pretty spammy and unreadable, though. Watchdog to come with summarised stats for the DB.
 
 By running start.py at the same time as the backfill scripts, start.py will automatically take care of 
@@ -457,10 +464,6 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     threads = 2
 
 ### Using the miscellaneous scripts ###
-
-Update regex (run it every now and then, but it doesn't update that often):
-
-    > python3 scripts/update_regex.py
 
 Categorise all uncategorised releases - this runs automatically after import.
 

@@ -19,7 +19,10 @@ def upgrade():
 
     op.drop_constraint('releases_nzb_id_fkey', 'releases')
     op.drop_constraint('releases_nfo_id_fkey', 'releases')
-    #op.drop_constraint('releases_sfv_id_fkey', 'releases')
+    try:
+        op.drop_constraint('releases_sfv_id_fkey', 'releases')
+    except:
+        pass
 
     op.create_foreign_key('releases_nzb_id_fkey', 'releases', 'nzbs', ['nzb_id'], ['id'], ondelete='CASCADE')
     op.create_foreign_key('releases_nfo_id_fkey', 'releases', 'nfos', ['nfo_id'], ['id'], ondelete='CASCADE')

@@ -47,11 +47,7 @@ api = {
 
     # api_port: port number to bind the api
     # usually 8080
-    'api_port': 8080,
-
-    # pid_file: process file for the api, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': ''
+    'api_port': 8080
 }
 
 scan = {
@@ -129,10 +125,15 @@ scan = {
     # !!WARNING!! if backfilling, set this to 0.
     'dead_binary_age': 1,
 
-    # pid_file: process file for the scanner, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': '',
+    # publish: publish release info in json to a host
+    # useful for xmpp pubsub or any listening scripts
+    # it just sends a POST to the server with the json
+    'publish': False,
 
+    # publish_hosts: hosts to send processed release data to
+    # include the port and path if necessary
+    # ie. ['http://127.0.0.1:5678/releases', 'http://someaddress.com/whatever']
+    'publish_hosts': ['http://127.0.0.1:8090']
 }
 
 postprocess = {
@@ -256,20 +257,15 @@ postprocess = {
     # blacklist_url: url to retrieve blacklists from
     # generally leave alone
     'blacklist_url': 'https://raw.github.com/kevinlekiller/Newznab-Blacklist/master/New/blacklists.txt',
-
-    # pid_file: process file for the scanner, if daemonized
-    # make sure it's writable, leave blank for nginx
-    'pid_file': '',
-
 }
 
 log = {
     # logging settings
     # ----------------
-    # logging_file: a filepath or None to go to stdout
-    # this should be something like '/var/log/pynab/pynab.log'
+    # logging_dir: a filepath or None to go to stdout
+    # this should be something like '/var/log/pynab'
     # it'll automatically split the logfiles for you
-    'logging_file': None,
+    'logging_dir': None,
 
     # logging.x where DEBUG, INFO, WARNING, ERROR, etc
     # generally, debug if something goes wrong, info for normal usage
@@ -310,6 +306,27 @@ news = {
 
     # ssl: True if you want to use SSL, False if not
     'ssl': True,
+}
+
+# xmpp pubsub bot
+# used to push nzbs, rather than waiting for rss updates
+bot = {
+    # enabled: whether to enable the xmpp pubsub bot
+    'enabled': False,
+
+    # host: jabber server hostname
+    'host': '',
+
+    # jid: jabber_id
+    'jid': '',
+
+    # password: jabber password
+    'password': '',
+
+    # listen: host/port to listen on for releases in json
+    # should be a tuple, eg. for localhost:8090
+    # ('', 8090)
+    'listen': ('', 8090)
 }
 
 # used in convert_mongo_to_postgre.py
