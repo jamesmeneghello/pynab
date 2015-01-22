@@ -1,7 +1,7 @@
 """Pynab Scanner, for indexing groups
 
 Usage:
-    pynab.py update <group>
+    pynab.py update [<group>]
     pynab.py backfill <group> [--date=<date>]
 
 Options:
