@@ -72,6 +72,8 @@ def stop():
         call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
         call('zdaemon -Czdaemon/api.conf stop', shell=True)
         call('zdaemon -Czdaemon/backfill.conf stop', shell=True)
+        call('zdaemon -Czdaemon/prebot.conf stop', shell=True)
+        call('zdaemon -Czdaemon/pubsub.conf stop', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 

@@ -25,3 +25,4 @@ sleekxmpp
 eventlet
 requests-futures
 irc
+colorama
