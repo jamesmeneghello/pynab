@@ -1,99 +1,118 @@
-import random
-import os, sys, time
+import os
+import sys
+import time
+
 from imp import reload
-from colorama import init, Fore
-init()
+import colorama
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
-import config
-from pynab.db import Part, Binary, Release, db_session
 
-config_time = os.stat(config.__file__).st_mtime
+from pynab.db import Part, Binary, Release, db_session
+import config
+
 
 def get_config_changes():
+    """
+    Check if config has changed and re-import.
+    """
     global config_time
-
     if os.stat(config.__file__).st_mtime > config_time:
         reload(config)
         config_time = os.stat(config.__file__).st_mtime
 
 
 def get_stats():
+    """
+    Retrieve relevant stats for display.
+    """
     with db_session() as db:
-        # parts
         parts = db.query(Part).count()
-
-        # binaries
         binaries = db.query(Binary).count()
-
-        # backlog = db.query(Release).filter(Release.passworded=='UNKNOWN').count()
-
-        # processed releases
         releases = db.query(Release).count()
+        # backlog = db.query(Release).filter(Release.passworded=='UNKNOWN').count()
 
         return parts, binaries, releases
 
-#
-# Give the numbers some color
-#
+
 def colored(num):
+    """
+    Colour the numbers depending on value.
+    """
     if num == 0:
-        return Fore.GREEN + " " + Fore.RESET
+        return '{}.{}'.format(colorama.Fore.GREEN, colorama.Fore.RESET)
     if num > 0:
-        return Fore.GREEN + "+" + str(num) + Fore.RESET
+        return '{}+{}{}'.format(colorama.Fore.GREEN, num, colorama.Fore.RESET)
     if num < 0:
-        return Fore.RED + str(num) + Fore.RESET
-
-def printHeader():
-    print ("%-21s|%-21s|%s" % (" Parts", " Binaries", " Releases"))
+        return '{}{}{}'.format(colorama.Fore.RED, num, colorama.Fore.RESET)
 
 
-last_parts = 0
-last_binaries = 0
-last_releases = 0
-first_loop = True
-loop_num = 1
+def build_header():
+    """
+    Generate a header string.
+    """
+    return '{:^21}|{:^21}|{:^21}'.format('Parts', 'Binaries', 'Releases')
 
-printHeader()
 
-logging_dir = config.log.get('logging_dir')
-csv_path = os.path.join(logging_dir, "stats.csv")
+if __name__ == '__main__':
+    colorama.init()
+    config_time = os.stat(config.__file__).st_mtime
 
-# write header if we are creating the file
-if config.stats.get('write_csv', True):
-    if not os.path.exists(csv_path):
-        csv = open(csv_path, 'a')
-        csv.write("Date,Parts,part_diff,Binaries,bin_diff,Releases,rel_diff\n")
-        csv.close()
+    logging_dir = config.log.get('logging_dir')
+    csv_path = os.path.join(logging_dir, 'stats.csv')
 
-while True:
-    parts, binaries, releases = get_stats()    
+    print(build_header())
 
-    if not first_loop:
-        p_diff = parts - last_parts 
-        b_diff = binaries - last_binaries
-        r_diff = releases - last_releases
-    else:
-        first_loop = False
-        p_diff = 0
-        b_diff = 0
-        r_diff = 0
+    i = 1
+    first = True
 
-    if loop_num % config.stats.get('header_every_nth', 0) == 0:
-        printHeader()
+    last_parts = 0
+    last_binaries = 0
+    last_releases = 0
 
-    print ("%10d %20s|%10d %20s|%10d %6s" % (parts, colored(p_diff), binaries, colored(b_diff), releases, colored(r_diff)))
+    while True:
+        parts, binaries, releases = get_stats()
 
-    # write to csv file
-    if config.stats.get('write_csv', True):
-        csv = open(csv_path, 'a')
-        csv.write("%s,%d,%d,%d,%d,%d,%d\n" % (time.strftime("%Y-%m-%d %H:%M:%S"),parts, p_diff, binaries, b_diff, releases, r_diff))
-        csv.close()
+        if not first:
+            p_diff = parts - last_parts
+            b_diff = binaries - last_binaries
+            r_diff = releases - last_releases
+        else:
+            first = False
+            p_diff = 0
+            b_diff = 0
+            r_diff = 0
 
-    last_parts    = parts
-    last_binaries = binaries
-    last_releases = releases
-    loop_num += 1
+        if i % config.stats.get('header_every_nth', 0) == 0:
+            i = 1
+            print(build_header())
 
-    time.sleep(config.stats.get('sleep_time', 300))
-    get_config_changes()
+        print('{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^6}'.format(
+            parts, colored(p_diff),
+            binaries, colored(b_diff),
+            releases, colored(r_diff)
+        ))
+
+        # write to csv file
+        if config.stats.get('write_csv', True):
+            # write the header if we're creating the file
+            if not os.path.exists(csv_path):
+                csv = open(csv_path, 'w')
+                csv.write('Date,Parts,part_diff,Binaries,bin_diff,Releases,rel_diff\n')
+                csv.close()
+
+            csv = open(csv_path, 'a')
+            csv.write('{},{},{},{},{},{},{}\n'.format(
+                time.strftime("%Y-%m-%d %H:%M:%S"),
+                parts, p_diff,
+                binaries, b_diff,
+                releases, r_diff
+            ))
+            csv.close()
+
+        last_parts = parts
+        last_binaries = binaries
+        last_releases = releases
+        i += 1
+
+        time.sleep(config.stats.get('sleep_time', 300))
+        get_config_changes()
