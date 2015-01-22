@@ -2,7 +2,7 @@
 
 Usage:
     pynab.py update [<group>]
-    pynab.py backfill <group> [--date=<date>]
+    pynab.py backfill [<group>] [--date=<date>]
 
 Options:
     -h --help       Show this screen.
