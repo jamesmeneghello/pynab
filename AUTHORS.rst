@@ -15,5 +15,5 @@ Contributors
 * @guillp - Group management scripts and bugfixes
 * @ukharley - Logging modifications
 * @traxo-xx - NZB360 compatibility
-* @brookesy2 - Postproc daemonised
-* @AlanKK - Bugfixes
+* @brookesy2 - pre-bot, various fixes
+* @AlanKK - Bugfixes, monitoring
