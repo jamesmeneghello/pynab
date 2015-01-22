@@ -491,6 +491,17 @@ Don't run on normal groups, just ebooks and misc.
 
     > python3 scripts/rename_bad_releases.py
 
+Show the number of releases added each day.
+
+    > python3 scripts/releases_by_date.py
+
+This will be run by monitor.sh but can be run separately as well.  It shows the number of parts,
+binaries an releases in the database.  Let it run and it also shows how many of each are added
+and removed every few mins.  Preferences for this, including writing to a .csv file, are in 
+config.py.
+
+    > python3 scripts/stats.py
+
 
 ### Building the WebUI ###
 
