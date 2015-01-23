@@ -81,9 +81,10 @@ def main(mode='update', group=None, date=None):
 
         # refresh the db session each iteration, just in case
         with db_session() as db:
-            if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
-                log.info('scan: backlog of segments detected, processing first')
-                process()
+            if mode == 'update':
+                if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
+                    log.info('scan: backlog of segments detected, processing first')
+                    process()
 
             if not group:
                 active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
@@ -117,30 +118,34 @@ def main(mode='update', group=None, date=None):
 
                 db.commit()
 
-                process()
+                if mode == 'update':
+                    process()
 
-                # clean up dead binaries and parts
-                if config.scan.get('dead_binary_age', 1) != 0:
-                    dead_time = pytz.utc.localize(datetime.datetime.now()).replace(tzinfo=None) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+                    # clean up dead binaries and parts
+                    if config.scan.get('dead_binary_age', 1) != 0:
+                        dead_time = pytz.utc.localize(datetime.datetime.now()).replace(tzinfo=None) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
 
-                    dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
-                    db.commit()
+                        dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                        db.commit()
 
-                    log.info('scan: deleted {} dead binaries'.format(dead_binaries))
+                        log.info('scan: deleted {} dead binaries'.format(dead_binaries))
             else:
                 log.info('scan: no groups active, cancelling pynab.py...')
                 break
 
-            # vacuum the segments, parts and binaries tables
-            log.info('scan: vacuuming relevant tables...')
+            if mode == 'update':
+                # vacuum the segments, parts and binaries tables
+                log.info('scan: vacuuming relevant tables...')
 
-            if iterations >= config.scan.get('full_vacuum_iterations', 288):
-                # this may look weird, but we want to reset iterations even if full_vacuums are off
-                # so it doesn't count to infinity
-                if config.scan.get('full_vacuum', True):
-                    pynab.db.vacuum(mode='scan', full=True)
-                else:
-                    pynab.db.vacuum(mode='scan', full=False)
+                if iterations >= config.scan.get('full_vacuum_iterations', 288):
+                    # this may look weird, but we want to reset iterations even if full_vacuums are off
+                    # so it doesn't count to infinity
+                    if config.scan.get('full_vacuum', True):
+                        pynab.db.vacuum(mode='scan', full=True)
+                    else:
+                        pynab.db.vacuum(mode='scan', full=False)
+                    iterations = 0
+            else:
                 iterations = 0
 
             db.close()
