@@ -42,12 +42,12 @@ Features
 - Newznab-API compatible (mostly, see below)
 - TVRage/IMDB/Password post-processing
 - Release renaming for most obfuscated releases
+- XMPP PubSub support to push to nzb clients
 
 In development:
 ---------------
 
 - Pre-DB comparisons to assist in renaming
-- XMPP PubSub support to push to nzb clients
 - Got an idea? Send it in!
 
 
@@ -84,7 +84,7 @@ Requirements
 ------------
 
 - Python 3.2 or higher
-- PostgreSQL 9.3 or higher
+- PostgreSQL 9.3+ or MySQL/Maria/Percona 5.5+
 - A u/WSGI-capable webserver (or use CherryPy)
 
 I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both should work.
@@ -98,15 +98,22 @@ Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodes
 
 ### Ubuntu 13.04/13.10 ###
 
-Install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
+If Postgres: install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
+If MySQL: install MySQL 5.5+ (preferably 5.6+)
 
 You also need to install Python 3.3/3.4, associated packages and pip3:
 
     > sudo apt-get install python3 python3-setuptools python3-pip libxml2-dev libxslt-dev libyaml-dev
 
-And a few packages required by psycopg2:
+And a few packages required by psycopg2 (you need these even if you're using MySQL):
 
     > sudo apt-get install postgresql-server-dev-9.3
+
+If you're using MySQL, you'll also need to add a line to your /etc/mysql/my.cnf, under [mysqld]:
+
+    local_infile = 1
+    
+This allows us to vastly increase the speed of segment writes. Without this, scanning will be impossibly slow!
 
 ### General *nix ###
 

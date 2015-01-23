@@ -152,7 +152,7 @@ def process():
     with db_session() as db:
         binary_query = """
             SELECT
-                binaries.id, binaries.name, binaries.posted
+                binaries.id, binaries.name, binaries.posted, binaries.total_parts
             FROM binaries
             INNER JOIN (
                 SELECT
