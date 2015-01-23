@@ -137,7 +137,8 @@ def main():
 
             if config.postprocess.get('delete_bad_releases', False):
                 # kill unwanteds
-                deletes = db.query(Release).filter(Release.unwanted == True).delete()
+                # deletes = db.query(Release).filter(Release.unwanted==True).delete()
+                deletes = 0
 
                 # and also kill other-miscs that we can't retrieve a rar for
                 sub = db.query(Release.id).join(MetaBlack, Release.rar_metablack).\
