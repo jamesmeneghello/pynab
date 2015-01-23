@@ -100,5 +100,5 @@ if __name__ == '__main__':
 
     end = time.time()
 
-    print('Install complete in {:.2f}s'.format(start - end))
+    print('Install complete in {:.2f}s'.format(end - start))
     print('Now: activate some groups, activate desired blacklists, and run pynab.py with python3.')
