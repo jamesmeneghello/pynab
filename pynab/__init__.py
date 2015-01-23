@@ -13,6 +13,28 @@ import colorlog
 import sys
 
 
+def check_config():
+    config = __import__('config')
+    config_sample = __import__('config_sample')
+    exclude = lambda x: '__' not in x and x != 'logging'
+
+    missing = False
+    top_level = set(filter(exclude, dir(config_sample))) - set(filter(exclude, dir(config)))
+    if top_level:
+        print('Top level config items missing: \'{}\''.format(', '.join(top_level)))
+        missing = True
+
+    for item in filter(exclude, dir(config)):
+        inner_level = set(getattr(config_sample, item).keys()) - set(getattr(config, item).keys())
+        if inner_level:
+            print('Config element \'{}\' is missing: {}'.format(item, ', '.join(inner_level)))
+            missing = True
+
+    if missing:
+        print('Check config_sample.py and copy missing items to config.py before running again.')
+        exit(1)
+
+
 def log_init(log_name):
     if config.log.get('logging_dir', None):
         global log_descriptor, log
@@ -73,3 +95,5 @@ else:
 
 # set up root_dir for use with templates etc
 root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+check_config()
