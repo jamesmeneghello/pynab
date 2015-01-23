@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import time
 
 if __name__ == '__main__':
     print('Welcome to Pynab.')
@@ -21,6 +22,8 @@ if __name__ == '__main__':
     import pynab.util
 
     db = Session()
+
+    start = time.time()
 
     print('Building tables...')
     Base.metadata.drop_all(engine)
@@ -61,9 +64,10 @@ if __name__ == '__main__':
     print('Copying TV data into db...')
     with open('db/initial/tvshows.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
+        chunks = [data[x:x+500] for x in range(0, len(data), 500)]
         try:
-            for row in data:
-                engine.execute(TvShow.__table__.insert(), row)
+            for chunk in chunks:
+                engine.execute(TvShow.__table__.insert(), chunk)
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
@@ -71,9 +75,10 @@ if __name__ == '__main__':
     print('Copying movie data into db...')
     with open('db/initial/movies.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
+        chunks = [data[x:x+500] for x in range(0, len(data), 500)]
         try:
-            for row in data:
-                engine.execute(Movie.__table__.insert(), row)
+            for chunk in chunks:
+                engine.execute(Movie.__table__.insert(), chunk)
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
@@ -93,5 +98,7 @@ if __name__ == '__main__':
         print(
             'Could not update blacklist. Try the URL in config.py manually - if it doesn\'t work, post an issue on Github.')
 
-    print('Install complete.')
+    end = time.time()
+
+    print('Install complete in {:.2f}s'.format(start - end))
     print('Now: activate some groups, activate desired blacklists, and run pynab.py with python3.')
