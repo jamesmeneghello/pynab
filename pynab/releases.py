@@ -347,6 +347,7 @@ def process():
                         # this sometimes raises if we get a duplicate
                         # this requires a post of the same name at exactly the same time (down to the second)
                         # pretty unlikely, but there we go
+                        log.warning('release: [{}]: duplicate release, discarded'.format(release.search_name))
                         db.rollback()
 
                     # delete processed binaries
