@@ -341,6 +341,14 @@ def process():
                     # save the release
                     db.add(release)
 
+                    try:
+                        db.flush()
+                    except Exception as e:
+                        # this sometimes raises if we get a duplicate
+                        # this requires a post of the same name at exactly the same time (down to the second)
+                        # pretty unlikely, but there we go
+                        db.rollback()
+
                     # delete processed binaries
                     db.query(Binary).filter(Binary.id==binary.id).delete()
 
