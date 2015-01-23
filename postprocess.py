@@ -68,6 +68,7 @@ def main():
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
     # scripts.quick_postprocess.local_postprocess()
 
+    iterations = 0
     while True:
         with db_session() as db:
             # delete passworded releases first so we don't bother processing them
@@ -175,17 +176,14 @@ def main():
 
             # vacuum the segments, parts and binaries tables
             log.info('postprocess: vacuuming relevant tables...')
-            conn = engine.connect()
-            conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.execute('VACUUM ANALYZE releases')
-            conn.execute('VACUUM ANALYZE metablack')
-            conn.execute('VACUUM ANALYZE episodes')
-            conn.execute('VACUUM ANALYZE tvshows')
-            conn.execute('VACUUM ANALYZE movies')
-            conn.execute('VACUUM ANALYZE nfos')
-            conn.execute('VACUUM ANALYZE sfvs')
-            conn.execute('VACUUM ANALYZE files')
-            conn.close()
+            if iterations >= config.scan.get('full_vacuum_iterations', 288):
+                # this may look weird, but we want to reset iterations even if full_vacuums are off
+                # so it doesn't count to infinity
+                if config.scan.get('full_vacuum', True):
+                    pynab.db.vacuum(mode='postprocess', full=True)
+                else:
+                    pynab.db.vacuum(mode='postprocess', full=False)
+                iterations = 0
 
         # wait for the configured amount of time between cycles
         postprocess_wait = config.postprocess.get('postprocess_wait', 300)

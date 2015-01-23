@@ -138,9 +138,9 @@ def main(mode='update', group=None, date=None):
                 # this may look weird, but we want to reset iterations even if full_vacuums are off
                 # so it doesn't count to infinity
                 if config.scan.get('full_vacuum', True):
-                    pynab.db.vacuum(full=True)
+                    pynab.db.vacuum(mode='scan', full=True)
                 else:
-                    pynab.db.vacuum(full=False)
+                    pynab.db.vacuum(mode='scan', full=False)
                 iterations = 0
 
             db.close()

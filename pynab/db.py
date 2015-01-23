@@ -76,19 +76,40 @@ def copy_file(engine, data, ordering, type):
     log.debug('parts: {} insert: {:.2f}s'.format(config.db.get('engine'), insert_end - insert_start))
 
 
-def vacuum(full=False):
+def vacuum(mode='scan', full=False):
     conn = engine.connect()
     if 'postgre' in config.db.get('engine'):
         conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-        if full:
-            conn.execute('VACUUM FULL ANALYZE binaries')
-            conn.execute('VACUUM FULL ANALYZE parts')
-            conn.execute('VACUUM FULL ANALYZE segments')
+        if mode == 'scan':
+            if full:
+                conn.execute('VACUUM FULL ANALYZE binaries')
+                conn.execute('VACUUM FULL ANALYZE parts')
+                conn.execute('VACUUM FULL ANALYZE segments')
+            else:
+                conn.execute('VACUUM ANALYZE binaries')
+                conn.execute('VACUUM ANALYZE parts')
+                conn.execute('VACUUM ANALYZE segments')
         else:
-            conn.execute('VACUUM ANALYZE binaries')
-            conn.execute('VACUUM ANALYZE parts')
-            conn.execute('VACUUM ANALYZE segments')
+            if full:
+                conn.execute('VACUUM FULL ANALYZE releases')
+                conn.execute('VACUUM FULL ANALYZE metablack')
+                conn.execute('VACUUM FULL ANALYZE episodes')
+                conn.execute('VACUUM FULL ANALYZE tvshows')
+                conn.execute('VACUUM FULL ANALYZE movies')
+                conn.execute('VACUUM FULL ANALYZE nfos')
+                conn.execute('VACUUM FULL ANALYZE sfvs')
+                conn.execute('VACUUM FULL ANALYZE files')
+            else:
+                conn.execute('VACUUM ANALYZE releases')
+                conn.execute('VACUUM ANALYZE metablack')
+                conn.execute('VACUUM ANALYZE episodes')
+                conn.execute('VACUUM ANALYZE tvshows')
+                conn.execute('VACUUM ANALYZE movies')
+                conn.execute('VACUUM ANALYZE nfos')
+                conn.execute('VACUUM ANALYZE sfvs')
+                conn.execute('VACUUM ANALYZE files')
+
     elif 'mysql' in config.db.get('engine'):
         log.info('db: not optimising or analysing innodb tables, do it yourself.')
         pass
