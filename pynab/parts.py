@@ -4,7 +4,7 @@ import io
 import pyhashxx
 import struct
 
-from pynab.db import db_session, engine, Part, Segment
+from pynab.db import db_session, engine, Part, Segment, copy_file
 from pynab import log
 
 from sqlalchemy.orm import Load, subqueryload
@@ -65,16 +65,9 @@ def save_all(parts):
                     s.write("\n")
                 s.seek(0)
 
-                conn = engine.raw_connection()
-                cur = conn.cursor()
-                insert_start = time.time()
-                cur.copy_expert("COPY parts ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(', '.join(ordering)), s)
-                conn.commit()
-                insert_end = time.time()
-                log.debug('parts: postgres part copy time: {:.2f}s'.format(insert_end - insert_start))
+                copy_file(engine, s, ordering, Part)
 
-                #engine.execute(Part.__table__.insert(), part_inserts)
-
+        with db_session() as db:
             existing_parts = dict(
                 ((part.hash, part) for part in
                     db.query(Part)
@@ -117,19 +110,11 @@ def save_all(parts):
                             # leave off the tab
                             s.write(str(segment[item]))
                         else:
-                            s.write(str(segment[item]) + "\t")
+                            s.write(str(segment[item]) + ",")
                     s.write("\n")
                 s.seek(0)
 
-                conn = engine.raw_connection()
-                cur = conn.cursor()
-                insert_start = time.time()
-                cur.copy_from(s, 'segments', columns=ordering)
-                conn.commit()
-                insert_end = time.time()
-                log.debug('parts: postgres segment copy time: {:.2f}s'.format(insert_end - insert_start))
-
-                #engine.execute(Segment.__table__.insert(), segment_inserts)
+                copy_file(engine, s, ordering, Segment)
 
         end = time.time()
 

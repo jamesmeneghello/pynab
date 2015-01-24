@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot|checkconfig
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
 
@@ -17,7 +17,6 @@ from subprocess import Popen, call
 from docopt import docopt
 import os
 
-import pynab
 import pynab.util
 from pynab.db import db_session, User, Group
 
@@ -139,16 +138,17 @@ def reset_group(group):
             print('group does not exist.')
 
 
+def checkconfig():
+    from pynab import check_config
+    check_config()
+
+
 def update_regex():
     pynab.util.update_regex()
 
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    if not hasattr(config, 'monitor'):
-        print('error: missing monitor in config.py - have you updated config.py from config.sample.py?')
-        exit(1)
 
     monitor = config.monitor.get('type', None)
 
@@ -157,9 +157,6 @@ if __name__ == '__main__':
         exit(1)
     elif monitor == 'windows' and config.log.get('logging_file'):
         print('To view console output in command windows, turn off the logging file!')
-    elif not monitor:
-        print('error: missing monitor in config.py - have you updated config.py from config.sample.py?')
-        exit(1)
 
     arguments = docopt(__doc__, version=pynab.__version__)
 
@@ -200,5 +197,7 @@ if __name__ == '__main__':
             reset_group(arguments['<group>'])
     elif arguments['regex']:
         update_regex()
+    elif arguments['checkconfig']:
+        checkconfig()
     
     exit(0)

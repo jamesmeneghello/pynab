@@ -149,7 +149,7 @@ def process():
     with db_session() as db:
         binary_query = """
             SELECT
-                binaries.id, binaries.name, binaries.posted
+                binaries.id, binaries.name, binaries.posted, binaries.total_parts
             FROM binaries
             INNER JOIN (
                 SELECT
@@ -337,6 +337,15 @@ def process():
 
                     # save the release
                     db.add(release)
+
+                    try:
+                        db.flush()
+                    except Exception as e:
+                        # this sometimes raises if we get a duplicate
+                        # this requires a post of the same name at exactly the same time (down to the second)
+                        # pretty unlikely, but there we go
+                        log.warning('release: [{}]: duplicate release, discarded'.format(release.search_name))
+                        db.rollback()
 
                     # delete processed binaries
                     db.query(Binary).filter(Binary.id==binary.id).delete()

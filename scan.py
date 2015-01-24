@@ -11,12 +11,12 @@ Options:
 
 """
 
+import sys
 import concurrent.futures
 import time
 import pytz
 import datetime
 import dateutil.parser
-import psycopg2.extensions
 from docopt import docopt
 
 from pynab import log, log_init
@@ -30,14 +30,18 @@ import pynab.rars
 import pynab.nfos
 import pynab.imdb
 import pynab.debug
+import pynab.server
 import config
 
 
 def update(group_name):
     try:
         return pynab.groups.scan(group_name, limit=config.scan.get('group_scan_limit', 2000000))
+    except pynab.server.AuthException as e:
+        log.error('server: {}'.format(e))
     except Exception as e:
-        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(exc_type))
 
 
 def backfill(group_name, date=None):
@@ -77,9 +81,10 @@ def main(mode='update', group=None, date=None):
 
         # refresh the db session each iteration, just in case
         with db_session() as db:
-            if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
-                log.info('scan: backlog of segments detected, processing first')
-                process()
+            if mode == 'update':
+                if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
+                    log.info('scan: backlog of segments detected, processing first')
+                    process()
 
             if not group:
                 active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
@@ -111,39 +116,38 @@ def main(mode='update', group=None, date=None):
                         for r in concurrent.futures.as_completed(miss_result):
                             data = r.result()
 
-                process()
+                db.commit()
 
-                # clean up dead binaries and parts
-                if config.scan.get('dead_binary_age', 1) != 0:
-                    dead_time = pytz.utc.localize(datetime.datetime.now()) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+                if mode == 'update':
+                    process()
 
-                    dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
-                    db.commit()
+                    # clean up dead binaries and parts
+                    if config.scan.get('dead_binary_age', 1) != 0:
+                        dead_time = pytz.utc.localize(datetime.datetime.now()).replace(tzinfo=None) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
 
-                    log.info('scan: deleted {} dead binaries'.format(dead_binaries))
+                        dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                        db.commit()
+
+                        log.info('scan: deleted {} dead binaries'.format(dead_binaries))
             else:
                 log.info('scan: no groups active, cancelling pynab.py...')
                 break
 
-            # vacuum the segments, parts and binaries tables
-            log.info('scan: vacuuming relevant tables...')
-            conn = engine.connect()
-            conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            if mode == 'update':
+                # vacuum the segments, parts and binaries tables
+                log.info('scan: vacuuming relevant tables...')
 
-            # this may look weird, but we want to reset iterations even if full_vacuums are off
-            # so it doesn't count to infinity
-            if iterations >= config.scan.get('full_vacuum_iterations', 288):
-                if config.scan.get('full_vacuum', True):
-                    conn.execute('VACUUM FULL ANALYZE binaries')
-                    conn.execute('VACUUM FULL ANALYZE parts')
-                    conn.execute('VACUUM FULL ANALYZE segments')
-                iterations = 0
+                if iterations >= config.scan.get('full_vacuum_iterations', 288):
+                    # this may look weird, but we want to reset iterations even if full_vacuums are off
+                    # so it doesn't count to infinity
+                    if config.scan.get('full_vacuum', True):
+                        pynab.db.vacuum(mode='scan', full=True)
+                    else:
+                        pynab.db.vacuum(mode='scan', full=False)
+                    iterations = 0
             else:
-                conn.execute('VACUUM ANALYZE binaries')
-                conn.execute('VACUUM ANALYZE parts')
-                conn.execute('VACUUM ANALYZE segments')
+                iterations = 0
 
-            conn.close()
             db.close()
 
         # don't bother waiting if we're backfilling, just keep going

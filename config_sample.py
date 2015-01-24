@@ -291,12 +291,16 @@ log = {
     'max_log_size': 50*1024*1024,
     
     # enable/disable color logging to console
-    'colors': 'True',
+    'colors': True,
 }
 
-# postgre server config
-# hopefully self-explanatory
-postgre = {
+# main db server config
+# mostly self-explanatory
+db = {
+    # engine: which db server type to use
+    # 'postgresql' or 'mysql+pymysql'
+    # maria, percona, etc use the latter
+    'engine': 'postgresql',
     'host': '',
     'port': 5432,
     'user': '',

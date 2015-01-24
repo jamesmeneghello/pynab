@@ -1,4 +1,3 @@
-cymysql
 pymongo
 python-dateutil
 pytz
@@ -25,3 +24,6 @@ sleekxmpp
 eventlet
 requests-futures
 irc
+colorama
+cymysql
+git+https://github.com/PyMySQL/PyMySQL.git
