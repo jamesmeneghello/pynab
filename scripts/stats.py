@@ -91,7 +91,7 @@ if __name__ == '__main__':
             i = 1
             print(build_header())
 
-        print('{:^10} {:^10}|{:^10} {:^10}|{:^10} {:^10}|{:^10} {:^10}'.format(
+        print('{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}'.format(
             parts, colored(p_diff),
             binaries, colored(b_diff),
             releases, colored(r_diff),
