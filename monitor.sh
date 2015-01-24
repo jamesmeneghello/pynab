@@ -24,7 +24,7 @@ fi
 #
 SCRIPT_PATH=$( readlink -m $( type -p $0 ))      # Full path to script
 SCRIPT_DIR=$( dirname ${SCRIPT_PATH} )           # Directory script is run in
-LOGGING_DIR=$( grep logging_dir $SCRIPT_DIR/../config.py | awk -F\' '{print $4 }' )
+LOGGING_DIR=$( grep logging_dir $SCRIPT_DIR/config.py | awk -F\' '{print $4 }' )
 
 
 #
@@ -33,7 +33,7 @@ LOGGING_DIR=$( grep logging_dir $SCRIPT_DIR/../config.py | awk -F\' '{print $4 }
 $CMD -2 new-session -d -s pynab
 $CMD new-window -n 'Pynab'
 
-$CMD send-keys "python3 $SCRIPT_DIR/../scripts/stats.py" C-m
+$CMD send-keys "python3 $SCRIPT_DIR/scripts/stats.py" C-m
 
 $CMD split-window -h -t 0 "tail -f $LOGGING_DIR/backfill.log"
 
