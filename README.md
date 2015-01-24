@@ -339,7 +339,7 @@ To run the monitor:
 
     > ./monitor.sh
 
-This will spawn a new tmux session, load the layout and then attach to tmux.  It will use byobu if you have it installed.
+This will spawn a new tmux session, load the layout and then attach to tmux.  It will use byobu if you have it installed.  A full screen window is recommended.
 
 tmux layouts can be modified or added as desired (just change monitor.sh).  Optionally, run 
     
