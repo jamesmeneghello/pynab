@@ -2,7 +2,7 @@
 """Pynab, a Python/Postgres Usenet Indexer
 
 Usage:
-    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot
+    pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot|checkconfig
     pynab.py user (create|delete) <email>
     pynab.py group (enable|disable|reset) <group>
 
@@ -17,7 +17,6 @@ from subprocess import Popen, call
 from docopt import docopt
 import os
 
-import pynab
 import pynab.util
 from pynab.db import db_session, User, Group
 
@@ -139,6 +138,11 @@ def reset_group(group):
             print('group does not exist.')
 
 
+def checkconfig():
+    from pynab import check_config
+    check_config()
+
+
 def update_regex():
     pynab.util.update_regex()
 
@@ -193,5 +197,7 @@ if __name__ == '__main__':
             reset_group(arguments['<group>'])
     elif arguments['regex']:
         update_regex()
+    elif arguments['checkconfig']:
+        checkconfig()
     
     exit(0)
