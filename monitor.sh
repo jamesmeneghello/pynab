@@ -44,9 +44,14 @@ $CMD split-window -v  -t 2 -p 50 "tail -f $LOGGING_DIR/update.log"
 
 $CMD select-pane -t 0
 
+$CMD resize-pane -t 0 -x 63    # fixed width stats pane. it won't survive window resize
+$CMD attach-session -t pynab
+
 # from http://stackoverflow.com/a/22566549
+#
+# To adjust the layout of panes, if you have the same number as in this script, you can 
+# optionally run "tmux list-windows" and copy the output into the layout line below.
+#
 # layout=a822,211x52,0,0{63x52,0,0,1,147x52,64,0[147x14,64,0,2,147x18,64,15,3,147x18,64,34,6]}
 # $CMD select-layout "$layout"
 
-$CMD resize-pane -t 0 -x 63    # fixed width stats pane. it won't survive window resize
-$CMD attach-session -t pynab
