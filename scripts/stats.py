@@ -31,7 +31,7 @@ def get_stats():
         releases = db.query(Release).count()
         # backlog = db.query(Release).filter(Release.passworded=='UNKNOWN').count()
         # other-misc releases, ie. hashed, yet-to-be renamed or just bad releases
-        others = db.query(Release).count()
+        others = db.query(Release).filter(Release.category_id==8020).count()
 
         return parts, binaries, releases, others
 
