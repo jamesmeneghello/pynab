@@ -49,7 +49,7 @@ $CMD split-window -v "tail -F $LOGGING_DIR/backfill.log"
 $CMD select-layout even-vertical
 $CMD split-window -h "tail -F $LOGGING_DIR/prebot.log"
 $CMD select-pane -t 0                                   # highlight 
-$CMD split-window -h "tail -F $LOGGING_DIR/scan.log"    # split top window and add this
+$CMD split-window -h "tail -F $LOGGING_DIR/pubsub.log"    # split top window and add this
 $CMD select-pane -t 2                                   # highlight 
 
 $CMD select-window -t 'MAIN'
