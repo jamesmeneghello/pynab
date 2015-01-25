@@ -24,6 +24,11 @@ def check_config():
         print('Top level config items missing: \'{}\''.format(', '.join(top_level)))
         missing = True
 
+    reverse_level = set(filter(exclude, dir(config_sample))) - set(filter(exclude, dir(config)))
+    if reverse_level:
+        print('Some extra top level config items that should be deleted: \'{}\''.format(', '.join(reverse_level)))
+
+
     for item in filter(exclude, dir(config)):
         inner_level = set(getattr(config_sample, item).keys()) - set(getattr(config, item).keys())
         if inner_level:
