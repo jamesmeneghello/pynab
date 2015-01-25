@@ -37,14 +37,13 @@ def check_config():
 
 def log_init(log_name):
     if config.log.get('logging_dir', None):
-        global log_descriptor, log
+        global log
 
     logging_file = os.path.join(logging_dir, log_name + '.log')
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
     log.handlers = []
     log.addHandler(handler)
-    log_descriptor = handler.stream.fileno()
     log.info('log: started pynab logger')
 
 

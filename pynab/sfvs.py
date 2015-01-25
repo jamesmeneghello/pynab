@@ -78,7 +78,7 @@ def process(limit=None, category=0):
                             break
 
                     if not found:
-                        log.warning('sfv: [{}] - no sfvs in release'.format(
+                        log.debug('sfv: [{}] - no sfvs in release'.format(
                             release.search_name
                         ))
                         mb = MetaBlack(sfv=release, status='IMPOSSIBLE')
