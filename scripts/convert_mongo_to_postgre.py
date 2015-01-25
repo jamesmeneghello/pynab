@@ -20,7 +20,7 @@ if __name__ == '__main__':
     print('Welcome to Pynab.')
     print('-----------------')
     print()
-    print('Please ensure that you have copied and renamed config.sample.py to config.py before proceeding.')
+    print('Please ensure that you have copied and renamed config_sample.py to config.py before proceeding.')
     print()
     print('This script is destructive. Ensure that the database credentials and settings are correct.')
     print('The supplied database really should be empty, but it\'ll just drop anything it wants to overwrite.')

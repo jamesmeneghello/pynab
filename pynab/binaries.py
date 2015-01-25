@@ -44,7 +44,8 @@ def save(db, binaries):
         if binary_inserts:
             # this could be optimised slightly with COPY but it's not really worth it
             # there's usually only a hundred or so rows
-            engine.execute(Binary.__table__.insert(), binary_inserts)
+            db.execute(Binary.__table__.insert(), binary_inserts)
+            db.commit()
 
         existing_binaries = dict(
             ((binary.hash, binary) for binary in
@@ -63,7 +64,8 @@ def save(db, binaries):
 
         if update_parts:
             p = Part.__table__.update().where(Part.id==bindparam('_id')).values(binary_id=bindparam('_binary_id'))
-            engine.execute(p, update_parts)
+            db.execute(p, update_parts)
+            db.commit()
 
 
 def process():
@@ -87,7 +89,7 @@ def process():
 
     with db_session() as db:
         db.expire_on_commit = False
-        relevant_groups = db.query(Part.group_name).group_by(Part.group_name).all()
+        relevant_groups = [x[0] for x in db.query(Part.group_name).group_by(Part.group_name).all()]
         if relevant_groups:
             # grab all relevant regex
             all_regex = db.query(Regex).filter(Regex.status==True).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()

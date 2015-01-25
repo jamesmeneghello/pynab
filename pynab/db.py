@@ -2,22 +2,126 @@ from contextlib import contextmanager
 import datetime
 import json
 import copy
+import time
+import psycopg2
+import tempfile
+import os
 
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
     create_engine, UniqueConstraint, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, exc, event
+from sqlalchemy.pool import Pool
 
 import config
 
+from pynab import log
+
 
 def sqlalchemy_url():
-    return 'postgresql://{user}:{pass}@{host}:{port}/{db}'.format(**config.postgre)
+    return '{engine}://{user}:{pass}@{host}:{port}/{db}'.format(**config.db)
 
+
+def copy_file(engine, data, ordering, type):
+    """
+    Handles a fast-copy, or a slowass one.
+
+    If you're using postgres or a mysql derivative, this should work fine.
+    Anything else? Welllllllllllllp. It's gonna be slow. Really slow.
+
+    In fact, I'm going to point out just how slow it is.
+    """
+    insert_start = time.time()
+    if 'mysql' in config.db.get('engine'):
+        # ho ho ho
+        conn = engine.raw_connection()
+        cur = conn.cursor()
+        (fd, filename) = tempfile.mkstemp(prefix='pynab')
+        filename = filename.replace('\\', '/')
+        try:
+            file = os.fdopen(fd, 'wb')
+            data.seek(0)
+            t = data.read(1048576)
+            while t:
+                file.write(t.encode('utf-8'))
+                t = data.read(1048576)
+            file.close()
+            data.close()
+
+            query = "LOAD DATA LOCAL INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' ({})"\
+                .format(filename,  type.__tablename__, ','.join(ordering))
+
+            cur.execute((query))
+            conn.commit()
+            cur.close()
+
+            os.remove(filename)
+        except Exception as e:
+            log.error(e)
+    elif 'postgre' in config.db.get('engine'):
+        conn = engine.raw_connection()
+        cur = conn.cursor()
+        cur.copy_expert("COPY {} ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(type.__tablename__, ', '.join(ordering)), data)
+        conn.commit()
+        cur.close()
+    else:
+        # this... this is the slow one
+        # i don't even want to think about how slow this is
+        # it's really slow
+        # slower than the github api
+        engine.execute(type.__table__.insert(), data)
+
+    insert_end = time.time()
+    log.debug('parts: {} insert: {:.2f}s'.format(config.db.get('engine'), insert_end - insert_start))
+
+
+def vacuum(mode='scan', full=False):
+    conn = engine.connect()
+    if 'postgre' in config.db.get('engine'):
+        conn.connection.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+
+        if mode == 'scan':
+            if full:
+                conn.execute('VACUUM FULL ANALYZE binaries')
+                conn.execute('VACUUM FULL ANALYZE parts')
+                conn.execute('VACUUM FULL ANALYZE segments')
+            else:
+                conn.execute('VACUUM ANALYZE binaries')
+                conn.execute('VACUUM ANALYZE parts')
+                conn.execute('VACUUM ANALYZE segments')
+        else:
+            if full:
+                conn.execute('VACUUM FULL ANALYZE releases')
+                conn.execute('VACUUM FULL ANALYZE metablack')
+                conn.execute('VACUUM FULL ANALYZE episodes')
+                conn.execute('VACUUM FULL ANALYZE tvshows')
+                conn.execute('VACUUM FULL ANALYZE movies')
+                conn.execute('VACUUM FULL ANALYZE nfos')
+                conn.execute('VACUUM FULL ANALYZE sfvs')
+                conn.execute('VACUUM FULL ANALYZE files')
+            else:
+                conn.execute('VACUUM ANALYZE releases')
+                conn.execute('VACUUM ANALYZE metablack')
+                conn.execute('VACUUM ANALYZE episodes')
+                conn.execute('VACUUM ANALYZE tvshows')
+                conn.execute('VACUUM ANALYZE movies')
+                conn.execute('VACUUM ANALYZE nfos')
+                conn.execute('VACUUM ANALYZE sfvs')
+                conn.execute('VACUUM ANALYZE files')
+
+    elif 'mysql' in config.db.get('engine'):
+        log.info('db: not optimising or analysing innodb tables, do it yourself.')
+        pass
+
+    conn.close()
+
+connect_args = {}
+if 'mysql' in config.db.get('engine'):
+    connect_args = {'charset': 'utf8', 'local_infile': 1}
 
 Base = declarative_base()
-engine = create_engine(sqlalchemy_url())
+engine = create_engine(sqlalchemy_url(), pool_recycle=3600, connect_args=connect_args)
 Session = scoped_session(sessionmaker(bind=engine))
 
 # enable query debugging
@@ -52,6 +156,22 @@ def after_cursor_execute(conn, cursor, statement, parameters, context, executema
     log.debug("Total Queries: %d" % _q.total)
 # -------------------
 """
+
+# handle mysql disconnections
+@event.listens_for(Pool, "checkout")
+def ping_connection(dbapi_connection, connection_record, connection_proxy):
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("SELECT 1")
+    except:
+        # optional - dispose the whole pool
+        # instead of invalidating one at a time
+        # connection_proxy._pool.dispose()
+
+        # raise DisconnectionError - pool will try
+        # connecting again up to three times before raising.
+        raise exc.DisconnectionError()
+    cursor.close()
 
 
 @contextmanager
@@ -111,14 +231,28 @@ def column_windows(session, column, windowsize):
         yield int_for_range(start, end)
 
 
-def windowed_query(q, column, windowsize):
-    """"Break a Query into windows on a given column."""
+def windowed_query(qry, pk, size):
+    """
+    Break a Query into windows on a given column.
+    """
 
-    for whereclause in column_windows(
-            q.session,
-            column, windowsize):
-        for row in q.filter(whereclause).order_by(column):
-            yield row
+    if 'postgre' in config.db.get('engine'):
+        for whereclause in column_windows(qry.session, pk, size):
+            for row in qry.filter(whereclause).order_by(pk):
+                yield row
+    else:
+        # mysql etc
+        firstid = None
+        while True:
+            q = qry
+            if firstid is not None:
+                q = qry.filter(pk > firstid)
+            rec = None
+            for rec in q.order_by(pk).limit(size):
+                yield rec
+            if rec is None:
+                break
+            firstid = pk.__get__(rec, pk) if rec else None
 
 
 def json_serial(obj):
@@ -142,9 +276,9 @@ class Release(Base):
     added = Column(DateTime, default=func.now())
     posted = Column(DateTime)
 
-    name = Column(String)
-    search_name = Column(String, index=True)
-    posted_by = Column(String)
+    name = Column(String(512))
+    search_name = Column(String(512), index=True)
+    posted_by = Column(String(200))
 
     status = Column(Integer)
     grabs = Column(Integer, default=0)
@@ -167,7 +301,7 @@ class Release(Base):
     tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
     tvshow_metablack = relationship('MetaBlack', foreign_keys=[tvshow_metablack_id])
 
-    movie_id = Column(String, ForeignKey('movies.id'), index=True)
+    movie_id = Column(String(20), ForeignKey('movies.id'), index=True)
     movie = relationship('Movie', backref=backref('releases'))
     movie_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='CASCADE'), index=True)
     movie_metablack = relationship('MetaBlack', foreign_keys=[movie_metablack_id])
@@ -228,7 +362,7 @@ class Episode(Base):
 
     season = Column(String(10))
     episode = Column(String(20))
-    series_full = Column(String)
+    series_full = Column(String(60))
     air_date = Column(String(16))
     year = Column(String(8))
 
@@ -240,7 +374,7 @@ class File(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String)
+    name = Column(String(512))
     size = Column(BigInteger)
 
     release_id = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'), index=True)
@@ -254,7 +388,8 @@ class Group(Base):
     active = Column(Boolean, index=True)
     first = Column(BigInteger)
     last = Column(BigInteger)
-    name = Column(String)
+    name = Column(String(200))
+
 
 class Binary(Base):
     __tablename__ = 'binaries'
@@ -262,14 +397,14 @@ class Binary(Base):
     id = Column(Integer, primary_key=True)
     hash = Column(BigInteger, index=True)
 
-    name = Column(String, index=True)
+    name = Column(String(512), index=True)
     total_parts = Column(Integer)
 
     posted = Column(DateTime)
-    posted_by = Column(String)
+    posted_by = Column(String(200))
 
-    xref = Column(String)
-    group_name = Column(String)
+    xref = Column(String(256))
+    group_name = Column(String(200))
 
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
@@ -284,6 +419,7 @@ class Binary(Base):
 
         return size
 
+
 # it's unlikely these will ever be used in sqlalchemy
 # for performance reasons, but keep them to create tables etc
 class Part(Base):
@@ -292,14 +428,14 @@ class Part(Base):
     id = Column(BigInteger, primary_key=True)
     hash = Column(BigInteger, index=True)
 
-    subject = Column(String)
+    subject = Column(String(512))
     total_segments = Column(Integer, index=True)
 
     posted = Column(DateTime, index=True)
-    posted_by = Column(String)
+    posted_by = Column(String(200))
 
-    xref = Column(String)
-    group_name = Column(String, index=True)
+    xref = Column(String(256))
+    group_name = Column(String(200), index=True)
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
 
@@ -316,7 +452,7 @@ class Segment(Base):
 
     segment = Column(Integer, index=True)
     size = Column(Integer)
-    message_id = Column(String)
+    message_id = Column(String(256))
 
     part_id = Column(BigInteger, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
@@ -327,7 +463,7 @@ class Miss(Base):
     __tablename__ = 'misses'
 
     id = Column(Integer, primary_key=True)
-    group_name = Column(String, index=True)
+    group_name = Column(String(200), index=True)
 
     message = Column(BigInteger, index=True, nullable=False)
 
@@ -339,14 +475,14 @@ class Regex(Base):
 
     id = Column(Integer, primary_key=True)
     regex = Column(Text)
-    description = Column(String)
+    description = Column(String(256))
     status = Column(Boolean, default=True)
     ordinal = Column(Integer)
 
     # don't reference this, we don't need it
     # and it'd hammer performance, plus it's
     # sometimes regex
-    group_name = Column(String)
+    group_name = Column(String(200))
 
 
 class Blacklist(Base):
@@ -354,10 +490,10 @@ class Blacklist(Base):
 
     id = Column(Integer, primary_key=True)
 
-    description = Column(String)
-    group_name = Column(String, index=True)
-    field = Column(String, server_default='subject', nullable=False)
-    regex = Column(Text, unique=True)
+    description = Column(String(256))
+    group_name = Column(String(200), index=True)
+    field = Column(String(20), server_default='subject', nullable=False)
+    regex = Column(Text)
     status = Column(Boolean, default=False)
 
 
@@ -365,7 +501,7 @@ class Category(Base):
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String(256))
 
     parent_id = Column(Integer, ForeignKey('categories.id'), index=True)
     parent = relationship('Category', remote_side=[id])
@@ -378,7 +514,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
 
     api_key = Column(String(32), unique=True)
-    email = Column(String, unique=True)
+    email = Column(String(256), unique=True)
     grabs = Column(Integer)
 
 
@@ -406,10 +542,10 @@ class SFV(Base):
 class Movie(Base):
     __tablename__ = 'movies'
 
-    id = Column(String, primary_key=True)
+    id = Column(String(20), primary_key=True)
 
-    name = Column(String, index=True)
-    genre = Column(String)
+    name = Column(String(256), index=True)
+    genre = Column(String(256))
     year = Column(Integer, index=True)
 
 
@@ -417,7 +553,7 @@ class TvShow(Base):
     __tablename__ = 'tvshows'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, index=True)
+    name = Column(String(256), index=True)
     country = Column(String(5))
 
 
@@ -425,23 +561,23 @@ class DataLog(Base):
     __tablename__ = 'datalogs'
 
     id = Column(Integer, primary_key=True)
-    description = Column(String, index=True)
+    description = Column(String(256), index=True)
     data = Column(Text)
 
-class Pre(Base):
 
+class Pre(Base):
     __tablename__ = 'pres'
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
     pretime = Column(DateTime)
-    name = Column(String, index=True)
-    searchname = Column(String)
-    category = Column(String)
-    source = Column(String)
-    requestid = Column(BigInteger)
-    requestgroup = Column(String)
-    filename = Column(String)
+    name = Column(String(512), index=True)
+    searchname = Column(String(512))
+    category = Column(String(256))
+    source = Column(String(256))
+    requestid = Column(Integer)
+    requestgroup = Column(String(500))
+    filename = Column(String(512))
     nuked = Column(Boolean, default=False)
 
     __table_args__ = (UniqueConstraint(name),)

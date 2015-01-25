@@ -14,8 +14,11 @@ import pynab.parts
 import pynab.yenc
 import config
 
-
 SEGMENT_REGEX = regex.compile('\((\d+)[\/](\d+)\)', regex.I)
+
+
+class AuthException(Exception):
+    pass
 
 
 class Server:
@@ -23,7 +26,6 @@ class Server:
         self.connection = None
 
     def __enter__(self):
-        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -43,6 +45,9 @@ class Server:
 
     def connect(self, compression=True):
         """Creates a connection to a news server."""
+        if not config.news.get('user') or not config.news.get('password'):
+            raise AuthException('no username or password supplied')
+
         if not self.connection:
             news_config = config.news.copy()
 

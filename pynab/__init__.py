@@ -13,22 +13,45 @@ import colorlog
 import sys
 
 
-def log_init(log_name):
-    global log_descriptor, log
+def check_config():
+    config = __import__('config')
+    config_sample = __import__('config_sample')
+    exclude = lambda x: '__' not in x and x != 'logging'
 
-    logging_file = os.path.join(logging_dir, log_name + '.log')
-    handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-    log.handlers = []
-    log.addHandler(handler)
-    log_descriptor = handler.stream.fileno()
-    log.info('log: started pynab logger')
+    missing = False
+    top_level = set(filter(exclude, dir(config_sample))) - set(filter(exclude, dir(config)))
+    if top_level:
+        print('Top level config items missing: \'{}\''.format(', '.join(top_level)))
+        missing = True
+
+    for item in filter(exclude, dir(config)):
+        inner_level = set(getattr(config_sample, item).keys()) - set(getattr(config, item).keys())
+        if inner_level:
+            print('Config element \'{}\' is missing: {}'.format(item, ', '.join(inner_level)))
+            missing = True
+
+    if missing:
+        print('Check config_sample.py and copy missing items to config.py before running again.')
+        exit(1)
+
+
+def log_init(log_name):
+    if config.log.get('logging_dir', None):
+        global log_descriptor, log
+
+        logging_file = os.path.join(logging_dir, log_name + '.log')
+        handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
+        handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        log.handlers = []
+        log.addHandler(handler)
+        log_descriptor = handler.stream.fileno()
+        log.info('log: started pynab logger')
 
 
 log = logging.getLogger(__name__)
 log.setLevel(config.log.get('logging_level', logging.DEBUG))
 
-logging_dir = config.log.get('logging_dir')
+logging_dir = config.log.get('logging_dir', None)
 log_descriptor = None
 
 # catch old configs
@@ -48,7 +71,7 @@ if logging_dir:
 
     log_init(name)
 
-elif config.log.get('colors', False):
+elif not config.log.get('colors', False):
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     log.addHandler(handler)
@@ -72,3 +95,5 @@ else:
 
 # set up root_dir for use with templates etc
 root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+check_config()
