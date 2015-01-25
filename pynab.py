@@ -199,5 +199,6 @@ if __name__ == '__main__':
         update_regex()
     elif arguments['checkconfig']:
         checkconfig()
+        print('Config appears ok!')
     
     exit(0)
