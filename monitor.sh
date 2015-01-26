@@ -5,7 +5,7 @@
 #
 SCRIPT_PATH=$( readlink -m $( type -p $0 ))      # Full path to script
 SCRIPT_DIR=$( dirname ${SCRIPT_PATH} )           # Directory script is run in
-LOGGING_DIR=$( grep logging_dir $SCRIPT_DIR/config.py | awk -F\' '{print $4 }' )
+LOGGING_DIR=$( grep \'logging_dir\' $SCRIPT_DIR/config.py | awk -F\' '{print $4 }' )
 
 #
 # Find byobu or tmux
@@ -34,8 +34,8 @@ fi
 #
 # MAIN window
 #
-$CMD -2 new-session -d -s pynab -n 'MAIN' "python3 $SCRIPT_DIR/scripts/stats.py"
-$CMD split-window -h "echo 'ERROR|CRITICAL errors from all logs' ; tail -f $LOGGING_DIR/*.log  | egrep \"ERROR|CRITICAL\""
+$CMD -2 new-session -d -s pynab -n 'MAIN' "tail -F $LOGGING_DIR/stats.log"
+$CMD split-window -h "echo 'WARNING|ERROR|CRITICAL errors from all logs' ; tail -F $LOGGING_DIR/*.log  | egrep \"WARNING|ERROR|CRITICAL\""
 
 $CMD resize-pane -t 0 -x 87    # fixed width stats pane won't survive window resize
 $CMD select-pane -t 1
@@ -43,13 +43,13 @@ $CMD select-pane -t 1
 #
 # LOGS window - four even-horizontal panes
 #
-$CMD new-window -t 1 -n 'LOGS' "tail -f $LOGGING_DIR/postprocess.log" 
-$CMD split-window -v "tail -f $LOGGING_DIR/update.log" 
-$CMD split-window -v "tail -f $LOGGING_DIR/backfill.log"
+$CMD new-window -t 1 -n 'LOGS' "tail -F $LOGGING_DIR/postprocess.log" 
+$CMD split-window -v "tail -F $LOGGING_DIR/backfill.log" 
+$CMD split-window -v "tail -F $LOGGING_DIR/update.log"
 $CMD select-layout even-vertical
-$CMD split-window -h "tail -f $LOGGING_DIR/prebot.log"
+$CMD split-window -h "tail -F $LOGGING_DIR/prebot.log"
 $CMD select-pane -t 0                                   # highlight 
-$CMD split-window -h "tail -f $LOGGING_DIR/pubsub.log"  # split top window and add this
+$CMD split-window -h "bash"                             # split top window and add this
 $CMD select-pane -t 2                                   # highlight 
 
 $CMD select-window -t 'MAIN'

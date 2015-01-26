@@ -35,13 +35,13 @@ def check_config():
         exit(1)
 
 
-def log_init(log_name):
+def log_init(log_name, format='%(asctime)s %(levelname)s %(message)s'):
     if config.log.get('logging_dir', None):
         global log_descriptor, log
 
     logging_file = os.path.join(logging_dir, log_name + '.log')
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
+    handler.setFormatter(logging.Formatter(format, '%Y-%m-%d %H:%M:%S'))
     log.handlers = []
     log.addHandler(handler)
     log_descriptor = handler.stream.fileno()

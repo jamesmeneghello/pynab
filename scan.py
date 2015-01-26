@@ -41,7 +41,7 @@ def update(group_name):
         log.error('server: {}'.format(e))
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(exc_type))
+        log.error(e + ': scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(exc_type))
 
 
 def backfill(group_name, date=None):
