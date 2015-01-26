@@ -41,7 +41,10 @@ def update(group_name):
         log.error('server: {}'.format(e))
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error(e + ': scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(exc_type))
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
+            exc_type,
+            exc_value.encode().decode('ascii')
+        ))
 
 
 def backfill(group_name, date=None):
@@ -52,14 +55,22 @@ def backfill(group_name, date=None):
     try:
         return pynab.groups.scan(group_name, direction='backward', date=date, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
+            exc_type,
+            exc_value.encode().decode('ascii')
+        ))
 
 
 def scan_missing(group_name):
     try:
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
-        log.error(e + ": " + 'scan: nntp server is flipping out, hopefully they fix their shit')
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
+            exc_type,
+            exc_value.encode().decode('ascii')
+        ))
 
 
 def process():

@@ -35,7 +35,7 @@ fi
 # MAIN window
 #
 $CMD -2 new-session -d -s pynab -n 'MAIN' "tail -F $LOGGING_DIR/stats.log"
-$CMD split-window -h "echo 'WARNING|ERROR|CRITICAL errors from all logs' ; tail -F $LOGGING_DIR/*.log  | egrep \"WARNING|ERROR|CRITICAL\""
+$CMD split-window -h "echo 'ERROR|CRITICAL errors from all logs' ; tail -F $LOGGING_DIR/*.log  | egrep \"ERROR|CRITICAL\""
 
 $CMD resize-pane -t 0 -x 87    # fixed width stats pane won't survive window resize
 $CMD select-pane -t 1
@@ -43,13 +43,13 @@ $CMD select-pane -t 1
 #
 # LOGS window - four even-horizontal panes
 #
-$CMD new-window -t 1 -n 'LOGS' "tail -F $LOGGING_DIR/postprocess.log" 
-$CMD split-window -v "tail -F $LOGGING_DIR/backfill.log" 
+$CMD new-window -t 1 -n 'LOGS' "tail -F $LOGGING_DIR/postprocess.log"
+$CMD split-window -v "tail -F $LOGGING_DIR/backfill.log"
 $CMD split-window -v "tail -F $LOGGING_DIR/update.log"
 $CMD select-layout even-vertical
 $CMD split-window -h "tail -F $LOGGING_DIR/prebot.log"
 $CMD select-pane -t 0                                   # highlight 
-$CMD split-window -h "bash"                             # split top window and add this
+$CMD split-window -h "tail -F $LOGGING_DIR/pubsub.log"    # split top window and add this
 $CMD select-pane -t 2                                   # highlight 
 
 $CMD select-window -t 'MAIN'

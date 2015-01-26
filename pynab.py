@@ -90,7 +90,6 @@ def update():
     call('alembic upgrade head', shell=True)
     call('pip3 install -q -r requirements.txt', shell=True)
     print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
-    exit()
 
 
 def create_user(email):
@@ -149,6 +148,7 @@ def reset_group(group):
 def checkconfig():
     from pynab import check_config
     check_config()
+    print('Config appears ok!')
 
 
 def update_regex():
@@ -192,6 +192,7 @@ if __name__ == '__main__':
         prebot()
     elif arguments['update']:
         update()
+        checkconfig()
     elif arguments['user']:
         if arguments['create']:
             create_user(arguments['<email>'])
