@@ -45,7 +45,11 @@ def names_from_sfvs(release):
 
 
 def names_from_requestid(release):
-    pass
+    requestname = pynab.requests.get(release.name)
+    if requestname:
+        return requestname
+    else:
+        return []
 
 
 def discover_name(release):
@@ -75,8 +79,9 @@ def discover_name(release):
     if release.sfv:
         potential_names += names_from_sfvs(release)
 
-    if release.req_id:
+    if release.name.startswith('REQ:'):
         potential_names += names_from_requestid(release)
+        print("Potential Names: {}".format(potential_names))
 
     if len(potential_names) > 1:
         old_category = release.category_id
