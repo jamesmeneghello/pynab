@@ -9,7 +9,7 @@ import pynab.releases
 '''
 
 REQUEST_REGEX = [
-    regex.compile('((?>\w+[.\-_])+(?:\w+-\d*[a-zA-Z][a-zA-Z0-9]*)+(\.rar ))', regex.I),
+    regex.compile('', regex.I),
 ]
 
 '''
