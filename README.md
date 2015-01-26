@@ -336,28 +336,24 @@ Or, again, if using Upstart:
 
 ### Monitoring Pynab ###
 
-You can optionally use a teamocil layout to set up a window for monitoring (that will show scan/postproc
-progress). 
+Pynab includes a simple monitoring window based on tmux for showing system progress.  You can optionally use byobu, http://byobu.co, which makes tmux much easier to use.
 
 If you want to use the monitor, you'll need some other packages:
 
-    > sudo apt-get install tmux
-
-Including Ruby 2.0 so that we can install teamocil...
-
-    > \curl -L https://get.rvm.io | bash -s stable --ruby
-    > rvm install ruby --latest
-    > rvm list [find the 2.0.x version]
-    > rvm use ruby-<version>
-    > gem install teamocil
+    > sudo apt-get install tmux byobu
 
 To run the monitor:
 
     > ./monitor.sh
 
-This will spawn a new tmux session, load the Teamocil layout and then attach to tmux.
+This will spawn a new tmux session, load the layout and then attach to tmux.  It will use byobu if you have it installed.  A full screen window is recommended.
 
-Teamocil layouts are in `teamocil/` and can be modified or added as desired (just change monitor.sh).
+tmux layouts can be modified or added as desired (just change monitor.sh).  Optionally, run 
+    
+    > tmux list-windows
+
+and copy the Pynab window layout into $layout in monitor.sh.
+
 If you create a good layout, submit a pull request! :)
 
 ### Backfilling Groups ###

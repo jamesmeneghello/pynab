@@ -24,6 +24,11 @@ def check_config():
         print('Top level config items missing: \'{}\''.format(', '.join(top_level)))
         missing = True
 
+    reverse_level = set(filter(exclude, dir(config_sample))) - set(filter(exclude, dir(config)))
+    if reverse_level:
+        print('Some extra top level config items that should be deleted: \'{}\''.format(', '.join(reverse_level)))
+
+
     for item in filter(exclude, dir(config)):
         inner_level = set(getattr(config_sample, item).keys()) - set(getattr(config, item).keys())
         if inner_level:
@@ -37,15 +42,14 @@ def check_config():
 
 def log_init(log_name):
     if config.log.get('logging_dir', None):
-        global log_descriptor, log
+        global log
 
-        logging_file = os.path.join(logging_dir, log_name + '.log')
-        handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        log.handlers = []
-        log.addHandler(handler)
-        log_descriptor = handler.stream.fileno()
-        log.info('log: started pynab logger')
+    logging_file = os.path.join(logging_dir, log_name + '.log')
+    handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
+    log.handlers = []
+    log.addHandler(handler)
+    log.info('log: started pynab logger')
 
 
 log = logging.getLogger(__name__)

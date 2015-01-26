@@ -71,16 +71,14 @@ def process(limit=None, category=0):
                             release.sfv_metablack_id = None
                             db.add(release)
 
-                            log.info('sfv: [{}] - [{}] - sfv added'.format(
-                                release.id,
+                            log.info('sfv: [{}] - sfv added'.format(
                                 release.search_name
                             ))
                             found = True
                             break
 
                     if not found:
-                        log.warning('sfv: [{}] - [{}] - no sfvs in release'.format(
-                            release.id,
+                        log.debug('sfv: [{}] - no sfvs in release'.format(
                             release.search_name
                         ))
                         mb = MetaBlack(sfv=release, status='IMPOSSIBLE')

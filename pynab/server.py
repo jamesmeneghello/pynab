@@ -234,7 +234,7 @@ class Server:
 
         end = time.time()
 
-        log.info('server: [{}]: retrieved {} - {} in {:.2f}s [{} recv, {} pts, {} ign, {} blk]'.format(
+        log.info('server: {}: retrieved {} - {} in {:.2f}s [{} recv, {} pts, {} ign, {} blk]'.format(
             group_name,
             first, last,
             end - start,
