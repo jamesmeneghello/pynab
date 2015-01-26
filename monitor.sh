@@ -34,7 +34,7 @@ fi
 #
 # MAIN window
 #
-$CMD -2 new-session -d -s pynab -n 'MAIN' "python3 $SCRIPT_DIR/scripts/stats.py"
+$CMD -2 new-session -d -s pynab -n 'MAIN' "tail -F $LOGGING_DIR/stats.log"
 $CMD split-window -h "echo 'ERROR|CRITICAL errors from all logs' ; tail -F $LOGGING_DIR/*.log  | egrep \"ERROR|CRITICAL\""
 
 $CMD resize-pane -t 0 -x 87    # fixed width stats pane won't survive window resize
@@ -44,8 +44,8 @@ $CMD select-pane -t 1
 # LOGS window - four even-horizontal panes
 #
 $CMD new-window -t 1 -n 'LOGS' "tail -F $LOGGING_DIR/postprocess.log"
-$CMD split-window -v "tail -F $LOGGING_DIR/update.log"
 $CMD split-window -v "tail -F $LOGGING_DIR/backfill.log"
+$CMD split-window -v "tail -F $LOGGING_DIR/update.log"
 $CMD select-layout even-vertical
 $CMD split-window -h "tail -F $LOGGING_DIR/prebot.log"
 $CMD select-pane -t 0                                   # highlight 
