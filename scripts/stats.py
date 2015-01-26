@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import logging
 
 from imp import reload
 import colorama
@@ -9,6 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab.db import Part, Binary, Release, db_session
 import config
+from pynab import log, log_init
 
 
 def get_config_changes():
@@ -56,13 +58,14 @@ def build_header():
 
 
 if __name__ == '__main__':
+    log_init('stats', '%(message)s')
     colorama.init()
     config_time = os.stat(config.__file__).st_mtime
 
     logging_dir = config.log.get('logging_dir')
     csv_path = os.path.join(logging_dir, 'stats.csv')
 
-    print(build_header())
+    log.info(build_header())
 
     i = 1
     first = True
@@ -89,9 +92,9 @@ if __name__ == '__main__':
 
         if i % config.stats.get('header_every_nth', 0) == 0:
             i = 1
-            print(build_header())
+            log.info(build_header())
 
-        print('{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}'.format(
+        log.info('{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}|{:^10} {:^20}'.format(
             parts, colored(p_diff),
             binaries, colored(b_diff),
             releases, colored(r_diff),
