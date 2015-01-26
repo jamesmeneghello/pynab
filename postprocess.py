@@ -137,7 +137,9 @@ def main():
 
             if config.postprocess.get('delete_bad_releases', False):
                 # kill unwanteds
-                # deletes = db.query(Release).filter(Release.unwanted==True).delete()
+                pass
+                """
+                deletes = db.query(Release).filter(Release.unwanted==True).delete()
                 deletes = 0
 
                 # and also kill other-miscs that we can't retrieve a rar for
@@ -150,6 +152,7 @@ def main():
 
                 log.info('postprocess: deleted {} bad releases'.format(deletes))
                 db.commit()
+                """
 
             # delete any orphan metablacks
             log.info('postprocess: deleting orphan metablacks...')
