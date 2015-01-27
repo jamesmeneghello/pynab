@@ -58,7 +58,7 @@ def backfill(group_name, date=None):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
             exc_type,
-            exc_value.encode().decode('ascii')
+            str(exc_value).encode().decode('ascii')
         ))
 
 
@@ -69,7 +69,7 @@ def scan_missing(group_name):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
             exc_type,
-            exc_value.encode().decode('ascii')
+            str(exc_value).encode().decode('ascii')
         ))
 
 
