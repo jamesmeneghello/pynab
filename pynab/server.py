@@ -258,37 +258,31 @@ class Server:
         """Retrieves the date of the specified post."""
         self.connect()
 
-        i = 0
-        while i < 10:
-            articles = []
+        art_num = 0
+        overview = None
 
-            try:
-                self.connection.group(group_name)
-                _, articles = self.connection.over('{0:d}-{0:d}'.format(article))
-            except nntplib.NNTPError as e:
-                log.debug(e)
-                # leave this alone - we don't expect any data back
-                pass
+        try:
+            self.connection.group(group_name)
+            art_num, overview = self.connection.head('{0:d}'.format(article))
+        except nntplib.NNTPError as e:
+            log.error('server: error while finding date of post: {}'.format(e))
+            # leave this alone - we don't expect any data back
+            return None
 
-            try:
-                art_num, overview = articles[0]
-            except IndexError:
-                # if the server is missing an article, it's usually part of a large group
-                # so skip along quickishly, the datefinder will autocorrect itself anyway
-                article += int(article * 0.0001)
-                #article += 1
-                i += 1
-                continue
-
-            if art_num and overview:
-                try:
-                    date = dateutil.parser.parse(overview['date']).astimezone(pytz.utc)
-                except Exception as e:
-                    log.error('server: date parse failed while dating message: {}'.format(e))
-                    return None
-                return date
-            else:
-                return None
+        if art_num and overview:
+            # overview[0] = article number
+            # overview[1] = message-id
+            # overview[2] = headers
+            for header in overview[2]:
+                if 'Date:' in header.decode():
+                    try:
+                        date = dateutil.parser.parse(header.decode().replace('Date: ', '')).astimezone(pytz.utc)
+                    except Exception as e:
+                        log.error('server: date parse failed while dating message: {}'.format(e))
+                        return None
+                    return date
+        else:
+            return None
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
