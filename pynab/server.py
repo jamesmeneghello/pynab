@@ -67,6 +67,7 @@ class Server:
 
     def get(self, group_name, messages=None):
         """Get a set of messages from the server for the specified group."""
+        self.connect()
 
         data = ''
         if messages:
@@ -97,6 +98,7 @@ class Server:
 
     def scan(self, group_name, first=None, last=None, message_ranges=None):
         """Scan a group for segments and return a list."""
+        self.connect()
 
         messages_missed = []
 
@@ -254,6 +256,7 @@ class Server:
 
     def post_date(self, group_name, article):
         """Retrieves the date of the specified post."""
+        self.connect()
 
         i = 0
         while i < 10:
@@ -289,6 +292,8 @@ class Server:
 
     def day_to_post(self, group_name, days):
         """Converts a datetime to approximate article number for the specified group."""
+        self.connect()
+
         log.info('server: finding post {} days old...'.format(days))
 
         _, count, first, last, _ = self.connection.group(group_name)

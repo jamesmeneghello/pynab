@@ -89,10 +89,7 @@ def check_rar(filename):
 
 
 def get_rar_info(server, group_name, messages):
-    try:
-        data = server.get(group_name, messages)
-    except:
-        data = None
+    data = server.get(group_name, messages)
 
     if data:
         # if we got the requested articles, save them to a temp rar
@@ -242,7 +239,8 @@ def process(limit=None, category=0):
 
     with Server() as server:
         with db_session() as db:
-            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()).filter(Release.passworded=='UNKNOWN').filter(Release.rar_metablack_id==None)
+            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()).\
+                filter(Release.passworded=='UNKNOWN').filter(Release.rar_metablack_id==None)
             if category:
                 query = query.filter(Release.category_id==int(category))
 
@@ -255,7 +253,13 @@ def process(limit=None, category=0):
                 nzb = pynab.nzbs.get_nzb_details(release.nzb)
 
                 if nzb and nzb['rars']:
-                    passworded, info = check_release_files(server, release.group.name, nzb)
+                    try:
+                        passworded, info = check_release_files(server, release.group.name, nzb)
+                    except Exception as e:
+                        # if usenet isn't accessible, we don't want to blacklist it
+                        log.error('rar: file info failed: {}'.format(e))
+                        continue
+
                     if info:
                         log.info('rar: file info add [{}]'.format(
                             release.search_name
@@ -274,6 +278,7 @@ def process(limit=None, category=0):
 
                         release.rar_metablack_id = None
                         db.add(release)
+                        db.commit()
                         continue
                 log.debug('rar: [{}] - file info: no readable rars in release'.format(
                     release.search_name
