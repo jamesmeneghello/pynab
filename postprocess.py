@@ -61,12 +61,14 @@ def process_imdb():
         log.critical(traceback.format_exc())
         raise Exception
 
+
 def process_requests():
     try:
         return pynab.requests.process(500)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
+
 
 def main():
     log.info('postprocess: starting post-processing...')

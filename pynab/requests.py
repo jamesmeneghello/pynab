@@ -3,6 +3,10 @@ from pynab.db import db_session, Release, Pre
 from pynab.server import Server
 
 
+def get(release):
+    """Get Release Name from Pre Request"""
+    return release.pre.name
+
 def process(limit=None, category=0):
     """Process releases for requests"""
 
