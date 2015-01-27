@@ -12,6 +12,7 @@ import pynab.nzbs
 import pynab.rars
 import pynab.nfos
 import pynab.sfvs
+import pynab.requests
 import config
 
 
@@ -43,6 +44,11 @@ def names_from_sfvs(release):
         return []
 
 
+def names_from_requests(release):
+    """Attempt to grab release name from associated Pre request"""
+    return pynab.requests.get(release)
+
+
 def discover_name(release):
     """Attempts to fix a release name by nfo, filelist or sfv."""
     potential_names = [release.search_name,]
@@ -69,6 +75,9 @@ def discover_name(release):
 
     if release.sfv:
         potential_names += names_from_sfvs(release)
+
+    if release.pre:
+        potential_names.append(names_from_requests(release))
 
     if len(potential_names) > 1:
         old_category = release.category_id

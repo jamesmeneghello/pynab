@@ -16,6 +16,7 @@ import pynab.rars
 import pynab.nfos
 import pynab.sfvs
 import pynab.imdb
+import pynab.requests
 import scripts.quick_postprocess
 import scripts.rename_bad_releases
 import config
@@ -56,6 +57,14 @@ def process_rars():
 def process_imdb():
     try:
         return pynab.imdb.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
+
+
+def process_requests():
+    try:
+        return pynab.requests.process(500)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
@@ -103,6 +112,10 @@ def main():
                 # check for passwords, file count and size
                 if config.postprocess.get('process_rars', True):
                     threads.append(executor.submit(process_rars))
+
+                # check for requests in local pre table
+                if config.postprocess.get('process_requests', True):
+                    threads.append(executor.submit(process_requests))
 
                 for t in concurrent.futures.as_completed(threads):
                     data = t.result()

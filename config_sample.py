@@ -255,6 +255,10 @@ postprocess = {
     # this can be used to clean release names, etc
     'process_sfvs': False,
 
+    # process requests: query the pre table to
+    # try and discover names from request ids
+    'process_requests': True,
+    
     # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
     # so if we can't find a match for some movie, wait 7 days before trying that movie again
     # there's really no benefit to setting this low - anywhere from a week to several months is fine
