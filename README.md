@@ -373,34 +373,14 @@ As such, you don't want to delete backfilled binaries.
 
 You can use the backfill scripts as so:
 
-	> python3 scripts/backfill.py -g <group> -d <date>
+	> python3 scan.py backfill [group] [--date=<date>]
 
 You can optionally specify a group - omitting the group argument will operate a backfill over all
 groups. You can also optionally specify a particular date to backfill to - omitting a date will fall
 back onto your config.py's backfill_days parameter.
 
-Note that you can combine the backfill script with Screen to backfill multiple groups at once, like so:
-
-	> screen /bin/bash
-	> python3 scripts/backfill.py -g alt.binaries.somegroup
-	> (press ctrl-a then d)
-	> screen /bin/bash
-	> python3 scripts/backfill.py -g alt.binaries.someothergroup
-	> (press ctrl-a then d)
-	> screen /bin/bash
-	> python3 start.py
-	> (press ctrl-a then d)
-	> screen /bin/bash
-	> python3 post_process.py
-	> (press ctrl-a then d)
-	> tail -f pynab.log
-
-The last line will enable you to see output from all the windows, if logging_dir is enabled.
-This is pretty spammy and unreadable, though. Watchdog to come with summarised stats for the DB.
-
-By running start.py at the same time as the backfill scripts, start.py will automatically take care of 
-processing parts created by the backfill scripts at regular intervals, preventing the parts table from
-becoming extremely large.
+Backfilling will add parts to the DB, but won't process them - the main pynab scanning script is intended
+to be run in parallel, which will take care of binary and release processing.
 
 ### Updating Pynab ###
 
