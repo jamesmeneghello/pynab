@@ -88,15 +88,6 @@ __all__ = ["NNTP",
            "decode_header",
            ]
 
-# maximal line length when calling readline(). This is to prevent
-# reading arbitrary length lines. RFC 3977 limits NNTP line length to
-# 512 characters, including CRLF. We have selected 2048 just to be on
-# the safe side.
-
-# turns out 2048 wasn't safe, so it's been increased further
-
-_MAXLINE = 8192
-
 
 # Exceptions raised when an error or invalid response is received
 class NNTPError(Exception):
@@ -455,9 +446,7 @@ class _NNTPBase:
         """Internal: return one line from the server, stripping _CRLF.
         Raise EOFError if the connection is closed.
         Returns a bytes object."""
-        line = self.file.readline(_MAXLINE +1)
-        if len(line) > _MAXLINE:
-            raise NNTPDataError('line too long')
+        line = self.file.read()
         if self.debugging > 1:
             print('*get*', repr(line))
         if not line: raise EOFError
