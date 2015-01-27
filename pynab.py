@@ -172,6 +172,7 @@ if __name__ == '__main__':
         scan()
         postprocess()
         stats()
+        prebot()
         if monitor == 'windows':
             api()
         if config.bot.get('enabled', False):
