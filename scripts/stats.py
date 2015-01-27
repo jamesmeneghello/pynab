@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import logging
 
 from imp import reload
 import colorama
