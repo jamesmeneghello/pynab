@@ -2,7 +2,7 @@ import lib.nntplib as nntplib
 import regex
 import time
 import datetime
-import math
+import random
 import socket
 
 import dateutil.parser
@@ -38,7 +38,7 @@ class Server:
         try:
             response, count, first, last, name = self.connection.group(group_name)
         except Exception as e:
-            log.error('server: could not send group command: {}'.format(e))
+            log.error('server: couldn\'t send group command')
             return None, False, None, None, None
 
         return response, count, first, last, name
@@ -56,9 +56,9 @@ class Server:
 
             try:
                 if ssl:
-                    self.connection = nntplib.NNTP_SSL(compression=compression, **news_config)
+                    self.connection = nntplib.NNTP_SSL(compression=compression, timeout=10, **news_config)
                 else:
-                    self.connection = nntplib.NNTP(compression=compression, **news_config)
+                    self.connection = nntplib.NNTP(compression=compression, timeout=10, **news_config)
             except Exception as e:
                 log.error('server: could not connect to news server: {}'.format(e))
                 return False
@@ -265,7 +265,7 @@ class Server:
             self.connection.group(group_name)
             art_num, overview = self.connection.head('{0:d}'.format(article))
         except nntplib.NNTPError as e:
-            log.error('server: error while finding date of post: {}'.format(e))
+            log.debug('server: unable to get date of message {}: {}'.format(article, e))
             # leave this alone - we don't expect any data back
             return None
 
@@ -291,57 +291,58 @@ class Server:
         log.info('server: finding post {} days old...'.format(days))
 
         _, count, first, last, _ = self.connection.group(group_name)
+
+        # get first, last and target dates
+        candidate_post = None
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
+        bottom_date = self.post_date(group_name, first)
+        top_date = self.post_date(group_name, last)
+        bottom = first
+        top = last
 
-        first_date = self.post_date(group_name, first)
-        last_date = self.post_date(group_name, last)
+        # iterative, obviously
+        while True:
+            # do something like a binary search
+            # find the percentage-point of target date between first and last dates
+            # ie. start |-------T---| end = ~70%
+            # so we'd find the post number ~70% through the message count
+            try:
+                target = target_date - bottom_date
+                total = top_date - bottom_date
+            except:
+                log.error('server: nntp server problem while getting first/last article dates')
+                return None
 
-        if first_date and last_date:
-            if target_date < first_date:
-                return first
-            elif target_date > last_date:
-                return False
+            perc = target.total_seconds() / total.total_seconds()
 
-            upper = last
-            lower = first
-            interval = math.floor((upper - lower) * 0.5)
-            next_date = last_date
-
-            # 95% of the time spent finding posts by date is spent on the last day
-            # so add a tolerance, because we probably don't care
-            tolerance = 1
-
-            while self.days_old(next_date) < days - tolerance:
-                log.debug('server: post was {} days old, continuing'.format(self.days_old(next_date)))
-                skip = 1
-                temp_date = self.post_date(group_name, upper - interval)
-                if temp_date:
-                    while temp_date > target_date:
-                        upper = upper - interval - (skip - 1)
-                        skip *= 2
-                        date = self.post_date(group_name, upper - interval)
-                        # if we couldn't get the date, skip this one
-                        if date:
-                            temp_date = date
-
-
-                interval = math.ceil(interval / 2)
-                if interval <= 0:
+            while True:
+                candidate_post = int(abs(bottom + ((top - bottom) * perc)))
+                candidate_date = self.post_date(group_name, candidate_post)
+                if candidate_date:
                     break
-                skip = 1
+                else:
+                    addition = (random.choice([-1, 1]) / 100) * perc
+                    if perc + addition > 1.0:
+                        perc -= addition
+                    elif perc - addition < 0.0:
+                        perc += addition
+                    else:
+                        perc += addition
 
-                next_date = self.post_date(group_name, upper - 1)
-                if next_date:
-                    while not next_date:
-                        upper = upper - skip
-                        skip *= 2
-                        next_date = self.post_date(group_name, upper - 1)
+            # tolerance sliding scale, about 0.1% rounded to the nearest day
+            # we don't need a lot of leeway, since this is a lot faster than previously
+            tolerance = round(days * 0.001)
+            if abs(target_date - candidate_date) < datetime.timedelta(days=tolerance):
+                break
 
-            log.debug('server: {}: article {:d} is {:d} days old.'.format(group_name, upper, self.days_old(next_date)))
-            return upper
-        else:
-            log.error('server: {}: could not get group information.'.format(group_name))
-            return False
+            if candidate_date > target_date:
+                top = candidate_post
+                top_date = candidate_date
+            else:
+                bottom = candidate_post
+                bottom_date = candidate_date
+
+        return candidate_post
 
     @staticmethod
     def days_old(date):
