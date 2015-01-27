@@ -30,6 +30,7 @@ def rename_bad_releases(category):
                 # we found a new name!
                 s_count += 1
 
+                release.name = name
                 release.search_name = pynab.releases.clean_release_name(name)
                 release.category_id = category_id
 
