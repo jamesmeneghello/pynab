@@ -171,12 +171,12 @@ if __name__ == '__main__':
     if arguments['start']:
         scan()
         postprocess()
-        stats()
         prebot()
         if monitor == 'windows':
             api()
         if config.bot.get('enabled', False):
             pubsub()
+        stats()
     elif arguments['stop']:
         stop()
     elif arguments['scan']:
