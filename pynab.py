@@ -65,6 +65,13 @@ def prebot():
         Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
+def stats():
+    if monitor == 'zdaemon':
+        call('zdaemon -Czdaemon/stats.conf start', shell=True)
+    elif monitor == 'windows':
+        Popen('start "Pynab stats (close to quit)" python scripts/stats.py start', stdout=None, stderr=None, stdin=None, shell=True)
+
+
 def stop():
     if monitor == 'zdaemon':
         call('zdaemon -Czdaemon/update.conf stop', shell=True)
@@ -73,6 +80,7 @@ def stop():
         call('zdaemon -Czdaemon/backfill.conf stop', shell=True)
         call('zdaemon -Czdaemon/prebot.conf stop', shell=True)
         call('zdaemon -Czdaemon/pubsub.conf stop', shell=True)
+        call('zdaemon -Czdaemon/stats.conf stop', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
@@ -163,6 +171,8 @@ if __name__ == '__main__':
     if arguments['start']:
         scan()
         postprocess()
+        stats()
+        prebot()
         if monitor == 'windows':
             api()
         if config.bot.get('enabled', False):

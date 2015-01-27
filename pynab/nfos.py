@@ -60,8 +60,10 @@ def process(limit=None, category=0):
                     for nfo in nfos:
                         try:
                             article = server.get(release.group.name, [nfo['message_id'], ])
-                        except:
-                            article = None
+                        except Exception as e:
+                            # if usenet's not accessible, don't block it forever
+                            log.error('nfo: unable to get nfo: {}'.format(e))
+                            continue
 
                         if article:
                             data = gzip.compress(article.encode('utf-8'))

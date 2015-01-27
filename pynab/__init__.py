@@ -28,7 +28,6 @@ def check_config():
     if reverse_level:
         print('Some extra top level config items that should be deleted: \'{}\''.format(', '.join(reverse_level)))
 
-
     for item in filter(exclude, dir(config)):
         inner_level = set(getattr(config_sample, item).keys()) - set(getattr(config, item).keys())
         if inner_level:
@@ -40,13 +39,13 @@ def check_config():
         exit(1)
 
 
-def log_init(log_name):
+def log_init(log_name, format='%(asctime)s %(levelname)s %(message)s'):
     if config.log.get('logging_dir', None):
         global log
 
     logging_file = os.path.join(logging_dir, log_name + '.log')
     handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
-    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
+    handler.setFormatter(logging.Formatter(format, '%Y-%m-%d %H:%M:%S'))
     log.handlers = []
     log.addHandler(handler)
     log.info('log: started pynab logger')
