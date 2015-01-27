@@ -26,7 +26,7 @@ def process(limit=None, category=0):
                 for release in releases:
                     requests[int(release.name.split(': ')[1])] = release
             else:
-                log.info("No release requests to process")
+                log.info("Requests: No release requests to process")
 
             #Query for the requestids
             if requests:
