@@ -19,7 +19,7 @@ def process(limit=None, category=0):
             else:
                 releases = query.order_by(Release.posted.desc()).all()
 
-            #Create a dict of request id's and releases
+            # create a dict of request id's and releases
             requests = {}   
             
             if releases:
@@ -28,13 +28,14 @@ def process(limit=None, category=0):
             else:
                 log.info("Requests: No release requests to process")
 
-            #Query for the requestids
+            # query for the requestids
             if requests:
                 pres = db.query(Pre).filter(Pre.requestid.in_(requests.keys())).all()
             else:
                 log.info("Requests: No pre requests found")
+                pres = []
             
-            #Loop through and associate pres with their requests
+            # loop through and associate pres with their requests
             for pre in pres:
 
                 if pre.requestid in requests and pre.requestgroup == requests.get(pre.requestid).group.name:
