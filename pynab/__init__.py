@@ -77,11 +77,11 @@ if logging_dir:
 
 elif not config.log.get('colors', False):
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S'))
     log.addHandler(handler)
 else:
     formatter = colorlog.ColoredFormatter(
-        "%(log_color)s%(asctime)s - %(levelname)s - %(reset)s %(blue)s%(message)s",
+        "%(log_color)s%(asctime)s %(levelname)s %(reset)s %(blue)s%(message)s",
         '%Y-%m-%d %H:%M:%S',
         reset=True,
         log_colors={
