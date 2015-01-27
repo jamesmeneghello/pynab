@@ -77,7 +77,7 @@ def discover_name(release):
         potential_names += names_from_sfvs(release)
 
     if release.pre:
-        potential_names += names_from_requests(release)
+        potential_names.append(names_from_requests(release))
 
     if len(potential_names) > 1:
         old_category = release.category_id
