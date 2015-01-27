@@ -47,7 +47,7 @@ def process_sfvs():
 
 def process_rars():
     try:
-        return pynab.rars.process(200)
+        return pynab.rars.process(100)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
