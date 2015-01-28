@@ -56,9 +56,9 @@ class Server:
 
             try:
                 if ssl:
-                    self.connection = nntplib.NNTP_SSL(compression=compression, timeout=120, **news_config)
+                    self.connection = nntplib.NNTP_SSL(compression=compression, **news_config)
                 else:
-                    self.connection = nntplib.NNTP(compression=compression, timeout=120, **news_config)
+                    self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
                 log.error('server: could not connect to news server: {}'.format(e))
                 return False
