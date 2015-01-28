@@ -446,7 +446,7 @@ class _NNTPBase:
         """Internal: return one line from the server, stripping _CRLF.
         Raise EOFError if the connection is closed.
         Returns a bytes object."""
-        line = self.file.read()
+        line = self.file.readline()
         if self.debugging > 1:
             print('*get*', repr(line))
         if not line: raise EOFError
