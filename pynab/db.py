@@ -575,8 +575,8 @@ class Pre(Base):
     searchname = Column(String(512))
     category = Column(String(256))
     source = Column(String(256))
-    requestid = Column(Integer)
-    requestgroup = Column(String(500))
+    requestid = Column(Integer, index=True)
+    requestgroup = Column(String(500), index=True)
     filename = Column(String(512))
     nuked = Column(Boolean, default=False)
 
