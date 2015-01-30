@@ -5,16 +5,19 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import pynab.releases
-from pynab.db import db_session, Release
+from pynab.db import db_session, Release, windowed_query
 from pynab import log
 
+import config
 
 def rename_bad_releases(category):
     count = 0
     s_count = 0
     with db_session() as db:
-        query = db.query(Release).filter(Release.category_id==int(category)).filter((Release.files.any())|(Release.nfo!=None)|(Release.sfv!=None)|Release.pre!=None).filter((Release.status!=1)|(Release.status==None))
-        for release in query.all():
+        query = db.query(Release).filter(Release.category_id==int(category)).filter(
+            (Release.files.any())|(Release.nfo_id!=None)|(Release.sfv_id!=None)|(Release.pre_id!=None)
+        ).filter((Release.status!=1)|(Release.status==None))
+        for release in windowed_query(query, Release.id, config.scan.get('binary_process_chunk_size', 1000)):
             count += 1
             name, category_id = pynab.releases.discover_name(release)
 
