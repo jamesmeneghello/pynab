@@ -20,13 +20,13 @@ def process(limit=None):
             for release in releases:
                 requests[int(release.name.split(': ')[1])] = release
         else:
-            log.info("Requests: No release requests to process")
+            log.info("requests: no release requests to process")
 
         # query for the requestids
         if requests:
             pres = db.query(Pre).filter(Pre.requestid.in_(requests.keys())).all()
         else:
-            log.info("Requests: No pre requests found")
+            log.info("requests: no pre requests found")
             pres = []
 
         # loop through and associate pres with their requests
@@ -35,8 +35,8 @@ def process(limit=None):
                 updaterelease = requests.get(pre.requestid)
                 updaterelease.pre_id = pre.id
                 db.merge(updaterelease)
-                log.info("Requests: Found pre request id {} for {}".format(pre.requestid, updaterelease.name))
+                log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, pre.requestgroup, updaterelease.name))
             else:
-                log.info("Requests: No pre request found for {}".format(requests.get(pre.requestid).name))
+                log.info("requests: no pre request found for {}".format(requests.get(pre.requestid).name))
 
         db.commit()
