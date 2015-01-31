@@ -275,18 +275,21 @@ class Server:
             # overview[2] = headers
             for header in overview[2]:
                 date_header = ''
+
                 if 'X-Server-Date:' in header.decode():
                     continue
                 elif 'NNTP-Posting-Date:' in header.decode():
                     date_header = header.decode().replace('NNTP-Posting-Date: ', '')
                 elif 'Date:' in header.decode():
                     date_header = header.decode().replace('Date: ', '')
-                try:
-                    date = pytz.utc.localize(dateutil.parser.parse(date_header))
-                except Exception as e:
-                    log.error('server: date parse failed while dating message: {}'.format(e))
-                    return None
-                return date
+
+                if date_header:
+                    try:
+                        date = pytz.utc.localize(dateutil.parser.parse(date_header))
+                    except Exception as e:
+                        log.error('server: date parse failed while dating message: {}'.format(e))
+                        return None
+                    return date
         else:
             return None
 
