@@ -9,15 +9,18 @@ from pynab.db import db_session, engine, Pre
 import urllib
 import regex
 import json
-import csv
 import subprocess
-import pandas
+
+try:
+	import pandas
+except:
+	print("pandas is required to use nzedb pre import: pip install pandas")
 
 #BeautifulSoup is required
 try:
 	from bs4 import BeautifulSoup
 except:
-	print("BeautifulSoup is required to use orlydb scraping: pip install beautifulsoup4")
+	print("BeautifulSoup is required to use nzedb pre import: pip install beautifulsoup4")
 
 
 
@@ -125,5 +128,5 @@ def processNzedbPre():
 
 	if insertFails is not None:
 		print("Failures: {}".format(insertFails))
-		
+
 processNzedbPre()
