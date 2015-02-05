@@ -36,13 +36,13 @@ def processNzedbPre():
 		preHTML = urllib.request.urlopen("https://www.dropbox.com/sh/fb2pffwwriruyco/AACy9Egno_v2kcziVHuvWbbxa")
 		soup = BeautifulSoup(preHTML.read())
 	except:
-		print("Error connecting to dropbox, try again later")
+		print("Pre-Import: Error connecting to dropbox, try again later")
 
 	try:
 		data = open('lastfile.json')
 		lastFileFromDisk = json.load(data)
 	except:
-		print("No existinfg file found, will attempt to download and insert all pres")
+		print("Pre-Import: No existinfg file found, will attempt to download and insert all pres")
 		lastFileFromDisk = None
 
 	#Find all the download links, change the download from 0 to 1
@@ -63,10 +63,10 @@ def processNzedbPre():
 		if lastFileFromDisk is None or int(processingFile['lastfile']) > lastFileFromDisk['lastfile']:
 			
 			try:
-				print("Attempting to download file: {}".format(processingFile['lastfile']))
+				print("Pre-Import: Attempting to download file: {}".format(processingFile['lastfile']))
 				urllib.request.urlretrieve(preCSV, "unformattedDL.gz")
 			except:
-				print("Error downloading: {}".format(preCSV))
+				print("Pre-Import: Error downloading: {}".format(preCSV))
 				insertFails.append(processingFile['lastfile'])
 				#The assumption here is, if the first one fails, more than likely they will all fail
 				break
@@ -90,7 +90,7 @@ def processNzedbPre():
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
 			
-			
+
 			with db_session() as db:
 				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 			
@@ -114,7 +114,7 @@ def processNzedbPre():
 			formattedUL = open('formattedUL.csv')	
 
 			try:
-				print("Attempting to add {} to the database".format(processingFile['lastfile'])))
+				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile'])))
 				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
 				conn.commit()
 			except Exception as e:
