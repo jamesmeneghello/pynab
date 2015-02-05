@@ -1,5 +1,6 @@
+#This is quite possibly the most hilariously complex import process...
+#What I can gather as the column names from the csv, in case anyone else wants to do this.
 #title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
-#name,filename,nuked,category,pretime,source,requestid,groupname
 
 import os
 from os import listdir
@@ -9,12 +10,14 @@ import urllib
 import regex
 import json
 import csv
+import subprocess
+import pandas
 
 #BeautifulSoup is required
 try:
 	from bs4 import BeautifulSoup
 except:
-	log.error("BeautifulSoup is required to use orlydb scraping: pip install beautifulsoup4")
+	print("BeautifulSoup is required to use orlydb scraping: pip install beautifulsoup4")
 
 
 
@@ -58,11 +61,14 @@ def processNzedbPre():
 		if lastFileFromDisk is None or int(processingFile['lastfile']) > lastFileFromDisk['lastfile']:
 			
 			try:
+				print("Attempting to download file: {}".format(processingFile['lastfile']))
 				urllib.request.urlretrieve(preCSV, "unformattedDL.gz")
 			except:
 				print("Error downloading: {}".format(preCSV))
 				insertFails.append(processingFile['lastfile'])
+				#The assumption here is, if the first one fails, more than likely they will all fail
 				break
+
 
 			#Clean out some things we cant work with. Probably a better way to do this!
 			os.system("csvcut -t -q 3 -c 1,9,11,15,17,19,21,23 unformattedDL.gz > formattedUL.csv")
@@ -71,39 +77,53 @@ def processNzedbPre():
 			os.system('sed -i s/,3,/,1,/g {}'.format("formattedUL.csv"))
 			os.system('sed -i s/,4,/,1,/g {}'.format("formattedUL.csv"))
 			os.system('sed -i s/,5,/,1,/g {}'.format("formattedUL.csv"))
-			#os.system('sed -i s/",\\N"/''/g {}'.format("formattedUL.csv"))
+			#For whatever reason this wouldnt work using os.system
+			subprocess.call(['sed', '-i', 's/.\\N$/''/g', 'formattedUL.csv'], shell=False )
 
-			#open the file ready for import
-			formattedUL = open('formattedUL.csv')
-			dictCSV = csv.DictReader(formattedUL, fieldnames = ("name","filename","nuked","category","pretime","source","requestid","requestgroup"), dialect=csv)
-			#dictCSV.fieldnames = "name","filename","nuked","category","pretime","source","requestid","requestgroup"
-			#conn = engine.raw_connection()
-			#cur = conn.cursor()
-			#print("need to process")
-			with db_session() as db:
-				for i, data in enumerate(dictCSV):
-					p = Pre(**data)
-					db.add(p)
-					if i % 1000 == 0:
-						db.flush()
-				try:
-					db.commit()		
-				except:
-					print("probably a dupe error")	
-					insertFails.append(processingFile['lastfile'])
+			#Get the data into datatable, much easier to work with.
+			colnames = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
+			data = pandas.read_csv('formattedUL.csv', names=colnames)
+			names = list(data.name)
 			
-			'''try:
-				cur.copy_expert("COPY pres2 (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
+			#Sometimes there are duplicates within the table itself, remove them
+			data.drop_duplicates(subset='name', take_last=True, inplace=True)
+			
+			with db_session() as db:
+				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
+			
+				prenamelist = []
+				for pre in pres:
+					prenamelist.append(pre.name)
+				
+				newdata = data[~data['name'].isin(prenamelist)]
+				
+				newdata.to_csv('formattedUL.csv', index=False, header=False)
+				
+				#Delete any pres found as we are essentially going to update them
+				for pre in pres:
+					db.delete(pre)
+				db.commit()
+
+			#Process the now clean CSV
+			conn = engine.raw_connection()
+			cur = conn.cursor()		
+			formattedUL = open('formattedUL.csv')	
+			try:
+				print("Attempting to add {} to the database".format(processingFile['lastfile'])))
+				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
 				conn.commit()
 			except Exception as e:
 				print("Pre-Import: Error inserting into database - {}".format(e))
 				insertFails.append(processingFile['lastfile'])	
-			'''
+			
+			#Write out the last pre csv name so it can be restarted later without downloading all the pres.
 			with open('lastfile.json', 'w') as outfile:
 				json.dump({'lastfile' : int(processingFile['lastfile'])}, outfile)
 			
 		else:
 			pass
 
-	print(insertFails)
+	if insertFails is not None:
+		print("Failures: {}".format(insertFails))
+		
 processNzedbPre()
