@@ -3,7 +3,6 @@
 #title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
 
 import os
-from os import listdir
 import sys
 from pynab.db import db_session, engine, Pre
 import urllib
@@ -91,6 +90,7 @@ def processNzedbPre():
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
 			
+			
 			with db_session() as db:
 				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 			
@@ -107,10 +107,12 @@ def processNzedbPre():
 					db.delete(pre)
 				db.commit()
 
+
 			#Process the now clean CSV
 			conn = engine.raw_connection()
 			cur = conn.cursor()		
 			formattedUL = open('formattedUL.csv')	
+
 			try:
 				print("Attempting to add {} to the database".format(processingFile['lastfile'])))
 				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
@@ -119,12 +121,15 @@ def processNzedbPre():
 				print("Pre-Import: Error inserting into database - {}".format(e))
 				insertFails.append(processingFile['lastfile'])	
 			
+
 			#Write out the last pre csv name so it can be restarted later without downloading all the pres.
 			with open('lastfile.json', 'w') as outfile:
 				json.dump({'lastfile' : int(processingFile['lastfile'])}, outfile)
-			
+	
+
 		else:
 			pass
+
 
 	if insertFails is not None:
 		print("Failures: {}".format(insertFails))
