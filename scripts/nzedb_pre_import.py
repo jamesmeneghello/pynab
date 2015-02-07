@@ -4,6 +4,7 @@
 
 import os
 import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from pynab.db import db_session, engine, Pre
 import urllib
 import regex
@@ -114,7 +115,7 @@ def processNzedbPre():
 			formattedUL = open('formattedUL.csv')	
 
 			try:
-				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile'])))
+				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
 				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
 				conn.commit()
 			except Exception as e:
