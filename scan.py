@@ -40,10 +40,8 @@ def update(group_name):
     except pynab.server.AuthException as e:
         log.error('server: {}'.format(e))
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
-            exc_type,
-            str(exc_value).encode().decode('ascii')
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
+            e
         ))
 
 

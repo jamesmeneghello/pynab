@@ -16,7 +16,7 @@ def scan(group_name, direction='forward', date=None, limit=None):
 
         if count:
             with db_session() as db:
-                group = db.query(Group).filter(Group.name==group_name).one()
+                group = db.query(Group).filter(Group.name==group_name).first()
 
                 if group:
                     # sort out missing first/lasts
