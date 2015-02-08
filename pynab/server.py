@@ -275,7 +275,7 @@ class Server:
             # overview[2] = headers
             for header in overview[2]:
                 date_header = ''
-                head = nntplib.decode_header(header)
+                head = nntplib.decode_header(header.decode('utf-8', errors='surrogateescape'))
 
                 if 'X-Server-Date:' in head:
                     continue
