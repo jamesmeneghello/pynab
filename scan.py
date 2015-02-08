@@ -18,6 +18,7 @@ import pytz
 import datetime
 import dateutil.parser
 from docopt import docopt
+import traceback
 
 from pynab import log, log_init
 from pynab.db import db_session, Group, Binary, Miss, engine, Segment
@@ -41,8 +42,9 @@ def update(group_name):
         log.error('server: {}'.format(e))
     except Exception as e:
         log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
-            e
+            traceback.format_exc(e)
         ))
+
 
 
 def backfill(group_name, date=None):
@@ -53,10 +55,8 @@ def backfill(group_name, date=None):
     try:
         return pynab.groups.scan(group_name, direction='backward', date=date, limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
-            exc_type,
-            str(exc_value).encode().decode('ascii')
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
+            traceback.format_exc(e)
         ))
 
 
@@ -64,10 +64,8 @@ def scan_missing(group_name):
     try:
         return pynab.groups.scan_missing_segments(group_name)
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}: {}'.format(
-            exc_type,
-            str(exc_value).encode().decode('ascii')
+        log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
+            traceback.format_exc(e)
         ))
 
 
