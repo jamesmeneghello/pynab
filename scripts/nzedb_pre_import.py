@@ -74,7 +74,9 @@ def processNzedbPre():
 
 
 			#Clean out some things we cant work with. Probably a better way to do this!
-			os.system("csvcut -t -q 3 -c 1,9,11,15,17,19,21,23 unformattedDL.gz > formattedUL.csv")
+			cleanFile = pandas.read_csv('unformattedDL.gz', sep='\t', compression='gzip', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22])
+			cleanFile.to_csv('formattedUL.csv', index=False, header=False)
+
 			os.system('sed -i s/"\'"/""/g {}'.format("formattedUL.csv"))
 			os.system('sed -i s/,2,/,0,/g {}'.format("formattedUL.csv"))
 			os.system('sed -i s/,3,/,1,/g {}'.format("formattedUL.csv"))
@@ -87,11 +89,11 @@ def processNzedbPre():
 			colnames = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
 			data = pandas.read_csv('formattedUL.csv', names=colnames)
 			names = list(data.name)
-			
+
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
-			
 
+			#Query to find any existing pres, we need to delete them so COPY doesn't fail
 			with db_session() as db:
 				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 			
@@ -107,7 +109,6 @@ def processNzedbPre():
 				for pre in pres:
 					db.delete(pre)
 				db.commit()
-
 
 			#Process the now clean CSV
 			conn = engine.raw_connection()
