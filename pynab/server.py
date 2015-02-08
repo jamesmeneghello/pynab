@@ -285,10 +285,17 @@ class Server:
 
                 if date_header:
                     try:
-                        date = pytz.utc.localize(dateutil.parser.parse(date_header))
+                        date = dateutil.parser.parse(date_header)
                     except Exception as e:
                         log.error('server: date parse failed while dating message: {}'.format(e))
                         return None
+
+                    try:
+                        date = pytz.utc.localize(date)
+                    except:
+                        # no problem, it's already localised
+                        pass
+
                     return date
         else:
             return None
