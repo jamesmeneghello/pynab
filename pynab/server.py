@@ -275,13 +275,14 @@ class Server:
             # overview[2] = headers
             for header in overview[2]:
                 date_header = ''
+                head = nntplib.decode_header(header)
 
-                if 'X-Server-Date:' in header.decode():
+                if 'X-Server-Date:' in head:
                     continue
-                elif 'NNTP-Posting-Date:' in header.decode():
-                    date_header = header.decode().replace('NNTP-Posting-Date: ', '')
-                elif 'Date:' in header.decode():
-                    date_header = header.decode().replace('Date: ', '')
+                elif 'NNTP-Posting-Date:' in head:
+                    date_header = head.replace('NNTP-Posting-Date: ', '')
+                elif 'Date:' in head:
+                    date_header = head.replace('Date: ', '')
 
                 if date_header:
                     try:
