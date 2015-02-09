@@ -108,7 +108,6 @@ def processNzedbPre():
 
 				#Delete any pres found as we are essentially going to update them
 				if len(pres) is not 0:
-				#db.query(Pre).filter(Pre.id.in_(pres)).delete(synchronize_session='fetch')
 					for pre in pres:
 						db.delete(pre)
 				db.commit()
