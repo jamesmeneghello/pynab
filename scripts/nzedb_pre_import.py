@@ -88,15 +88,16 @@ def processNzedbPre():
 			#Get the data into datatable, much easier to work with.
 			colnames = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
 			data = pandas.read_csv('formattedUL.csv', names=colnames)
-			names = list(data.name)
-
+			
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
+
+			names = list(data.name)
 
 			#Query to find any existing pres, we need to delete them so COPY doesn't fail
 			with db_session() as db:
 				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
-			
+
 				prenamelist = []
 				for pre in pres:
 					prenamelist.append(pre.name)
@@ -104,10 +105,12 @@ def processNzedbPre():
 				newdata = data[~data['name'].isin(prenamelist)]
 				
 				newdata.to_csv('formattedUL.csv', index=False, header=False)
-				
+
 				#Delete any pres found as we are essentially going to update them
-				for pre in pres:
-					db.delete(pre)
+				if len(pres) is not 0:
+				#db.query(Pre).filter(Pre.id.in_(pres)).delete(synchronize_session='fetch')
+					for pre in pres:
+						db.delete(pre)
 				db.commit()
 
 			#Process the now clean CSV
