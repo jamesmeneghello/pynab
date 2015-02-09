@@ -27,6 +27,8 @@ except:
 
 #Regex used to strip out the file name
 FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl=1')
+CLEAN_REGEX = regex.compile('[\W_]+')
+
 
 def processNzedbPre():
 
@@ -90,11 +92,16 @@ def processNzedbPre():
 			colnames = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
 			data = pandas.read_csv('formattedUL.csv', names=colnames)
 			
+			#Add clean searchname column
+			data['searchname'] = data['name'].map(lambda x: CLEAN_REGEX.sub(' ', x).strip())
+			
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
 
 			#Create a list of names to check if they exist
 			names = list(data.name)
+
+
 
 			#Query to find any existing pres, we need to delete them so COPY doesn't fail
 			with db_session() as db:
@@ -122,7 +129,7 @@ def processNzedbPre():
 
 			try:
 				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
-				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup) FROM STDIN WITH CSV", formattedUL)
+				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup,searchname) FROM STDIN WITH CSV", formattedUL)
 				conn.commit()
 			except Exception as e:
 				print("Pre-Import: Error inserting into database - {}".format(e))
@@ -139,6 +146,6 @@ def processNzedbPre():
 
 
 	if insertFails is not None:
-		print("Failures: {}".format(insertFails))
+		print("Pre-Import: Failures: {}".format(insertFails))
 
 processNzedbPre()
