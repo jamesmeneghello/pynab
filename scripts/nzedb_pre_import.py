@@ -11,6 +11,7 @@ import regex
 import json
 import subprocess
 
+#Panadas is required
 try:
 	import pandas
 except:
@@ -92,6 +93,7 @@ def processNzedbPre():
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
 
+			#Create a list of names to check if they exist
 			names = list(data.name)
 
 			#Query to find any existing pres, we need to delete them so COPY doesn't fail
@@ -102,6 +104,7 @@ def processNzedbPre():
 				for pre in pres:
 					prenamelist.append(pre.name)
 				
+				#Create the inverse list, basically contains pres that already exist
 				newdata = data[~data['name'].isin(prenamelist)]
 				
 				newdata.to_csv('formattedUL.csv', index=False, header=False)
