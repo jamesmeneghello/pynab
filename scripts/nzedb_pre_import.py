@@ -6,6 +6,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from pynab.db import db_session, engine, Pre
+from pynab import releases
 import urllib
 import regex
 import json
@@ -27,7 +28,6 @@ except:
 
 #Regex used to strip out the file name
 FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl=1')
-CLEAN_REGEX = regex.compile('[\W_]+')
 
 
 def processNzedbPre():
@@ -93,7 +93,7 @@ def processNzedbPre():
 			data = pandas.read_csv('formattedUL.csv', names=colnames)
 			
 			#Add clean searchname column
-			data['searchname'] = data['name'].map(lambda x: CLEAN_REGEX.sub(' ', x).strip())
+			data['searchname'] = data['name'].map(lambda name: releases.clean_release_name(name))
 			
 			#Sometimes there are duplicates within the table itself, remove them
 			data.drop_duplicates(subset='name', take_last=True, inplace=True)
