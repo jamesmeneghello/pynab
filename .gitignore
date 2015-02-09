@@ -32,3 +32,8 @@ docs/_build
 build/
 config.py
 logs
+
+#files created by nzedb pre import
+scripts/formattedUL.csv
+scripts/unformattedDL.gz
+scripts/lastfile.json
