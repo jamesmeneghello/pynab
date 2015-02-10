@@ -40,7 +40,7 @@ class TestBot(irc.bot.SingleServerIRCBot):
 
 def main():
     channel = "#nZEDbPRE"
-    nickname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
+    nickname = ''.join([random.choice(string.ascii_letters) for n in range(8)])
     log.info("Pre: Bot Nick - {}".format(nickname))
     bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
     bot.start()

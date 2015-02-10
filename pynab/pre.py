@@ -1,7 +1,7 @@
 #import re
 import regex
 from pynab.db import db_session, engine, Pre
-from pynab import log
+from pynab import log, releases
 from sqlalchemy import *
 
 def nzedbirc(unformattedPre):
@@ -31,7 +31,6 @@ def parseNzedbirc(unformattedPre):
 
 	PRE_REGEX = regex.compile('(?P<preType>.+): \[DT: (?<pretime>.+)\]\[TT: (?P<name>.+)\]\[SC: (?P<source>.+)\]\[CT: (?P<category>.+)\]\[RQ: (?P<request>.+)\]\[SZ: (?P<size>.+)\]\[FL: (?P<files>.+)\]\[FN: (?P<filename>.+)\]')
 
-	cleanRegex = regex.compile('[\W_]+')
 	formattedPre = {}
 
 	try:
@@ -52,7 +51,7 @@ def parseNzedbirc(unformattedPre):
 	else:
 		formattedPre['requestid'] = None
 	
-	formattedPre['searchname'] = cleanRegex.sub(' ', formattedPre['name']).strip()
+	formattedPre['searchname'] = releases.clean_release_name(formattedPre['name'])
 
 	#remove any columns we dont need. Perhaps a way to filter these out via regex? Or a way to ignore via sqlalchemy
 	formattedPre.pop("preType", None)
