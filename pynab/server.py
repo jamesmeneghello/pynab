@@ -306,7 +306,7 @@ class Server:
         """Converts a datetime to approximate article number for the specified group."""
         self.connect()
 
-        log.info('server: finding post {} days old...'.format(days))
+        log.info('server: {}: finding post {} days old...'.format(group_name, days))
 
         _, count, first, last, _ = self.connection.group(group_name)
 
