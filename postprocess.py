@@ -71,6 +71,8 @@ def process_requests():
 
 
 def main():
+    log_init('postprocess')
+
     log.info('postprocess: starting post-processing...')
 
     # start with a quick post-process
@@ -208,5 +210,4 @@ def main():
         time.sleep(postprocess_wait)
 
 if __name__ == '__main__':
-    log_init('postprocess')
     main()
