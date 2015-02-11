@@ -60,7 +60,7 @@ def save_all(parts):
                             s.write('"' + part[item].replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S').replace('"',
                                                                                                                 '\\"') + '",')
                         elif item == 'xref':
-                            # leave off the tab
+                            # leave off the comma
                             s.write('"' + part[item].replace('"', '\\"') + '"')
                         else:
                             s.write('"' + str(part[item]).replace('"', '\\"') + '",')
@@ -68,6 +68,8 @@ def save_all(parts):
                 s.seek(0)
 
                 copy_file(engine, s, ordering, Part)
+
+                db.commit()
 
         with db_session() as db:
             existing_parts = dict(
@@ -111,13 +113,15 @@ def save_all(parts):
                     for item in ordering:
                         if item == 'part_id':
                             # leave off the tab
-                            s.write(str(segment[item]))
+                            s.write('"' + str(segment[item]).replace('"', '\\"') + '"')
                         else:
-                            s.write(str(segment[item]) + ",")
+                            s.write('"' + str(segment[item]).replace('"', '\\"') + '",')
                     s.write("\n")
                 s.seek(0)
 
                 copy_file(engine, s, ordering, Segment)
+
+                db.commit()
 
         end = time.time()
 
