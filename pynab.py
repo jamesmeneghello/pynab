@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     monitor = config.monitor.get('type', None)
 
-    if monitor and not (monitor == 'windows' or monitor == 'zdaemon'):
+    if monitor and not (monitor == 'windows' or monitor == 'supervisor'):
         print('error: no monitor type set in config.py')
         exit(1)
     elif monitor == 'windows' and config.log.get('logging_file'):
