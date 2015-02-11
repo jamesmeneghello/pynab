@@ -310,6 +310,16 @@ class Server:
 
         _, count, first, last, _ = self.connection.group(group_name)
 
+        # calculate tolerance
+        if days <= 50:
+            tolerance = 1
+        elif days <= 100:
+            tolerance = 5
+        elif days <= 1000:
+            tolerance = 10
+        else:
+            tolerance = 20
+
         # get first, last and target dates
         candidate_post = None
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
@@ -349,7 +359,6 @@ class Server:
 
             # tolerance sliding scale, about 0.1% rounded to the nearest day
             # we don't need a lot of leeway, since this is a lot faster than previously
-            tolerance = round(days * 0.001)
             if abs(target_date - candidate_date) < datetime.timedelta(days=tolerance):
                 break
 
