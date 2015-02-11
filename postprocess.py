@@ -71,11 +71,13 @@ def process_requests():
 
 
 def main():
+    log_init('postprocess')
+
     log.info('postprocess: starting post-processing...')
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    # scripts.quick_postprocess.local_postprocess()
+    scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -208,5 +210,4 @@ def main():
         time.sleep(postprocess_wait)
 
 if __name__ == '__main__':
-    log_init('postprocess')
     main()

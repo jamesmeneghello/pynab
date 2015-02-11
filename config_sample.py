@@ -17,13 +17,13 @@ stats = {
 
 monitor = {
     # type: monitor type
-    # zdaemon, windows
+    # supervisor, windows
     #
-    # zdaemon requires daemons and logs - ensure pid_file and logging_file
+    # supervisor requires daemons and logs - ensure pid_file and logging_file
     # options are set for scan, postprocess
     #
     # windows OSs can only use windows and should also set logging_file etc
-    'type': 'zdaemon',
+    'type': 'supervisor',
 }
 
 api = {

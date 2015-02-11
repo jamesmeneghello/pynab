@@ -80,6 +80,8 @@ def process():
 
 
 def main(mode='update', group=None, date=None):
+    log_init(mode)
+
     log.info('scan: starting {}...'.format(mode))
 
     iterations = 0
@@ -167,12 +169,9 @@ def main(mode='update', group=None, date=None):
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)
-
     if arguments['backfill']:
-        log_init('backfill')
         mode = 'backfill'
     else:
-        log_init('update')
         mode = 'update'
 
     main(mode=mode, group=arguments['<group>'], date=arguments['--date'])
