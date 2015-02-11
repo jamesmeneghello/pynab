@@ -202,7 +202,7 @@ def check_release_files(server, group_name, nzb):
                             if group_name in config.postprocess.get('delete_spam_groups', []):
                                 result = SPAM_REGEX.search(file['name'])
                                 if result:
-                                    log.debug('rar: [{}] - [{}] - release is spam')
+                                    log.debug('rar: release is spam')
                                     highest_password = 'YES'
                                     break
 
@@ -210,14 +210,14 @@ def check_release_files(server, group_name, nzb):
                         # whether "maybe" releases get deleted or not is a config option
                         result = MAYBE_PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO'):
-                            log.debug('rar: [{}] - [{}] - release might be passworded')
+                            log.debug('rar: release might be passworded')
                             highest_password = 'MAYBE'
                             break
 
                         # as is definitely-deleted
                         result = PASSWORDED_REGEX.search(file['name'])
                         if result and (not highest_password or highest_password == 'NO' or highest_password == 'MAYBE'):
-                            log.debug('rar: [{}] - [{}] - release is passworded')
+                            log.debug('rar: release is passworded')
                             highest_password = 'YES'
                             break
 
