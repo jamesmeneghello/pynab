@@ -21,6 +21,7 @@ if __name__ == '__main__':
     import config
     from pynab.db import Base, engine, Session, User, Group, Category, TvShow, Movie
     import pynab.util
+    from pynab.scripts import nzedb_pre_import
 
     db = Session()
 
@@ -84,6 +85,13 @@ if __name__ == '__main__':
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
+
+    print('Copying pre data into db...')
+    try:
+        nzedb_pre_import.processNzedbPre()
+    except Exception as e:
+        print('Problem inserting data into database: {}'.format(e))
+        sys.exit(0)
 
     if config.postprocess.get('regex_url'):
         print('Updating regex...')
