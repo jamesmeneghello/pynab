@@ -73,7 +73,7 @@ def stats():
 
 def stop():
     if monitor == 'supervisor':
-        call('supervisorctl stop pynab-all', shell=True)
+        call('supervisorctl stop pynab:*', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
