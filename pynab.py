@@ -23,14 +23,14 @@ from pynab.db import db_session, User, Group
 
 def scan():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-scan', shell=True)
+        call('supervisorctl start pynab:scan', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def backfill():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-backfill', shell=True)
+        call('supervisorctl start pynab:backfill', shell=True)
     elif monitor == 'windows':
         program = 'start "Pynab Backfill (close to quit)" python scan.py backfill'
         Popen(program, stdout=None, stderr=None, stdin=None, shell=True)
@@ -38,35 +38,35 @@ def backfill():
 
 def postprocess():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-postproc', shell=True)
+        call('supervisorctl start pynab:postproc', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab Post-Process (close to quit)" python postprocess.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def api():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-api', shell=True)
+        call('supervisorctl start pynab:api', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def pubsub():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-pubsub', shell=True)
+        call('supervisorctl start pynab:pubsub', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def prebot():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-prebot', shell=True)
+        call('supervisorctl start pynab:prebot', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def stats():
     if monitor == 'supervisor':
-        call('supervisorctl start pynab-stats', shell=True)
+        call('supervisorctl start pynab:stats', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab stats (close to quit)" python scripts/stats.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
