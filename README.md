@@ -452,6 +452,11 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     processes = 4 [or whatever number of cpu cores you have]
     threads = 2
 
+Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS
+environment variable for requests. For example, with Apache:
+
+    SetEnvIf X-Forwarded-Protocol https HTTPS=1
+
 ### Using the miscellaneous scripts ###
 
 Categorise all uncategorised releases - this runs automatically after import.
