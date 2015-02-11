@@ -54,6 +54,10 @@ def scan(group_name, direction='forward', date=None, limit=None):
                                                                                                        10))
                         mult = -1
 
+                    if not target:
+                        log.info('group: {}: unable to continue'.format(group_name))
+                        return False
+
                     if group.first <= target <= group.last:
                         log.info('group: {}: nothing to do, already have target'.format(group_name))
                         return True

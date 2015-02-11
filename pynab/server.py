@@ -324,7 +324,18 @@ class Server:
         candidate_post = None
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
         bottom_date = self.post_date(group_name, first)
+        # check bottom_date
+        if target_date < bottom_date:
+            log.info('server: {}: post was before first available, starting from the beginning'.format(
+                group_name
+            ))
+            return first
+
         top_date = self.post_date(group_name, last)
+        if target_date > top_date:
+            log.info('server: {}: requested post was newer than most recent, ending'.format(group_name))
+            return None
+
         bottom = first
         top = last
 
@@ -338,7 +349,8 @@ class Server:
                 target = target_date - bottom_date
                 total = top_date - bottom_date
             except:
-                log.error('server: nntp server problem while getting first/last article dates')
+                log.error('server: {}: nntp server problem while getting first/last article dates'.format(
+                    group_name))
                 return None
 
             perc = target.total_seconds() / total.total_seconds()
