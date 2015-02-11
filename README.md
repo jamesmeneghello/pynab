@@ -254,13 +254,15 @@ https://github.com/gregs1104/pgtune
 Execution of the indexer works identically to the mongo version - just run start.py and
 postprocess.py.
 
-### Installing Upstart Scripts ###
+### Installing Supervisor Scripts ###
 
-Pynab comes with an upstart script that can be used to handle automatic startups. To install it:
+Pynab comes with a supervisor config that can be used to handle automatic startups. To install it:
 
-    > vim init/pynab.conf
-    > [edit home, logdir as necessary]
-    > sudo cp init/pynab.conf /etc/init
+    > sudo apt-get install supervisor
+    > vim init/supervisor/pynab.conf
+    > [edit python/pynab paths as necessary]
+    > sudo cp init/supervisor/pynab.conf /etc/supervisor/conf.d/
+    > (the config path may vary per distribution, that's for ubuntu)
 
 This will, by default, run the pynab scan and postprocess daemons automatically on system boot. You
 can also manually control parts of pynab, as seen below.
@@ -268,7 +270,10 @@ can also manually control parts of pynab, as seen below.
 Operation
 =========
 
-Pynab comes with a CLI program that can make administration somewhat easier. Common usage is listed below.
+Pynab comes with a CLI program that can make administration somewhat easier.
+
+In order to take advantage of some of these options, you need supervisor installed and to have 
+copied the supervisor config, as per the previous section.
 
 ### Enabling Groups ###
 
@@ -300,7 +305,7 @@ to add your NN+ ID to the config file before installation?), you can re-call it 
 
 ### Running Pynab ###
 
-The pynab CLI handles execution of daemons and respawning of processes. There are two primary 
+The pynab CLI passes along execution and shutdown requests to supervisor. There are two primary 
 parts of pynab: scanning and post-processing. Scanning indexes usenet posts and builds releases,
 while post-processing enriches releases with metadata useful for the API. This metadata includes
 TVRage IDs, IMDB IDs, whether a release is passworded, release size, etc.
@@ -308,13 +313,13 @@ TVRage IDs, IMDB IDs, whether a release is passworded, release size, etc.
 Before running pynab, you should ensure that you've read and edited config.py (copied from 
 config.sample.py). If log directories are set to unwritable locations, pynab will not run.
 
+If you want to manually start/stop processes or check their status:
+
+    > sudo supervisorctl
+
 The simplest way of starting pynab is:
 
-    > python3 pynab.py start
-
-Or, if you've installed the Upstart script:
-
-    > sudo start pynab
+    > sudo python3 pynab.py start
 
 This will execute both the scanning and post-processing components of pynab. If you're using Windows,
 this will also execute the API - if you're using a nix OS, you should read down to the section on 
@@ -322,17 +327,18 @@ using uWSGI to operate the API.
 
 These components can also be started individually:
 
-    > python3 pynab.py scan
-    > python3 pynab.py postprocess
-    > python3 pynab.py api
+    > sudo python3 pynab.py scan
+    > sudo python3 pynab.py postprocess
+    > sudo python3 pynab.py api
+    > sudo python3 pynab.py backfill
+    > sudo python3 pynab.py stats
+    > sudo python3 pynab.py prebot
+    > sudo python3 pynab.py pubsub
 
 To stop pynab, you can use:
 
-    > python3 pynab.py stop
+    > sudo python3 pynab.py stop
 
-Or, again, if using Upstart:
-
-    > sudo stop pynab
 
 ### Monitoring Pynab ###
 
@@ -569,22 +575,6 @@ Run the following:
     > gem uninstall sass
     > gem install sass --no-ri --no-rdoc
     > gem install compass --no-ri --no-rdoc 
-
-- Upstart has broken horribly, and `sudo start pynab` or `sudo stop pynab` just hang and do nothing until I reboot.
-
-Particularly annoying, this bug, which is an upstart bug. You should see some output like this:
-
-    > sudo initctl status pynab
-    > pynab stop/killed, process 994 (or some other pid)
-
-Do this:
-
-    > cd ~
-    > wget https://raw.githubusercontent.com/ion1/workaround-upstart-snafu/master/workaround-upstart-snafu
-    > chmod +x workaround-upstart-snafu
-    > ./workaround-upstart-snafu 994 (whatever pid was listed above)
-    
-Let it run. Rebooting also solves this.
 
 
 Newznab API
