@@ -92,6 +92,9 @@ def switch_output(data):
 
 def get_link(route=''):
     """Gets a link (including domain/subdirs) to a route."""
+    if request.environ.get('HTTPS') == '1':
+        request.environ['wsgi.url_scheme'] = 'https'
+
     url = request.environ['wsgi.url_scheme'] + '://'
 
     if request.environ.get('HTTP_HOST'):
@@ -106,6 +109,7 @@ def get_link(route=''):
             if request.environ['SERVER_PORT'] != '80':
                 url += ':' + request.environ['SERVER_PORT']
 
+    url += request.environ['SCRIPT_NAME']
     if route:
         url += route
 
