@@ -360,6 +360,9 @@ class Server:
                 bottom = candidate_post
                 bottom_date = candidate_date
 
+            log.debug('server: {}: post {} was {} days old'.format(group_name, candidate_post,
+                                                                   Server.days_old(candidate_date)))
+
         return candidate_post
 
     @staticmethod
