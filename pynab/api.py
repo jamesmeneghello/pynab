@@ -8,7 +8,7 @@ from bottle import request, response
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, func, desc
 
-from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode, File
+from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode
 from pynab import log, root_dir
 import config
 
@@ -51,12 +51,12 @@ def get_nfo(dataset=None):
         id = request.query.guid or None
         if id:
             with db_session() as db:
-                release = db.query(Release).join(NFO).filter(Release.id==id).one()
+                release = db.query(Release).join(NFO).filter(Release.id == id).one()
                 if release:
                     data = release.nfo.data
                     response.set_header('Content-type', 'application/x-nfo')
                     response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                        .format(release.search_name.replace(' ', '_') + '.nfo')
+                                        .format(release.search_name.replace(' ', '_') + '.nfo')
                     )
                     return gzip.decompress(data)
                 else:
@@ -76,7 +76,7 @@ def get_nzb(dataset=None):
 
         if id:
             with db_session() as db:
-                release = db.query(Release).join(NZB).join(Category).filter(Release.id==id).one()
+                release = db.query(Release).join(NZB).join(Category).filter(Release.id == id).one()
                 if release:
                     release.grabs += 1
                     user.grabs += 1
@@ -89,7 +89,7 @@ def get_nzb(dataset=None):
                     response.set_header('X-DNZB-Name', release.search_name)
                     response.set_header('X-DNZB-Category', release.category.name)
                     response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                        .format(release.search_name.replace(' ', '_') + '.nzb')
+                                        .format(release.search_name.replace(' ', '_') + '.nzb')
                     )
                     return gzip.decompress(data)
                 else:
@@ -104,7 +104,7 @@ def auth():
     api_key = request.query.apikey or ''
 
     with db_session() as db:
-        user = db.query(User).filter(User.api_key==api_key).first()
+        user = db.query(User).filter(User.api_key == api_key).first()
         if user:
             return user
         else:
@@ -119,7 +119,7 @@ def movie_search(dataset=None):
             try:
                 imdb_id = request.query.imdbid or None
                 if imdb_id:
-                    query = query.join(Movie).filter(Movie.id=='tt'+imdb_id)
+                    query = query.join(Movie).filter(Movie.id == 'tt' + imdb_id)
 
                 genres = request.query.genre or None
                 if genres:
@@ -142,7 +142,7 @@ def tv_search(dataset=None):
             try:
                 tvrage_id = request.query.rid or None
                 if tvrage_id:
-                    query = query.join(TvShow).filter(TvShow.id==int(tvrage_id))
+                    query = query.join(TvShow).filter(TvShow.id == int(tvrage_id))
 
                 season = request.query.season or None
                 episode = request.query.ep or None
@@ -156,7 +156,7 @@ def tv_search(dataset=None):
                             # 2, convert to S02
                             season = 'S{:02d}'.format(int(season))
 
-                        query = query.filter(Episode.season==season)
+                        query = query.filter(Episode.season == season)
 
                     if episode:
                         # 23/10, do nothing
@@ -164,7 +164,7 @@ def tv_search(dataset=None):
                             # 15, convert to E15
                             episode = 'E{:02d}'.format(int(episode))
 
-                        query = query.filter(Episode.episode==episode)
+                        query = query.filter(Episode.episode == episode)
             except Exception as e:
                 log.error('API Error: {}'.format(e))
                 return api_error(201)
@@ -178,7 +178,7 @@ def details(dataset=None):
     if auth():
         if request.query.id:
             with db_session() as db:
-                release = db.query(Release).filter(Release.id==request.query.id).one()
+                release = db.query(Release).filter(Release.id == request.query.id).one()
                 if release:
                     dataset['releases'] = [release]
                     dataset['detail'] = True
@@ -211,7 +211,8 @@ def caps(dataset=None):
 
     with db_session() as db:
         category_alias = aliased(Category)
-        dataset['categories'] = db.query(Category).filter(Category.parent_id==None).join(category_alias, Category.children).all()
+        dataset['categories'] = db.query(Category).filter(Category.parent_id == None).join(category_alias,
+                                                                                           Category.children).all()
         try:
             tmpl = Template(
                 filename=os.path.join(root_dir, 'templates/api/caps.mako'))
@@ -226,10 +227,12 @@ def stats(dataset=None):
         dataset = {}
 
     with db_session() as db:
-        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.tvshow_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==5000).one()
-        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.movie_metablack_id), func.count(Release.id)).join(Category).filter(Category.parent_id==2000).one()
+        tv_totals = db.query(func.count(Release.tvshow_id), func.count(Release.tvshow_metablack_id),
+                             func.count(Release.id)).join(Category).filter(Category.parent_id == 5000).one()
+        movie_totals = db.query(func.count(Release.movie_id), func.count(Release.movie_metablack_id),
+                                func.count(Release.id)).join(Category).filter(Category.parent_id == 2000).one()
         nfo_total = db.query(func.count(Release.nfo_id), func.count(Release.nfo_metablack_id)).one()
-        file_total = db.query(Release.id).filter((Release.files.any())|(Release.passworded!='UNKNOWN')).count()
+        file_total = db.query(Release.id).filter((Release.files.any()) | (Release.passworded != 'UNKNOWN')).count()
         file_failed_total = db.query(func.count(Release.rar_metablack_id)).one()
         release_total = db.query(Release.id).count()
 
@@ -256,7 +259,8 @@ def stats(dataset=None):
             }
         }
 
-        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(desc(func.count(Release.id))).all()
+        dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(
+            desc(func.count(Release.id))).all()
 
         try:
             tmpl = Template(
@@ -289,13 +293,13 @@ def search(dataset=None, query=None):
                     query = query.join(Group)
                     group_names = group_names.split(',')
                     for group in group_names:
-                        query = query.filter(Group.name==group)
+                        query = query.filter(Group.name == group)
 
                 # max age
                 max_age = request.query.maxage or None
                 if max_age:
                     oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
-                    query = query.filter(Release.posted>oldest)
+                    query = query.filter(Release.posted > oldest)
 
                 # more info?
                 extended = request.query.extended or None

@@ -1,14 +1,15 @@
-import regex
 import unicodedata
 import difflib
 import datetime
 import time
+from collections import defaultdict
+
+import regex
 import roman
 import requests
 import xmltodict
 import pytz
 from lxml import etree
-from collections import defaultdict
 
 from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog
 from pynab import log
@@ -36,12 +37,14 @@ def process(limit=None, online=True):
 
     with db_session() as db:
         # clear expired metablacks
-        db.query(MetaBlack).filter(MetaBlack.tvshow!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
+        db.query(MetaBlack).filter(MetaBlack.tvshow != None).filter(MetaBlack.time <= expiry).delete(
+            synchronize_session='fetch')
 
-        query = db.query(Release).filter((Release.tvshow==None)|(Release.episode==None)).join(Category).filter(Category.parent_id==5000)
+        query = db.query(Release).filter((Release.tvshow == None) | (Release.episode == None)).join(Category).filter(
+            Category.parent_id == 5000)
 
         if online:
-            query = query.filter(Release.tvshow_metablack_id==None)
+            query = query.filter(Release.tvshow_metablack_id == None)
 
         if limit:
             releases = query.order_by(Release.posted.desc()).limit(limit)
@@ -64,7 +67,7 @@ def process(limit=None, online=True):
                     ).first()
 
                 if not rage and 'and' in show['clean_name']:
-                    rage = db.query(TvShow).filter(TvShow.name==show['clean_name'].replace(' and ', ' & ')).first()
+                    rage = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
 
                 if rage:
                     method = 'local'
@@ -72,7 +75,7 @@ def process(limit=None, online=True):
                     rage_data = search(api_session, show)
                     if rage_data:
                         method = 'online'
-                        rage = db.query(TvShow).filter(TvShow.id==rage_data['showid']).first()
+                        rage = db.query(TvShow).filter(TvShow.id == rage_data['showid']).first()
                         if not rage:
                             rage = TvShow(id=rage_data['showid'], name=rage_data['name'], country=rage_data['country'])
                             db.add(rage)
@@ -86,7 +89,8 @@ def process(limit=None, online=True):
                         release.search_name
                     ))
 
-                    e = db.query(Episode).filter(Episode.tvshow_id==rage.id).filter(Episode.series_full==show['series_full']).first()
+                    e = db.query(Episode).filter(Episode.tvshow_id == rage.id).filter(
+                        Episode.series_full == show['series_full']).first()
                     if not e:
                         e = Episode(
                             season=show.get('season'),
@@ -131,7 +135,7 @@ def search(session, show):
     except Exception as e:
         log.error(e)
         return None
-    
+
     content = r.content
     return search_lxml(show, content)
 
@@ -165,7 +169,7 @@ def search_lxml(show, content):
             if ratio == 100:
                 return xmltodict.parse(etree.tostring(xml_show))['show']
             matches[ratio].append(xml_show)
-                
+
     # if no 100% is found, check highest ratio matches
     for ratio, xml_matches in sorted(matches.items(), reverse=True):
         for xml_match in xml_matches:
@@ -195,7 +199,8 @@ def clean_name(name):
     for k, v in replace_chars.items():
         name = name.replace(k, v)
 
-    pattern = regex.compile(r'\b(hdtv|dvd|divx|xvid|mpeg2|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+)\b', regex.I)
+    pattern = regex.compile(r'\b(hdtv|dvd|divx|xvid|mpeg2|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+)\b',
+                            regex.I)
     name = pattern.sub('', name)
 
     return name.lower()

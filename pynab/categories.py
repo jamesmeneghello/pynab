@@ -1,6 +1,9 @@
-import regex
 import collections
+
+import regex
+
 from pynab import log
+
 
 # category codes
 # these are stored in the db, as well
@@ -276,7 +279,7 @@ parent_category_regex = {
             '( S\d{1,2} |\.S\d{2}\.|\.S\d{2}|s\d{1,2}e\d{1,2}|(\.| |\b|\-)EP\d{1,2}\.|\.E\d{1,2}\.|special.*?HDTV|HDTV.*?special|PDTV|\.\d{3}\.DVDrip|History( |\.|\-)Channel|trollhd|trollsd|HDTV.*?BTL|C4TV|WEB DL|web\.dl|WWE|season \d{1,2}|(?!collectors).*?series|\.TV\.|\.dtv\.|UFC|TNA|staffel|episode|special\.\d{4})',
             regex.I), [
              CAT_TV_FOREIGN, CAT_TV_SPORT, CAT_TV_DOCU, CAT_TV_HD, CAT_TV_SD
-        ]),
+         ]),
         (regex.compile('seizoen', regex.I), [
             CAT_TV_FOREIGN
         ]),
@@ -288,9 +291,11 @@ parent_category_regex = {
         ]),
     ]),
     CAT_PARENT_MOVIE: collections.OrderedDict([
-        (regex.compile('[-._ ]AVC|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]', regex.I), [
-            CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
-        ])
+        (regex.compile(
+            '[-._ ]AVC|(B|H)(D|R)RIP|Bluray|BD[-._ ]?(25|50)?|Camrip|[-._ ]\d{4}[-._ ].+(720p|1080p|Cam)|DIVX|[-._ ]DVD[-._ ]|DVD-?(5|9|R|Rip)|VHSRip|XVID|[-._ ](DTS|TVrip)[-._ ]',
+            regex.I), [
+             CAT_MOVIE_FOREIGN, CAT_MOVIE_SD, CAT_MOVIE_3D, CAT_MOVIE_BLURAY, CAT_MOVIE_HD
+         ])
     ]),
     CAT_PARENT_PC: collections.OrderedDict([
         (regex.compile('', regex.I), [
@@ -412,7 +417,9 @@ category_regex = {
         regex.compile('(SDTV|HDTV|XVID|DIVX|PDTV|WEBDL|WEBRIP|DVDR|DVD-RIP|WEB-DL|x264|dvd)', regex.I)
     ],
     CAT_TV_ANIME: [
-        regex.compile('[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|a4e|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Darksouls-Subs|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF|FFFpeeps|GG|GotWoot?|GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku|Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]|\[[0-9A-Z]{8}\]$', regex.I)
+        regex.compile(
+            '[-._ ]Anime[-._ ]|^\(\[AST\]\s|\[(HorribleSubs|a4e|A-Destiny|AFFTW|Ahodomo|Anxious-He|Ayako-Fansubs|Broken|Chihiro|CoalGirls|CoalGuys|CMS|Commie|CTTS|Darksouls-Subs|Delicio.us|Doki|Doutei|Doremi Fansubs|Elysium|EveTaku|FFF|FFFpeeps|GG|GotWoot?|GotSpeed?|GX_ST|Hadena|Hatsuyuki|KiraKira|Hiryuu|HorribleSubs|Hybrid-Subs|IB|Kira-Fansub|KiteSeekers|m.3.3.w|Mazui|Muteki|Oyatsu|PocketMonsters|Ryuumaru|sage|Saitei|Sayonara-Group|Seto-Otaku|Shimeji|Shikakku|SHiN-gx|Static-Subs|SubDESU (Hentai)|SubSmith|Underwater|UTW|Warui-chan|Whine-Subs|WhyNot Subs|Yibis|Zenyaku|Zorori-Project)\]|\[[0-9A-Z]{8}\]$',
+            regex.I)
     ],
     CAT_MOVIE_FOREIGN: [
         regex.compile(
@@ -471,7 +478,7 @@ category_regex = {
     ],
     CAT_PC_GAMES: [
         regex.compile('\-Heist|\-RELOADED|\.GAME\-|\-SKIDROW|PC GAME|FASDOX|v\d{1,3}.*?\-TE|RIP\-unleashed|Razor1911',
-                   regex.I)
+                      regex.I)
     ],
     CAT_XXX_X264: [
         regex.compile('x264|720|1080', regex.I)
@@ -548,6 +555,7 @@ category_regex = {
         regex.compile('[\(\[](?:(?:html|epub|pdf|mobi|azw|doc).?)+[\)\]]', regex.I)
     ]
 }
+
 
 def determine_category(name, group_name=''):
     """Categorise release based on release name and group name."""

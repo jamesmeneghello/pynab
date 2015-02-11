@@ -1,18 +1,19 @@
-import lib.nntplib as nntplib
-import regex
 import time
 import datetime
 import random
 import socket
 
+import regex
 import dateutil.parser
 import pytz
 
+import lib.nntplib as nntplib
 from pynab import log
 from pynab.db import db_session, Blacklist
 import pynab.parts
 import pynab.yenc
 import config
+
 
 SEGMENT_REGEX = regex.compile('\((\d+)[\/](\d+)\)', regex.I)
 
@@ -133,7 +134,7 @@ class Server:
 
         if overviews:
             with db_session() as db:
-                blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+                blacklists = db.query(Blacklist).filter(Blacklist.status == True).all()
                 for blacklist in blacklists:
                     db.expunge(blacklist)
 
@@ -180,7 +181,7 @@ class Server:
                     hash = pynab.parts.generate_hash(subject, posted_by, group_name, int(total_segments))
 
                     # this is spammy as shit, for obvious reasons
-                    #pynab.log.debug('Binary part found: ' + subject)
+                    # pynab.log.debug('Binary part found: ' + subject)
 
                     # build the segment, make sure segment number and size are ints
                     segment = {

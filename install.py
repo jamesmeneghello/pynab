@@ -8,7 +8,8 @@ if __name__ == '__main__':
     print('-----------------')
     print()
     print('Please ensure that you have copied and renamed config_sample.py to config.py before proceeding.')
-    print('You need to put in your details, too. If you are migrating from Newznab, check out scripts/convert_from_newznab.py first.')
+    print(
+        'You need to put in your details, too. If you are migrating from Newznab, check out scripts/convert_from_newznab.py first.')
     print()
     print('This script is destructive. Ensure that the database credentials and settings are correct.')
     print('The supplied database really should be empty, but it\'ll just drop anything it wants to overwrite.')
@@ -31,6 +32,7 @@ if __name__ == '__main__':
 
     from alembic.config import Config
     from alembic import command
+
     alembic_cfg = Config("alembic.ini")
     command.stamp(alembic_cfg, "head")
 
@@ -64,7 +66,7 @@ if __name__ == '__main__':
     print('Copying TV data into db...')
     with open('db/initial/tvshows.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
-        chunks = [data[x:x+500] for x in range(0, len(data), 500)]
+        chunks = [data[x:x + 500] for x in range(0, len(data), 500)]
         try:
             for chunk in chunks:
                 engine.execute(TvShow.__table__.insert(), chunk)
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     print('Copying movie data into db...')
     with open('db/initial/movies.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
-        chunks = [data[x:x+500] for x in range(0, len(data), 500)]
+        chunks = [data[x:x + 500] for x in range(0, len(data), 500)]
         try:
             for chunk in chunks:
                 engine.execute(Movie.__table__.insert(), chunk)

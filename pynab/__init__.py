@@ -6,11 +6,13 @@ __email__ = 'murodese@gmail.com'
 __version__ = '1.4.0'
 
 import logging
-import config
 import logging.handlers
 import os
-import colorlog
 import sys
+
+import colorlog
+
+import config
 
 
 def check_config():
@@ -44,7 +46,9 @@ def log_init(log_name, format='%(asctime)s %(levelname)s %(message)s'):
         global log
 
         logging_file = os.path.join(logging_dir, log_name + '.log')
-        handler = logging.handlers.RotatingFileHandler(logging_file, maxBytes=config.log.get('max_log_size', 50*1024*1024), backupCount=5, encoding='utf-8')
+        handler = logging.handlers.RotatingFileHandler(logging_file,
+                                                       maxBytes=config.log.get('max_log_size', 50 * 1024 * 1024),
+                                                       backupCount=5, encoding='utf-8')
         handler.setFormatter(logging.Formatter(format, '%Y-%m-%d %H:%M:%S'))
         log.handlers = []
         log.addHandler(handler)
@@ -85,10 +89,10 @@ else:
         '%Y-%m-%d %H:%M:%S',
         reset=True,
         log_colors={
-            'DEBUG':    'cyan',
-            'INFO':     'green',
-            'WARNING':  'yellow',
-            'ERROR':    'red',
+            'DEBUG': 'cyan',
+            'INFO': 'green',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
             'CRITICAL': 'red',
         }
     )

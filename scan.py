@@ -11,18 +11,17 @@ Options:
 
 """
 
-import sys
 import concurrent.futures
 import time
-import pytz
 import datetime
-import dateutil.parser
-from docopt import docopt
 import traceback
 
-from pynab import log, log_init
-from pynab.db import db_session, Group, Binary, Miss, engine, Segment
+import pytz
+import dateutil.parser
+from docopt import docopt
 
+from pynab import log, log_init
+from pynab.db import db_session, Group, Binary, Miss, Segment
 import pynab.groups
 import pynab.binaries
 import pynab.releases
@@ -46,14 +45,14 @@ def update(group_name):
         ))
 
 
-
 def backfill(group_name, date=None):
     if date:
         date = pytz.utc.localize(dateutil.parser.parse(date))
     else:
         date = pytz.utc.localize(datetime.datetime.now() - datetime.timedelta(config.scan.get('backfill_days', 10)))
     try:
-        return pynab.groups.scan(group_name, direction='backward', date=date, limit=config.scan.get('group_scan_limit', 2000000))
+        return pynab.groups.scan(group_name, direction='backward', date=date,
+                                 limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
         log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
             traceback.format_exc(e)
@@ -96,9 +95,9 @@ def main(mode='update', group=None, date=None):
                     process()
 
             if not group:
-                active_groups = [group.name for group in db.query(Group).filter(Group.active==True).all()]
+                active_groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
             else:
-                if db.query(Group).filter(Group.name==group).first():
+                if db.query(Group).filter(Group.name == group).first():
                     active_groups = [group]
                 else:
                     log.error('scan: no such group exists')
@@ -118,7 +117,8 @@ def main(mode='update', group=None, date=None):
 
                     # don't retry misses during backfill, it ain't gonna happen
                     if config.scan.get('retry_missed') and not mode == 'backfill':
-                        miss_groups = [group_name for group_name, in db.query(Miss.group_name).group_by(Miss.group_name).all()]
+                        miss_groups = [group_name for group_name, in
+                                       db.query(Miss.group_name).group_by(Miss.group_name).all()]
                         miss_result = [executor.submit(scan_missing, miss_group) for miss_group in miss_groups]
 
                         # no timeout for these, because it could take a while
@@ -132,9 +132,10 @@ def main(mode='update', group=None, date=None):
 
                     # clean up dead binaries and parts
                     if config.scan.get('dead_binary_age', 1) != 0:
-                        dead_time = pytz.utc.localize(datetime.datetime.now()).replace(tzinfo=None) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
+                        dead_time = pytz.utc.localize(datetime.datetime.now()).replace(
+                            tzinfo=None) - datetime.timedelta(days=config.scan.get('dead_binary_age', 3))
 
-                        dead_binaries = db.query(Binary).filter(Binary.posted<=dead_time).delete()
+                        dead_binaries = db.query(Binary).filter(Binary.posted <= dead_time).delete()
                         db.commit()
 
                         log.info('scan: deleted {} dead binaries'.format(dead_binaries))

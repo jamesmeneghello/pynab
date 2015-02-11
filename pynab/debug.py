@@ -8,7 +8,7 @@ def debug(sig, frame):
     interactive debugging."""
     d = {
         '_frame': frame
-    }         # Allow access to frame object.
+    }  # Allow access to frame object.
     d.update(frame.f_globals)  # Unless shadowed by global
     d.update(frame.f_locals)
 

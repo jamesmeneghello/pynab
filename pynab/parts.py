@@ -1,13 +1,13 @@
-import regex
 import time
 import io
 import pyhashxx
 import struct
 
+import regex
+from sqlalchemy.orm import Load, subqueryload
+
 from pynab.db import db_session, engine, Part, Segment, copy_file
 from pynab import log
-
-from sqlalchemy.orm import Load, subqueryload
 
 
 def generate_hash(subject, posted_by, group_name, total_segments):
@@ -37,7 +37,8 @@ def save_all(parts):
             # segments to the db is probably not a great idea anyway.
             existing_parts = dict(
                 ((part.hash, part) for part in
-                    db.query(Part.id, Part.hash).filter(Part.hash.in_(parts.keys())).filter(Part.group_name==group_name).order_by(Part.posted.asc()).all()
+                 db.query(Part.id, Part.hash).filter(Part.hash.in_(parts.keys())).filter(
+                     Part.group_name == group_name).order_by(Part.posted.asc()).all()
                 )
             )
 
@@ -56,7 +57,8 @@ def save_all(parts):
                 for part in part_inserts:
                     for item in ordering:
                         if item == 'posted':
-                            s.write('"' + part[item].replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S').replace('"', '\\"') + '",')
+                            s.write('"' + part[item].replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S').replace('"',
+                                                                                                                '\\"') + '",')
                         elif item == 'xref':
                             # leave off the tab
                             s.write('"' + part[item].replace('"', '\\"') + '"')
@@ -70,16 +72,16 @@ def save_all(parts):
         with db_session() as db:
             existing_parts = dict(
                 ((part.hash, part) for part in
-                    db.query(Part)
-                    .options(
-                        subqueryload('segments'),
-                        Load(Part).load_only(Part.id, Part.hash),
-                        Load(Segment).load_only(Segment.id, Segment.segment)
-                    )
-                    .filter(Part.hash.in_(parts.keys()))
-                    .filter(Part.group_name==group_name)
-                    .order_by(Part.posted.asc())
-                    .all()
+                 db.query(Part)
+                .options(
+                     subqueryload('segments'),
+                     Load(Part).load_only(Part.id, Part.hash),
+                     Load(Segment).load_only(Segment.id, Segment.segment)
+                 )
+                .filter(Part.hash.in_(parts.keys()))
+                .filter(Part.group_name == group_name)
+                .order_by(Part.posted.asc())
+                .all()
                 )
             )
 
@@ -97,7 +99,8 @@ def save_all(parts):
                             # kinda wish people would stop reposting shit constantly
                             pass
                 else:
-                    log.critical('parts: part didn\'t exist when we went to save it. backfilling with dead_binary_age not set to 0?')
+                    log.critical(
+                        'parts: part didn\'t exist when we went to save it. backfilling with dead_binary_age not set to 0?')
                     return False
 
             if segment_inserts:
@@ -131,7 +134,7 @@ def is_blacklisted(part, group_name, blacklists):
     for blacklist in blacklists:
         if regex.search(blacklist.group_name, group_name):
             # too spammy
-            #log.debug('{0}: Checking blacklist {1}...'.format(group_name, blacklist['regex']))
+            # log.debug('{0}: Checking blacklist {1}...'.format(group_name, blacklist['regex']))
             if regex.search(blacklist.regex, part[blacklist.field]):
                 return True
     return False

@@ -16,7 +16,7 @@ def scan(group_name, direction='forward', date=None, limit=None):
 
         if count:
             with db_session() as db:
-                group = db.query(Group).filter(Group.name==group_name).first()
+                group = db.query(Group).filter(Group.name == group_name).first()
 
                 if group:
                     # sort out missing first/lasts
@@ -49,7 +49,9 @@ def scan(group_name, direction='forward', date=None, limit=None):
                         mult = 1
                     elif direction == 'backward':
                         start = group.first
-                        target = server.day_to_post(group_name, server.days_old(date) if date else config.scan.get('backfill_days', 10))
+                        target = server.day_to_post(group_name,
+                                                    server.days_old(date) if date else config.scan.get('backfill_days',
+                                                                                                       10))
                         mult = -1
 
                     if group.first <= target <= group.last:
@@ -103,13 +105,14 @@ def scan(group_name, direction='forward', date=None, limit=None):
                             group_name,
                             to_go / config.scan.get('message_scan_limit'),
                             to_go
-                            )
+                        )
                         )
 
                         iterations += 1
 
                         if limit and iterations * config.scan.get('message_scan_limit') >= limit:
-                            log.info('group: {}: scan limit reached, ending early (will continue later)'.format(group_name))
+                            log.info(
+                                'group: {}: scan limit reached, ending early (will continue later)'.format(group_name))
                             return True
 
                     log.info('group: {}: scan completed'.format(group_name))
@@ -126,7 +129,9 @@ def save_missing_segments(group_name, missing_segments):
         first, last = min(missing_segments), max(missing_segments)
 
         # get previously-missed parts
-        previous_misses = [r for r, in db.query(Miss.message).filter(Miss.message>=first).filter(Miss.message<=last).filter(Miss.group_name==group_name).all()]
+        previous_misses = [r for r, in
+                           db.query(Miss.message).filter(Miss.message >= first).filter(Miss.message <= last).filter(
+                               Miss.group_name == group_name).all()]
 
         # find any messages we're trying to get again
         repeats = list(set(previous_misses) & set(missing_segments))
@@ -156,7 +161,8 @@ def save_missing_segments(group_name, missing_segments):
             ])
 
         # delete anything that's been attempted enough
-        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(Miss.group_name==group_name).delete()
+        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(
+            Miss.group_name == group_name).delete()
         db.commit()
         log.info('missing: saved {} misses and deleted {} expired misses'.format(len(new_misses), expired))
 
@@ -168,13 +174,14 @@ def scan_missing_segments(group_name):
 
     with db_session() as db:
         # recheck for anything to delete
-        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(Miss.group_name==group_name).delete()
+        expired = db.query(Miss).filter(Miss.attempts >= config.scan.get('miss_retry_limit')).filter(
+            Miss.group_name == group_name).delete()
         db.commit()
         if expired:
             log.info('missing: deleted {} expired misses'.format(expired))
 
         # get missing articles for this group
-        missing_messages = [r for r, in db.query(Miss.message).filter(Miss.group_name==group_name).all()]
+        missing_messages = [r for r, in db.query(Miss.message).filter(Miss.group_name == group_name).all()]
 
         if missing_messages:
             # mash it into ranges
@@ -191,7 +198,7 @@ def scan_missing_segments(group_name):
 
             # even if they got blacklisted, delete the ones we got from the misses
             if messages:
-                db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name==group_name).delete(False)
+                db.query(Miss).filter(Miss.message.in_(messages)).filter(Miss.group_name == group_name).delete(False)
 
             db.commit()
 

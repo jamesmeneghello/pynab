@@ -14,13 +14,16 @@ Options:
 # Thanks to Joel Rosdahl <joel@rosdahl.net> for this script
 # Taken from https://bitbucket.org/jaraco/irc/src
 
-import irc.bot
-import irc.strings
 import string
 import random
-import pynab.pre
+
+import irc.bot
+import irc.strings
 from docopt import docopt
+
+import pynab.pre
 from pynab import log_init, log
+
 
 class TestBot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
@@ -29,9 +32,9 @@ class TestBot(irc.bot.SingleServerIRCBot):
 
     def on_nicknameinuse(self, c, e):
         c.nick(c.get_nickname() + "_")
-    
+
     def on_welcome(self, c, e):
-        c.join(self.channel)    
+        c.join(self.channel)
 
     def on_pubmsg(self, c, e):
         a = e.arguments[0]
@@ -44,6 +47,7 @@ def main():
     log.info("Pre: Bot Nick - {}".format(nickname))
     bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
     bot.start()
+
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)

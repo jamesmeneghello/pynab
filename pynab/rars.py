@@ -1,8 +1,9 @@
 import tempfile
 import os
-import regex
 import shutil
 import subprocess
+
+import regex
 
 import lib.rar
 from pynab import log
@@ -31,11 +32,11 @@ def attempt_parse(file):
         name = match.match_obj.group(0).replace('_', '.')
     # EBook
     elif match.match('.*\.(epub|mobi|azw3|pdf|prc)', file, regex.I):
-        name = match.match_obj.group(0)\
-            .replace('.epub', '')\
-            .replace('.mobi', '')\
-            .replace('.azw3', '')\
-            .replace('.pdf', '')\
+        name = match.match_obj.group(0) \
+            .replace('.epub', '') \
+            .replace('.mobi', '') \
+            .replace('.azw3', '') \
+            .replace('.pdf', '') \
             .replace('.prc', '')
     # scene format generic
     elif match.match('([a-z0-9\'\-\.\_\(\)\+\ ]+\-[a-z0-9\'\-\.\_\(\)\ ]+)(.*?\\\\.*?|)\.(?:\w{3,4})$', file, regex.I):
@@ -50,7 +51,8 @@ def attempt_parse(file):
             folder_2_name = match.match_obj.group(2)
             if match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_name, regex.I):
                 name = match.match_obj.group(1)
-            elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', folder_name, regex.I):
+            elif match.match('(?!UTC)([a-z0-9]+[a-z0-9\.\_\- \'\)\(]+(\d{4}|HDTV).*?\-[a-z0-9]+)', folder_name,
+                             regex.I):
                 name = match.match_obj.group(1)
             elif match.match('^([a-z0-9\.\_\- ]+\-[a-z0-9\_]+)(\\\\|)$', folder_2_name, regex.I):
                 name = match.match_obj.group(1)
@@ -81,7 +83,7 @@ def check_rar(filename):
         if any([r.is_encrypted for r in rar.infolist()]):
             return False
         else:
-            #TODO: doublecheck return from this for names
+            # TODO: doublecheck return from this for names
             return rar.infolist()
     else:
         # probably an encrypted rar!
@@ -114,7 +116,8 @@ def get_rar_info(server, group_name, messages):
             unrar_path = config.postprocess.get('unrar_path', '/usr/bin/unrar')
             if not (unrar_path and os.path.isfile(unrar_path) and os.access(unrar_path, os.X_OK)):
                 log.error('rar: skipping archive decompression because unrar_path is not set or incorrect')
-                log.error('rar: if the rar is not password protected, but contains an inner archive that is, we will not know')
+                log.error(
+                    'rar: if the rar is not password protected, but contains an inner archive that is, we will not know')
             else:
                 # make a tempdir to extract rar to
                 tmp_dir = tempfile.mkdtemp()
@@ -125,13 +128,13 @@ def get_rar_info(server, group_name, messages):
                     '"{}"'.format(t.name),
                     '"{}"'.format(tmp_dir)
                 ]
-    
+
                 try:
                     subprocess.check_call(' '.join(exe), stderr=subprocess.STDOUT, shell=True)
                 except subprocess.CalledProcessError as cpe:
                     # almost every rar piece we get will throw an error
                     # we're only getting the first segment
-                    #log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
+                    # log.debug('rar: issue while extracting rar: {}: {} {}'.format(cpe.cmd, cpe.returncode, cpe.output))
                     pass
 
                 inner_passwords = []
@@ -141,13 +144,13 @@ def get_rar_info(server, group_name, messages):
                         inner_files = check_rar(fpath)
                     except lib.rar.BadRarFile:
                         continue
-    
+
                     if inner_files:
                         inner_passwords += [r.is_encrypted for r in inner_files]
                     else:
                         passworded = True
                         break
-    
+
                 if not passworded:
                     passworded = any(inner_passwords)
 
@@ -239,10 +242,10 @@ def process(limit=None, category=0):
 
     with Server() as server:
         with db_session() as db:
-            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()).\
-                filter(Release.passworded=='UNKNOWN').filter(Release.rar_metablack_id==None)
+            query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()). \
+                filter(Release.passworded == 'UNKNOWN').filter(Release.rar_metablack_id == None)
             if category:
-                query = query.filter(Release.category_id==int(category))
+                query = query.filter(Release.category_id == int(category))
 
             if limit:
                 releases = query.order_by(Release.posted.desc()).limit(limit)

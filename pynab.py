@@ -12,11 +12,12 @@ Options:
 
 """
 
-import config
 from subprocess import Popen, call
-from docopt import docopt
 import os
 
+from docopt import docopt
+
+import config
 import pynab.util
 from pynab.db import db_session, User, Group
 
@@ -40,7 +41,8 @@ def postprocess():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:postproc', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab Post-Process (close to quit)" python postprocess.py', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab Post-Process (close to quit)" python postprocess.py', stdout=None, stderr=None, stdin=None,
+              shell=True)
 
 
 def api():
@@ -54,21 +56,24 @@ def pubsub():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:pubsub', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None,
+              shell=True)
 
 
 def prebot():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:prebot', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None,
+              shell=True)
 
 
 def stats():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:stats', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab stats (close to quit)" python scripts/stats.py start', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab stats (close to quit)" python scripts/stats.py start', stdout=None, stderr=None, stdin=None,
+              shell=True)
 
 
 def stop():
@@ -87,13 +92,14 @@ def update():
 
 def create_user(email):
     import pynab.users
+
     key = pynab.users.create(email)
     print('user created. key: {}'.format(key))
 
 
 def delete_user(email):
     with db_session() as db:
-        deleted = db.query(User).filter(User.email==email).delete()
+        deleted = db.query(User).filter(User.email == email).delete()
         if deleted:
             db.commit()
             print('user deleted.')
@@ -103,7 +109,7 @@ def delete_user(email):
 
 def enable_group(group):
     with db_session() as db:
-        group = db.query(Group).filter(Group.name==group).first()
+        group = db.query(Group).filter(Group.name == group).first()
         if group:
             group.active = True
             db.add(group)
@@ -115,7 +121,7 @@ def enable_group(group):
 
 def disable_group(group):
     with db_session() as db:
-        group = db.query(Group).filter(Group.name==group).first()
+        group = db.query(Group).filter(Group.name == group).first()
         if group:
             group.active = False
             db.add(group)
@@ -127,7 +133,7 @@ def disable_group(group):
 
 def reset_group(group):
     with db_session() as db:
-        group = db.query(Group).filter(Group.name==group).first()
+        group = db.query(Group).filter(Group.name == group).first()
         if group:
             group.first = 0
             group.last = 0
@@ -140,6 +146,7 @@ def reset_group(group):
 
 def checkconfig():
     from pynab import check_config
+
     check_config()
     print('Config appears ok!')
 
@@ -205,5 +212,5 @@ if __name__ == '__main__':
         update_regex()
     elif arguments['checkconfig']:
         checkconfig()
-    
+
     exit(0)

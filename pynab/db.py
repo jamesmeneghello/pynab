@@ -3,10 +3,10 @@ import datetime
 import json
 import copy
 import time
-import psycopg2
 import tempfile
 import os
 
+import psycopg2
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
     create_engine, UniqueConstraint, Enum
 from sqlalchemy.ext.declarative import declarative_base
@@ -15,7 +15,6 @@ from sqlalchemy import func, and_, exc, event
 from sqlalchemy.pool import Pool
 
 import config
-
 from pynab import log
 
 
@@ -49,8 +48,8 @@ def copy_file(engine, data, ordering, type):
             file.close()
             data.close()
 
-            query = "LOAD DATA LOCAL INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' ({})"\
-                .format(filename,  type.__tablename__, ','.join(ordering))
+            query = "LOAD DATA LOCAL INFILE '{}' INTO TABLE {} FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' ({})" \
+                .format(filename, type.__tablename__, ','.join(ordering))
 
             cur.execute((query))
             conn.commit()
@@ -62,7 +61,8 @@ def copy_file(engine, data, ordering, type):
     elif 'postgre' in config.db.get('engine'):
         conn = engine.raw_connection()
         cur = conn.cursor()
-        cur.copy_expert("COPY {} ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(type.__tablename__, ', '.join(ordering)), data)
+        cur.copy_expert(
+            "COPY {} ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(type.__tablename__, ', '.join(ordering)), data)
         conn.commit()
         cur.close()
     else:
@@ -115,6 +115,7 @@ def vacuum(mode='scan', full=False):
         pass
 
     conn.close()
+
 
 connect_args = {}
 if 'mysql' in config.db.get('engine'):
@@ -201,6 +202,7 @@ def column_windows(session, column, windowsize):
     so that windows of just a subset of rows can
     be computed.
     """
+
     def int_for_range(start_id, end_id):
         if end_id:
             return and_(

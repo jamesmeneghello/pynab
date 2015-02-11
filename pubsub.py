@@ -16,7 +16,6 @@ Options:
 from docopt import docopt
 
 import pynab.xmpp
-
 from pynab import log_init
 
 

@@ -6,7 +6,8 @@ def process(limit=None):
     """Process releases for requests"""
 
     with db_session() as db:
-        query = db.query(Release).filter(Release.name.like('REQ:%')).filter(Release.pre_id==None).filter(Release.category_id=='8010')
+        query = db.query(Release).filter(Release.name.like('REQ:%')).filter(Release.pre_id == None).filter(
+            Release.category_id == '8010')
 
         if limit:
             releases = query.order_by(Release.posted.desc()).limit(limit)
@@ -35,7 +36,8 @@ def process(limit=None):
                 updaterelease = requests.get(pre.requestid)
                 updaterelease.pre_id = pre.id
                 db.merge(updaterelease)
-                log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, pre.requestgroup, updaterelease.name))
+                log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, pre.requestgroup,
+                                                                                updaterelease.name))
             else:
                 log.info("requests: no pre request found for {}".format(requests.get(pre.requestid).name))
 

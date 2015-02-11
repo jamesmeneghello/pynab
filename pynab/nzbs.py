@@ -2,19 +2,19 @@ import gzip
 import os
 import datetime
 import calendar
-import regex
-import sys
 import io
-import pytz
 from xml.sax.saxutils import escape, quoteattr
-
-from lxml import etree, html
 from xml.etree import cElementTree as cet
+
+import regex
+import pytz
+from lxml import etree, html
 
 from pynab.db import db_session, NZB, Category, Release, Group
 from pynab import log
 import pynab
 import pynab.binaries
+
 
 XPATH_FILE = etree.XPath('file/@subject')
 XPATH_SEGMENT = etree.XPath('segments/segment')
@@ -128,9 +128,10 @@ def create(name, parent_category_name, binary):
 
     xml = io.StringIO()
     xml.write('<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n'
-        '<nzb>\n'
-        '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(parent_category_name, escape(name))
+              '<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.1//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.1.dtd">\n'
+              '<nzb>\n'
+              '<head><meta type="category">{}</meta><meta type="name">{}</meta></head>\n'.format(parent_category_name,
+                                                                                                 escape(name))
     )
 
     for part in binary.parts:

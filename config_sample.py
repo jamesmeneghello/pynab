@@ -55,7 +55,7 @@ api = {
     # result_default: default number if none is specified
     # make sure there's no quotes around it
     'result_default': 20,
-    
+
     # api_host: ip or hostname to bind the api
     # usually '0.0.0.0'
     'api_host': '0.0.0.0',
@@ -161,7 +161,7 @@ postprocess = {
     # since they'll take forever to index and possibly choke the server
     # this is the upper limit
     # 'max_process_size': 30*1024*1024*1024, # 30gb
-    'max_process_size': 10*1024*1024*1024,
+    'max_process_size': 10 * 1024 * 1024 * 1024,
 
     # max_process_anyway: try to process huge releases anyway
     # you can attempt to index massive releases anyway
@@ -174,7 +174,7 @@ postprocess = {
     # anything smaller than this in a group will be deleted
     # layout is minimum size and then a list of groups to check, ie.
     # 'min_size': {
-    #     104857600: ['alt.binaries.hdtv', 'alt.binaries.hdtv.x264'],
+    # 104857600: ['alt.binaries.hdtv', 'alt.binaries.hdtv.x264'],
     #     314572800: ['alt.binaries.mooveee']
     # },
     'min_size': {},
@@ -258,12 +258,12 @@ postprocess = {
     # process requests: query the pre table to
     # try and discover names from request ids
     'process_requests': True,
-    
+
     # fetch_blacklist_duration: the number of days between tvrage/imdb API attempts
     # so if we can't find a match for some movie, wait 7 days before trying that movie again
     # there's really no benefit to setting this low - anywhere from a week to several months is fine
     'fetch_blacklist_duration': 7,
-    
+
     # regex update settings
     # ---------------------
 
@@ -292,8 +292,8 @@ log = {
 
     # max_log_size: maximum size of logfiles before they get rotated
     # number, in bytes (this is 50mb)
-    'max_log_size': 50*1024*1024,
-    
+    'max_log_size': 50 * 1024 * 1024,
+
     # enable/disable color logging to console
     'colors': True,
 }

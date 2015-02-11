@@ -1,7 +1,8 @@
-import regex
 import unicodedata
 import difflib
 import datetime
+
+import regex
 import requests
 import pytz
 
@@ -20,12 +21,13 @@ def process(limit=None, online=True):
 
     with db_session() as db:
         # clear expired metablacks
-        db.query(MetaBlack).filter(MetaBlack.movie!=None).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
+        db.query(MetaBlack).filter(MetaBlack.movie != None).filter(MetaBlack.time <= expiry).delete(
+            synchronize_session='fetch')
 
-        query = db.query(Release).filter(Release.movie==None).join(Category).filter(Category.parent_id==2000)
+        query = db.query(Release).filter(Release.movie == None).join(Category).filter(Category.parent_id == 2000)
 
         if online:
-            query = query.filter(Release.movie_metablack_id==None)
+            query = query.filter(Release.movie_metablack_id == None)
 
         if limit:
             releases = query.order_by(Release.posted.desc()).limit(limit)
@@ -38,12 +40,12 @@ def process(limit=None, online=True):
                 method = 'local'
                 imdb = db.query(Movie).filter(
                     Movie.name.ilike('%'.join(clean_name(name).split(' ')))
-                ).filter(Movie.year==year).first()
+                ).filter(Movie.year == year).first()
                 if not imdb and online:
                     method = 'online'
                     movie = search(clean_name(name), year)
                     if movie and movie['Type'] == 'movie':
-                        imdb = db.query(Movie).filter(Movie.id==movie['imdbID']).first()
+                        imdb = db.query(Movie).filter(Movie.id == movie['imdbID']).first()
                         if not imdb:
                             imdb = Movie()
                             imdb.id = movie['imdbID']

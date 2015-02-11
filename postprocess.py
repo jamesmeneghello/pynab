@@ -3,11 +3,10 @@ import time
 import traceback
 import datetime
 
-import psycopg2.extensions
 import pytz
 
 from pynab import log, log_init
-from pynab.db import db_session, Release, engine, Blacklist, Group, MetaBlack, NZB, NFO, SFV
+from pynab.db import db_session, Release, Blacklist, Group, MetaBlack, NZB, NFO, SFV
 import pynab.groups
 import pynab.binaries
 import pynab.releases
@@ -136,7 +135,7 @@ def main():
                     field = 'search_name' if blacklist.field == 'subject' else blacklist.field
 
                     # filter by:
-                    #   group_name should match the blacklist's
+                    # group_name should match the blacklist's
                     #   <field> should match the blacklist's regex
                     #   <field> is determined by blacklist's field (usually subject/name)
                     #   date (optimisation)
@@ -181,15 +180,15 @@ def main():
 
             # delete any orphan nzbs
             log.info('postprocess: deleting orphan nzbs...')
-            db.query(NZB.id).filter(NZB.release==None).delete(synchronize_session='fetch')
+            db.query(NZB.id).filter(NZB.release == None).delete(synchronize_session='fetch')
 
             # delete any orphan nfos
             log.info('postprocess: deleting orphan nfos...')
-            db.query(NFO.id).filter(NFO.release==None).delete(synchronize_session='fetch')
+            db.query(NFO.id).filter(NFO.release == None).delete(synchronize_session='fetch')
 
             # delete any orphan sfvs
             log.info('postprocess: deleting orphan sfvs...')
-            db.query(SFV.id).filter(SFV.release==None).delete(synchronize_session='fetch')
+            db.query(SFV.id).filter(SFV.release == None).delete(synchronize_session='fetch')
 
             db.commit()
 
@@ -208,6 +207,7 @@ def main():
         postprocess_wait = config.postprocess.get('postprocess_wait', 300)
         log.info('sleeping for {:d} seconds...'.format(postprocess_wait))
         time.sleep(postprocess_wait)
+
 
 if __name__ == '__main__':
     main()

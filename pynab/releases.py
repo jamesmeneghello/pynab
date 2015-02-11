@@ -1,6 +1,7 @@
 import time
 import math
 import base64
+
 import regex
 from requests_futures.sessions import FuturesSession
 from sqlalchemy.orm import *
@@ -46,7 +47,7 @@ def names_from_sfvs(release):
 
 def discover_name(release):
     """Attempts to fix a release name by nfo, filelist or sfv."""
-    potential_names = [release.search_name,]
+    potential_names = [release.search_name, ]
 
     # base64-decode the name in case it's that
     try:
@@ -169,7 +170,7 @@ def process():
         """.format(config.postprocess.get('min_completion', 100))
 
         # pre-cache blacklists and group them
-        blacklists = db.query(Blacklist).filter(Blacklist.status==True).all()
+        blacklists = db.query(Blacklist).filter(Blacklist.status == True).all()
         for blacklist in blacklists:
             db.expunge(blacklist)
 
@@ -215,7 +216,7 @@ def process():
                             binary.parts[int(binary.total_parts / 2)].total_segments *
                             binary.parts[int(binary.total_parts / 2)].segments[0].size)
 
-                oversized = est_size > config.postprocess.get('max_process_size', 10*1024*1024*1024)
+                oversized = est_size > config.postprocess.get('max_process_size', 10 * 1024 * 1024 * 1024)
 
                 if oversized and not config.postprocess.get('max_process_anyway', True):
                     log.info('release: [{}] - removed (oversized)'.format(binary.name))
@@ -247,7 +248,7 @@ def process():
                         field = 'name' if blacklist.field == 'subject' else blacklist.field
                         if regex.search(blacklist.regex, getattr(binary, field)):
                             log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
-                            db.query(Binary).filter(Binary.id==binary.id).delete()
+                            db.query(Binary).filter(Binary.id == binary.id).delete()
                             db.commit()
                             blacklisted = True
                             break
@@ -283,7 +284,7 @@ def process():
                     log.info('release: [{}] - removed (smaller than minimum size for group)'.format(
                         binary.name
                     ))
-                    db.query(Binary).filter(Binary.id==binary.id).delete()
+                    db.query(Binary).filter(Binary.id == binary.id).delete()
                     db.commit()
                     continue
 
@@ -309,7 +310,7 @@ def process():
                         log.info('release: [{}] - removed (nzb only)'.format(binary.name))
                     else:
                         log.info('release: [{}] - removed (less than minimum archives)'.format(binary.name))
-                    db.query(Binary).filter(Binary.id==binary.id).delete()
+                    db.query(Binary).filter(Binary.id == binary.id).delete()
                     db.commit()
                     continue
 
@@ -352,11 +353,12 @@ def process():
                         db.rollback()
 
                     # delete processed binaries
-                    db.query(Binary).filter(Binary.id==binary.id).delete()
+                    db.query(Binary).filter(Binary.id == binary.id).delete()
 
                     # publish processed releases?
                     if config.scan.get('publish', False):
-                        futures = [request_session.post(host, data=to_json(release)) for host in config.scan.get('publish_hosts')]
+                        futures = [request_session.post(host, data=to_json(release)) for host in
+                                   config.scan.get('publish_hosts')]
 
             db.commit()
 

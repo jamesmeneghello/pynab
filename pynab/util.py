@@ -99,7 +99,8 @@ def update_regex():
                     ids.append(r.id)
                     db.merge(r)
 
-                removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update({Regex.status: False}, synchronize_session='fetch')
+                removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update(
+                    {Regex.status: False}, synchronize_session='fetch')
 
                 db.commit()
 

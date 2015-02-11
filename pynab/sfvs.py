@@ -1,5 +1,6 @@
-import regex
 import gzip
+
+import regex
 
 import pynab.nzbs
 import pynab.util
@@ -7,6 +8,7 @@ from pynab import log
 from pynab.db import db_session, Release, Group, NZB, SFV, MetaBlack
 from pynab.server import Server
 import pynab.releases
+
 
 SFV_MAX_FILESIZE = 50000
 
@@ -36,7 +38,8 @@ def process(limit=None, category=0):
 
     with Server() as server:
         with db_session() as db:
-            query = db.query(Release).join(Group).join(NZB).filter(Release.sfv==None).filter(Release.sfv_metablack_id==None)
+            query = db.query(Release).join(Group).join(NZB).filter(Release.sfv == None).filter(
+                Release.sfv_metablack_id == None)
             if category:
                 query = query.filter(Release.category_id == int(category))
             if limit:

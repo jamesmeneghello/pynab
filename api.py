@@ -1,4 +1,5 @@
 import json
+
 import regex
 import bottle
 from bottle import request, response
@@ -8,9 +9,10 @@ from pynab import log, log_init
 import pynab.api
 import config
 
+
 app = application = bottle.Bottle()
 
-#bottle.debug(True)
+# bottle.debug(True)
 
 @app.get('/scripts/:path#.+#')
 def serve_static(path):
@@ -61,7 +63,7 @@ def api():
 @app.get('/')
 @app.get('/index.html')
 def index():
-    if config.api.get('webui'): # disabled by default ? not really useful for a single user install
+    if config.api.get('webui'):  # disabled by default ? not really useful for a single user install
         raise bottle.static_file('index.html', root='./webui/dist')
 
 
@@ -118,7 +120,7 @@ def get_link(route=''):
 
 def main():
     bottle.run(app=app, host=config.api.get('api_host', '0.0.0.0'), port=config.api.get('api_port', 8080))
-    
+
 
 if __name__ == '__main__':
     log_init('api')

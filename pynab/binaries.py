@@ -1,16 +1,18 @@
-import regex
 import time
 import pyhashxx
 
+import regex
 from sqlalchemy import *
 
-from pynab.db import db_session, engine, Binary, Part, Regex, windowed_query
+from pynab.db import db_session, Binary, Part, Regex, windowed_query
 from pynab import log
 import config
 
 
-PART_REGEX = regex.compile('[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
+PART_REGEX = regex.compile(
+    '[\[\( ]((\d{1,3}\/\d{1,3})|(\d{1,3} of \d{1,3})|(\d{1,3}-\d{1,3})|(\d{1,3}~\d{1,3}))[\)\] ]', regex.I)
 XREF_REGEX = regex.compile('^([a-z0-9\.\-_]+):(\d+)?$', regex.I)
+
 
 def generate_hash(name, group_name, posted_by, total_parts):
     """Generates a mostly-unique temporary hash for a part."""
@@ -31,7 +33,7 @@ def save(db, binaries):
     if binaries:
         existing_binaries = dict(
             ((binary.hash, binary) for binary in
-                db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
+             db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
             )
         )
 
@@ -49,7 +51,7 @@ def save(db, binaries):
 
         existing_binaries = dict(
             ((binary.hash, binary) for binary in
-                db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
+             db.query(Binary.id, Binary.hash).filter(Binary.hash.in_(binaries.keys())).all()
             )
         )
 
@@ -63,7 +65,7 @@ def save(db, binaries):
                 log.error('something went horribly wrong')
 
         if update_parts:
-            p = Part.__table__.update().where(Part.id==bindparam('_id')).values(binary_id=bindparam('_binary_id'))
+            p = Part.__table__.update().where(Part.id == bindparam('_id')).values(binary_id=bindparam('_binary_id'))
             db.execute(p, update_parts)
             db.commit()
 
@@ -92,7 +94,8 @@ def process():
         relevant_groups = [x[0] for x in db.query(Part.group_name).group_by(Part.group_name).all()]
         if relevant_groups:
             # grab all relevant regex
-            all_regex = db.query(Regex).filter(Regex.status==True).filter(Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
+            all_regex = db.query(Regex).filter(Regex.status == True).filter(
+                Regex.group_name.in_(relevant_groups + ['.*'])).order_by(Regex.ordinal).all()
 
             # cache compiled regex
             compiled_regex = {}
@@ -103,7 +106,7 @@ def process():
                 regex_flags = regex.I if 'i' in flags else 0
                 compiled_regex[reg.id] = regex.compile(r, regex_flags)
 
-            query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id==None)
+            query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id == None)
             total_parts = query.count()
             for part in windowed_query(query, Part.id, config.scan.get('binary_process_chunk_size', 1000)):
                 found = False
@@ -155,7 +158,7 @@ def process():
                         if match.get('name') and match.get('parts'):
                             if match['parts'].find('/') == -1:
                                 match['parts'] = match['parts'].replace('-', '/') \
-                                    .replace('~', '/').replace(' of ', '/') \
+                                    .replace('~', '/').replace(' of ', '/')
 
                             match['parts'] = match['parts'].replace('[', '').replace(']', '') \
                                 .replace('(', '').replace(')', '')
@@ -173,7 +176,8 @@ def process():
                             if hash in binaries:
                                 if current in binaries[hash]['parts']:
                                     # but if we already have this part, pick the one closest to the binary
-                                    if binaries[hash]['posted'] - part.posted < binaries[hash]['posted'] - binaries[hash]['parts'][current].posted:
+                                    if binaries[hash]['posted'] - part.posted < binaries[hash]['posted'] - \
+                                            binaries[hash]['parts'][current].posted:
                                         binaries[hash]['parts'][current] = part
                                     else:
                                         dead_parts.append(part.id)
@@ -214,7 +218,10 @@ def process():
                         deleted = 0
 
                     db.commit()
-                    log.debug('binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries), deleted, total_parts))
+                    log.debug(
+                        'binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries),
+                                                                                                        deleted,
+                                                                                                        total_parts))
 
                     binaries = {}
                     dead_parts = []
@@ -226,7 +233,7 @@ def process():
     end = time.time()
 
     log.info('binary: processed {} parts and formed {} binaries in {:.2f}s'
-        .format(total_processed, total_binaries, end - start)
+             .format(total_processed, total_binaries, end - start)
     )
 
 
