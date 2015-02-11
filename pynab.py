@@ -22,65 +22,58 @@ from pynab.db import db_session, User, Group
 
 
 def scan():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/update.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-scan', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def backfill():
-    if monitor == 'zdaemon':
-        # can't use a conf file, since we're using params...
-        call('zdaemon -Czdaemon/backfill.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-backfill', shell=True)
     elif monitor == 'windows':
         program = 'start "Pynab Backfill (close to quit)" python scan.py backfill'
         Popen(program, stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def postprocess():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/postprocess.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-postproc', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab Post-Process (close to quit)" python postprocess.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def api():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/api.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-api', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab API (close to quit)" python api.py', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def pubsub():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/pubsub.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-pubsub', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab PubSub (close to quit)" python pubsub.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def prebot():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/prebot.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-prebot', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab prebot (close to quit)" python prebot.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def stats():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/stats.conf start', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl start pynab-stats', shell=True)
     elif monitor == 'windows':
         Popen('start "Pynab stats (close to quit)" python scripts/stats.py start', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def stop():
-    if monitor == 'zdaemon':
-        call('zdaemon -Czdaemon/update.conf stop', shell=True)
-        call('zdaemon -Czdaemon/postprocess.conf stop', shell=True)
-        call('zdaemon -Czdaemon/api.conf stop', shell=True)
-        call('zdaemon -Czdaemon/backfill.conf stop', shell=True)
-        call('zdaemon -Czdaemon/prebot.conf stop', shell=True)
-        call('zdaemon -Czdaemon/pubsub.conf stop', shell=True)
-        call('zdaemon -Czdaemon/stats.conf stop', shell=True)
+    if monitor == 'supervisor':
+        call('supervisorctl stop pynab-all', shell=True)
     elif monitor == 'windows':
         print('can\'t stop on windows! do it yourself. if i did it, i could close things you don\'t want closed.')
 
