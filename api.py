@@ -109,7 +109,7 @@ def get_link(route=''):
             if request.environ['SERVER_PORT'] != '80':
                 url += ':' + request.environ['SERVER_PORT']
 
-    url += request.environ['SCRIPT_NAME']
+    url += request.environ.get('SCRIPT_NAME', '')
     if route:
         url += route
 
