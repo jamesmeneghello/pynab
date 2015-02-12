@@ -1,6 +1,7 @@
 # import re
 import regex
-from sqlalchemy import *
+import requests
+import bs4
 
 from pynab.db import db_session, engine, Pre
 from pynab import log, releases
@@ -10,7 +11,6 @@ def nzedbirc(unformattedPre):
     formattedPre = parseNzedbirc(unformattedPre)
 
     with db_session() as db:
-
         p = db.query(Pre).filter(Pre.name == formattedPre['name']).first()
 
         if not p:
@@ -62,43 +62,43 @@ def parseNzedbirc(unformattedPre):
     return formattedPre
 
 
-#orlydb scraping
-#Returns the category of a pre if there is a match
+# orlydb scraping
+# Returns the category of a pre if there is a match
 def orlydb(name, search_name):
-    #BeautifulSoup is required
+    # BeautifulSoup is required
     try:
         from bs4 import BeautifulSoup
     except:
         log.error("BeautifulSoup is required to use orlydb scraping: pip install beautifulsoup4")
 
     try:
-        preHTML = urllib.request.urlopen(
-            "http://orlydb.com/?q={search_name}".format(search_name=urllib.parse.quote(search_name)))
+        preHTML = requests.get('http://orlydb.com/?q={}'.format(search_name))
     except:
         log.debug("Error connecting to orlydb")
         return False
 
-    soup = BeautifulSoup(preHTML.read())
+    soup = bs4.BeautifulSoup(preHTML.read())
     releases = soup.find(id="releases").findAll("div")
 
     rlsDict = {}
+    rlsname = None
     for rls in releases:
-        #Try/except used to filter out None types
-        #pretime left as may be used later
+        # Try/except used to filter out None types
+        # pretime left as may be used later
         try:
             rlsname = rls.find("span", {"class": "release"}).get_text()
-            #pretime = rls.find("span", {"class" : "timestamp"}).get_text()
+            # pretime = rls.find("span", {"class" : "timestamp"}).get_text()
             category = rls.find("span", {"class": "section"}).find("a").get_text()
 
-            #If the release matches what is passed, return the category in a dict
-            #This could be a problem if 2 pre's have the same name but different categories, chances are slim though
+            # If the release matches what is passed, return the category in a dict
+            # This could be a problem if 2 pre's have the same name but different categories, chances are slim though
             if rlsname == name:
                 rlsDict["category"] = category
         except Exception as e:
             log.debug("Error parsing to orlydb reponse: {}".format(e))
             return False
 
-    if bool(rlsDict):
+    if rlsDict:
         log.info("Orlydb pre found: {}".format(rlsname))
         return rlsDict
     else:
