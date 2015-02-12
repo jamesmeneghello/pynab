@@ -36,8 +36,9 @@ class Server:
         if self.connection:
             try:
                 self.connection.quit()
-                self.connection = None
             except:
+                self.connection = None
+            finally:
                 self.connection = None
 
     def group(self, group_name):
