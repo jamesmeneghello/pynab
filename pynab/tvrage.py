@@ -11,10 +11,13 @@ import xmltodict
 import pytz
 from lxml import etree
 
-from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog
+from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog, windowed_query
 from pynab import log
 import pynab.util
 import config
+
+
+PROCESS_CHUNK_SIZE = 500
 
 
 TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
@@ -46,10 +49,12 @@ def process(limit=None, online=True):
         if online:
             query = query.filter(Release.tvshow_metablack_id == None)
 
+        query = query.order_by(Release.posted.desc())
+
         if limit:
-            releases = query.order_by(Release.posted.desc()).limit(limit)
+            releases = query.limit(limit)
         else:
-            releases = query.order_by(Release.posted.desc()).all()
+            releases = windowed_query(query, Release.id, PROCESS_CHUNK_SIZE)
 
         for release in releases:
             method = ''

@@ -6,9 +6,12 @@ import regex
 import requests
 import pytz
 
-from pynab.db import db_session, Release, Movie, MetaBlack, Category, DataLog
+from pynab.db import db_session, Release, Movie, MetaBlack, Category, DataLog, windowed_query
 from pynab import log
 import config
+
+
+PROCESS_CHUNK_SIZE = 500
 
 
 OMDB_SEARCH_URL = 'http://www.omdbapi.com/?s='
@@ -29,10 +32,12 @@ def process(limit=None, online=True):
         if online:
             query = query.filter(Release.movie_metablack_id == None)
 
+        query = query.order_by(Release.posted.desc())
+
         if limit:
-            releases = query.order_by(Release.posted.desc()).limit(limit)
+            releases = query.limit(limit)
         else:
-            releases = query.order_by(Release.posted.desc()).all()
+            releases = windowed_query(query, Release.id, PROCESS_CHUNK_SIZE)
 
         for release in releases:
             name, year = parse_movie(release.search_name)
