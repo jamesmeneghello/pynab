@@ -58,11 +58,16 @@ def copy_file(engine, data, ordering, type):
             os.remove(filename)
         except Exception as e:
             log.error(e)
+            return False
     elif 'postgre' in config.db.get('engine'):
         conn = engine.raw_connection()
         cur = conn.cursor()
-        cur.copy_expert(
-            "COPY {} ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(type.__tablename__, ', '.join(ordering)), data)
+        try:
+            cur.copy_expert(
+                "COPY {} ({}) FROM STDIN WITH CSV ESCAPE E'\\\\'".format(type.__tablename__, ', '.join(ordering)), data)
+        except Exception as e:
+            log.error(e)
+            return False
         conn.commit()
         cur.close()
     else:
@@ -74,6 +79,8 @@ def copy_file(engine, data, ordering, type):
 
     insert_end = time.time()
     log.debug('parts: {} insert: {:.2f}s'.format(config.db.get('engine'), insert_end - insert_start))
+
+    return True
 
 
 def vacuum(mode='scan', full=False):

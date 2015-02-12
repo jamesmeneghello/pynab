@@ -101,7 +101,7 @@ def scan(group_name, direction='forward', date=None, limit=None):
                                 db.merge(group)
                                 db.commit()
                             else:
-                                log.error('group: problem saving parts to db')
+                                log.error('group: problem saving parts to db, restarting scan')
                                 return False
 
                         to_go = abs(target - end)
