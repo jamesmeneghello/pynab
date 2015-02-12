@@ -332,6 +332,13 @@ class Server:
         candidate_post = None
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
         bottom_date = self.post_date(group_name, first)
+
+        if not bottom_date:
+            log.error('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
+                group_name
+            ))
+            return None
+
         # check bottom_date
         if target_date < bottom_date:
             log.info('server: {}: post was before first available, starting from the beginning'.format(
