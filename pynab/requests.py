@@ -2,6 +2,12 @@ from pynab import log
 from pynab.db import db_session, Release, Pre
 
 
+GROUP_ALIASES = {
+    # from: to
+    'alt.binaries.etc': 'alt.binaries.teevee',
+}
+
+
 def process(limit=None):
     """Process releases for requests"""
 
@@ -32,13 +38,17 @@ def process(limit=None):
 
         # loop through and associate pres with their requests
         for pre in pres:
-            if pre.requestgroup == requests.get(pre.requestid).group.name:
-                updaterelease = requests.get(pre.requestid)
-                updaterelease.pre_id = pre.id
-                db.merge(updaterelease)
-                log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, pre.requestgroup,
-                                                                                updaterelease.name))
+            pre_group = requests.get(pre.requestid).group.name
+            if pre_group in GROUP_ALIASES:
+                pre_group = GROUP_ALIASES[pre_group]
+
+            if pre.requestgroup == pre_group:
+                updated_release = requests.get(pre.requestid)
+                updated_release.pre_id = pre.id
+                db.merge(updated_release)
+                log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, pre_group,
+                                                                                updated_release.name))
             else:
                 log.info("requests: no pre request found for {}".format(requests.get(pre.requestid).name))
 
-        db.commit()
+            db.commit()
