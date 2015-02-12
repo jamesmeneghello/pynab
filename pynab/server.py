@@ -30,8 +30,15 @@ class Server:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.quit()
+
+    def quit(self):
         if self.connection:
-            self.connection.quit()
+            try:
+                self.connection.quit()
+                self.connection = None
+            except:
+                self.connection = None
 
     def group(self, group_name):
         self.connect()
@@ -61,7 +68,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('server: could not connect to news server: {}'.format(e))
+                log.error('server: could not connect to news server')
                 return False
 
         return True
@@ -124,7 +131,7 @@ class Server:
             log.error('server: [{}]: nntp error'.format(group_name))
             log.error('server: suspected dead nntp connection, restarting')
 
-            self.connection.quit()
+            self.quit()
             self.connect()
             return self.scan(group_name, first, last, message_ranges)
 
