@@ -338,7 +338,7 @@ class Release(Base):
     pre_id = Column(Integer, ForeignKey('pres.id'), index=True)
     pre = relationship('Pre', backref=backref('pre'))
 
-    __table_args__ = (UniqueConstraint(name, posted),)
+    __table_args__ = (UniqueConstraint(name, group_id, posted),)
 
 
 class MetaBlack(Base):

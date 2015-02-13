@@ -10,9 +10,11 @@ from pynab import log
 
 import config
 
+
 def rename_bad_releases(category):
     count = 0
     s_count = 0
+    for_deletion = []
     with db_session() as db:
         query = db.query(Release).filter(Release.category_id==int(category)).filter(
             (Release.files.any())|(Release.nfo_id!=None)|(Release.sfv_id!=None)|(Release.pre_id!=None)
@@ -28,27 +30,41 @@ def rename_bad_releases(category):
                 # we're done with this release
                 release.status = 1
 
-                db.add(release)
+                db.merge(release)
             elif name and category_id:
-                # we found a new name!
-                s_count += 1
+                # only add it if it doesn't exist already
+                existing = db.query(Release).filter(Release.name==name,
+                                                    Release.group_id==release.group_id,
+                                                    Release.posted==release.posted).first()
+                if existing:
+                    # if it does, delete this one
+                    for_deletion.append(release.id)
+                    db.expunge(release)
+                else:
+                    # we found a new name!
+                    s_count += 1
 
-                release.name = name
-                release.search_name = pynab.releases.clean_release_name(name)
-                release.category_id = category_id
+                    release.name = name
+                    release.search_name = pynab.releases.clean_release_name(name)
+                    release.category_id = category_id
 
-                # we're done with this release
-                release.status = 1
+                    # we're done with this release
+                    release.status = 1
 
-                db.add(release)
+                    db.merge(release)
             else:
                 # bad release!
                 release.status = 0
                 release.unwanted = True
-                db.add(release)
+                db.merge(release)
         db.commit()
 
-    log.info('rename: successfully renamed {} of {} releases'.format(s_count, count))
+    if for_deletion:
+        deleted = db.query(Release).filter(Release.id.in_(for_deletion)).delete(synchronize_session=False)
+    else:
+        deleted = 0
+
+    log.info('rename: successfully renamed {} of {} releases and deleted {} duplicates'.format(s_count, count, deleted))
 
 
 if __name__ == '__main__':
