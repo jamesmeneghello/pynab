@@ -347,6 +347,13 @@ class Server:
             return first
 
         top_date = self.post_date(group_name, last)
+
+        if not top_date:
+            log.error('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
+                group_name
+            ))
+            return None
+
         if target_date > top_date:
             log.info('server: {}: requested post was newer than most recent, ending'.format(group_name))
             return None
