@@ -5,9 +5,8 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
-from pynab.db import db_session, engine, Pre
+from pynab.db import db_session, engine, Pre, copy_file
 from pynab import releases
-from pynab import db as fastCopy
 import urllib
 import regex
 import json
@@ -138,7 +137,7 @@ def processNzedbPre():
 			try:
 				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
 				ordering = ['name','filename','nuked','category','pretime','source','requestid','requestgroup','searchname']
-				fastCopy.copy_file(engine, formattedUL, ordering, Pre)
+				copy_file(engine, formattedUL, ordering, Pre)
 			except Exception as e:
 				print("Pre-Import: Error inserting into database - {}".format(e))
 				insertFails.append(processingFile['lastfile'])	
