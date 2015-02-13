@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from pynab.db import db_session, engine, Pre
 from pynab import releases
+from pynab import db as fastCopy
 import urllib
 import regex
 import json
@@ -55,9 +56,16 @@ def processNzedbPre():
 		downloadLinks.append(cleanLink)
 
 
-	#remove the top two links
-	downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AADGwFkXBXgW8vhQmo7S1L3Sa/0_batch_import.php?dl=1')
-	downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AAD2-CozDOXFxFDMgLZ6Dwv_a/0README.txt?dl=1')
+	#try remove the top two links (if they exist)
+	try:
+		downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AADGwFkXBXgW8vhQmo7S1L3Sa/0_batch_import.php?dl=1')
+	except:
+		pass
+	
+	try:
+		downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AAD2-CozDOXFxFDMgLZ6Dwv_a/0README.txt?dl=1')
+	except:
+		pass
 
 
 
@@ -70,9 +78,9 @@ def processNzedbPre():
 				print("Pre-Import: Attempting to download file: {}".format(processingFile['lastfile']))
 				urllib.request.urlretrieve(preCSV, "unformattedDL.gz")
 			except:
-				print("Pre-Import: Error downloading: {}".format(preCSV))
+				print("Pre-Import: Error downloading: {} - Please run the process again".format(preCSV))
 				insertFails.append(processingFile['lastfile'])
-				#The assumption here is, if the first one fails, more than likely they will all fail
+				#The assumption here is, if one fails, you should probably just start again at that file.
 				break
 
 
@@ -129,8 +137,8 @@ def processNzedbPre():
 
 			try:
 				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
-				cur.copy_expert("COPY pres (name,filename,nuked,category,pretime,source,requestid,requestgroup,searchname) FROM STDIN WITH CSV", formattedUL)
-				conn.commit()
+				ordering = ['name','filename','nuked','category','pretime','source','requestid','requestgroup','searchname']
+				fastCopy.copy_file(engine, formattedUL, ordering, Pre)
 			except Exception as e:
 				print("Pre-Import: Error inserting into database - {}".format(e))
 				insertFails.append(processingFile['lastfile'])	
