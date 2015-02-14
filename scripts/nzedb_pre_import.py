@@ -11,6 +11,7 @@ import urllib
 import regex
 import json
 import io
+import time
 
 #Panadas is required
 try:
@@ -89,6 +90,7 @@ def nzedbPre():
 			process(dirtyFile, processingFile)
 
 		else:
+			print("Pre-Import: More than likely there are no files left to upload")
 			pass
 
 
@@ -98,10 +100,22 @@ def nzedbPre():
 
 def largeNzedbPre():
 	
-	dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=1000, engine='python')
+	try:
+		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='python')
+	except:
+		print("Pre-Import: File predb_dump-062714.csv not found")
+	insert_start = time.time()
 	
+	i = 0
 	for chunk in dirtyChunk: 
-		process(chunk)
+		if i < 100:
+			print(i)
+			process(chunk)
+			i += 1
+		else:
+			insert_end = time.time()
+			print(insert_end - insert_start)
+			break
 
 
 def process(precsv, processingFile=None):
@@ -137,30 +151,33 @@ def process(precsv, processingFile=None):
 		#Create the inverse list, basically contains pres that already exist
 		newdata = precsv[~precsv['name'].isin(prenamelist)]
 
-		newdata.to_csv('formattedUL.csv', index=False, header=False)
-
+		data = io.StringIO()
+		newdata.to_csv(data, index=False, header=False)
+		
 		#Delete any pres found as we are essentially going to update them
 		if len(newdata) is not 0:
 			for pre in pres:
 				db.delete(pre)
 		else:
-			print("No pres to add from this file")
+			print("Pre-Import: No pres to add from this file")
 		db.commit()
 
-	#Process the now clean CSV	
-	formattedUL = open('formattedUL.csv')
 
 	try:
 		if processingFile is not None:
 			print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
 			
-			copy_file(engine, formattedUL, ordering, Pre)
+			data.seek(0)
+			copy_file(engine, data, ordering, Pre)
 			
 			#Write out the last pre csv name so it can be restarted later without downloading all the pres.
 			with open('lastfile.json', 'w') as outfile:
 				json.dump({'lastfile' : int(processingFile['lastfile'])}, outfile)
+		
 		else:
-			copy_file(engine, formattedUL, ordering, Pre)
+			data.seek(0)
+			copy_file(engine, data, ordering, Pre)
+			data.close()
 			print("Pre-Import: Chunk import successful")
 	
 	except Exception as e:
