@@ -40,7 +40,6 @@ except:
 	print("BeautifulSoup is required to use nzedb pre import: pip install beautifulsoup4")
 
 
-
 #Regex used to strip out the file name
 FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl=1')
 COLNAMES = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
@@ -105,7 +104,6 @@ def nzedbPre():
 			#Clean and process the file
 			process(dirtyFile, processingFile)
 
-
 		else:
 			print("Pre-Import: More than likely {} has already been imported".format(processingFile['lastfile']))
 			pass
@@ -124,7 +122,6 @@ def largeNzedbPre():
 	
 
 	i = 0
-
 	for chunk in dirtyChunk: 
 		process(chunk)
 		print("Pre-Import: Imported chunk {}".format(i))
