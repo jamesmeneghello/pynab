@@ -2,15 +2,15 @@
 #What I can gather as the column names from the csv, in case anyone else wants to do this.
 #title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
 
-import os
 import sys
+import os
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from pynab.db import db_session, engine, Pre, copy_file
 from pynab import releases
 import urllib
 import regex
 import json
-import subprocess
+import io
 
 #Panadas is required
 try:
@@ -28,12 +28,13 @@ except:
 
 #Regex used to strip out the file name
 FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl=1')
+COLNAMES = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
+INSERTFAILS = []
 
-
-def processNzedbPre():
+def nzedbPre():
 
 	downloadLinks = []
-	insertFails = []
+
 
 	#Nab the HTML used in beautifulSoup
 	try:
@@ -66,8 +67,7 @@ def processNzedbPre():
 	except:
 		pass
 
-
-
+	#Try and process each of the csv's. If they are
 	for preCSV in downloadLinks:
 		processingFile = FILENAME_REGEX.search(preCSV).groupdict()
 
@@ -78,81 +78,99 @@ def processNzedbPre():
 				urllib.request.urlretrieve(preCSV, "unformattedDL.gz")
 			except:
 				print("Pre-Import: Error downloading: {} - Please run the process again".format(preCSV))
-				insertFails.append(processingFile['lastfile'])
+				INSERTFAILS.append(processingFile['lastfile'])
 				#The assumption here is, if one fails, you should probably just start again at that file.
 				break
-
-
-			#Clean out some things we cant work with. Probably a better way to do this!
-			cleanFile = pandas.read_csv('unformattedDL.gz', sep='\t', compression='gzip', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22])
-			cleanFile.to_csv('formattedUL.csv', index=False, header=False)
-
-			os.system('sed -i s/"\'"/""/g {}'.format("formattedUL.csv"))
-			os.system('sed -i s/,2,/,0,/g {}'.format("formattedUL.csv"))
-			os.system('sed -i s/,3,/,1,/g {}'.format("formattedUL.csv"))
-			os.system('sed -i s/,4,/,1,/g {}'.format("formattedUL.csv"))
-			os.system('sed -i s/,5,/,1,/g {}'.format("formattedUL.csv"))
-			#For whatever reason this wouldnt work using os.system
-			subprocess.call(['sed', '-i', 's/.\\N$/''/g', 'formattedUL.csv'], shell=False )
-
+			
 			#Get the data into datatable, much easier to work with.
-			colnames = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
-			data = pandas.read_csv('formattedUL.csv', names=colnames)
-			
-			#Add clean searchname column
-			data['searchname'] = data['name'].map(lambda name: releases.clean_release_name(name))
-			
-			#Sometimes there are duplicates within the table itself, remove them
-			data.drop_duplicates(subset='name', take_last=True, inplace=True)
+			dirtyFile = pandas.read_csv('unformattedDL.gz', sep='\t', compression='gzip', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES)
 
-			#Create a list of names to check if they exist
-			names = list(data.name)
-
-
-
-			#Query to find any existing pres, we need to delete them so COPY doesn't fail
-			with db_session() as db:
-				pres = db.query(Pre).filter(Pre.name.in_(names)).all()
-
-				prenamelist = []
-				for pre in pres:
-					prenamelist.append(pre.name)
-				
-				#Create the inverse list, basically contains pres that already exist
-				newdata = data[~data['name'].isin(prenamelist)]
-				
-				newdata.to_csv('formattedUL.csv', index=False, header=False)
-
-				#Delete any pres found as we are essentially going to update them
-				if len(pres) is not 0:
-					for pre in pres:
-						db.delete(pre)
-				db.commit()
-
-			#Process the now clean CSV
-			conn = engine.raw_connection()
-			cur = conn.cursor()		
-			formattedUL = open('formattedUL.csv')	
-
-			try:
-				print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
-				ordering = ['name','filename','nuked','category','pretime','source','requestid','requestgroup','searchname']
-				copy_file(engine, formattedUL, ordering, Pre)
-			except Exception as e:
-				print("Pre-Import: Error inserting into database - {}".format(e))
-				insertFails.append(processingFile['lastfile'])	
-			
-
-			#Write out the last pre csv name so it can be restarted later without downloading all the pres.
-			with open('lastfile.json', 'w') as outfile:
-				json.dump({'lastfile' : int(processingFile['lastfile'])}, outfile)
-	
+			#Clean and process the file
+			process(dirtyFile, processingFile)
 
 		else:
 			pass
 
 
-	if insertFails is not None:
-		print("Pre-Import: Failures: {}".format(insertFails))
+	if INSERTFAILS is not None:
+		print("Pre-Import: Failures: {}".format(INSERTFAILS))
 
-processNzedbPre()
+
+def largeNzedbPre():
+	
+	dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=1000, engine='python')
+	
+	for chunk in dirtyChunk: 
+		process(chunk)
+
+
+def process(precsv, processingFile=None):
+		
+	ordering = ['name','filename','nuked','category','pretime','source','requestid','requestgroup','searchname']
+	
+	#Clean up the file a bit.
+	precsv.replace("'", '', inplace=True, regex=True)
+	precsv["nuked"].replace("2", "0", inplace=True)
+	precsv["nuked"].replace("3", "1", inplace=True)
+	precsv["nuked"].replace("4", "1", inplace=True)
+	precsv["nuked"].replace("5", "1", inplace=True)
+	precsv["nuked"].replace("69", "0", inplace=True)
+	precsv.replace(".\\N$", '', inplace=True, regex=True)
+
+	#Sometimes there are duplicates within the table itself, remove them
+	precsv.drop_duplicates(subset='name', take_last=True, inplace=True)
+
+	#Add clean searchname column
+	precsv['searchname'] = precsv['name'].map(lambda name: releases.clean_release_name(name))
+		
+	#Create a list of names to check if they exist
+	names = list(precsv.name)
+
+	#Query to find any existing pres, we need to delete them so COPY doesn't fail
+	with db_session() as db:
+		pres = db.query(Pre).filter(Pre.name.in_(names)).all()
+
+		prenamelist = []
+		for pre in pres:
+			prenamelist.append(pre.name)
+		
+		#Create the inverse list, basically contains pres that already exist
+		newdata = precsv[~precsv['name'].isin(prenamelist)]
+
+		newdata.to_csv('formattedUL.csv', index=False, header=False)
+
+		#Delete any pres found as we are essentially going to update them
+		if len(newdata) is not 0:
+			for pre in pres:
+				db.delete(pre)
+		else:
+			print("No pres to add from this file")
+		db.commit()
+
+	#Process the now clean CSV	
+	formattedUL = open('formattedUL.csv')
+
+	try:
+		if processingFile is not None:
+			print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
+			
+			copy_file(engine, formattedUL, ordering, Pre)
+			
+			#Write out the last pre csv name so it can be restarted later without downloading all the pres.
+			with open('lastfile.json', 'w') as outfile:
+				json.dump({'lastfile' : int(processingFile['lastfile'])}, outfile)
+		else:
+			copy_file(engine, formattedUL, ordering, Pre)
+			print("Pre-Import: Chunk import successful")
+	
+	except Exception as e:
+		print("Pre-Import: Error inserting into database - {}".format(e))
+		
+		if processingFile is not None:
+			INSERTFAILS.append(processingFile['lastfile'])	
+		else:
+			print("Pre-Import: Error processing chunk")
+
+
+largeNzedbPre()
+#nzedbPre()
