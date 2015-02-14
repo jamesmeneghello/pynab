@@ -1,3 +1,16 @@
+"""
+Pynab nzedb pre import
+
+Imports pre files from nzedb dropbox
+
+Usage:
+    nzedb_pre_import.py large|small
+
+Options:
+    -h --help       Show this screen.
+    --version       Show version.
+
+"""
 #This is quite possibly the most hilariously complex import process...
 #What I can gather as the column names from the csv, in case anyone else wants to do this.
 #title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
@@ -11,7 +24,7 @@ import urllib
 import regex
 import json
 import io
-import time
+from docopt import docopt
 
 #Panadas is required
 try:
@@ -90,7 +103,7 @@ def nzedbPre():
 			process(dirtyFile, processingFile)
 
 		else:
-			print("Pre-Import: More than likely there are no files left to upload")
+			print("Pre-Import: More than likely {} has already been imported".format(processingFile['lastfile']))
 			pass
 
 
@@ -104,18 +117,12 @@ def largeNzedbPre():
 		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='python')
 	except:
 		print("Pre-Import: File predb_dump-062714.csv not found")
-	insert_start = time.time()
 	
 	i = 0
 	for chunk in dirtyChunk: 
-		if i < 100:
-			print(i)
-			process(chunk)
-			i += 1
-		else:
-			insert_end = time.time()
-			print(insert_end - insert_start)
-			break
+		process(chunk)
+		print("Pre-Import: Imported chunk {}".format(i))
+		i += 1
 
 
 def process(precsv, processingFile=None):
@@ -189,5 +196,11 @@ def process(precsv, processingFile=None):
 			print("Pre-Import: Error processing chunk")
 
 
-largeNzedbPre()
-#nzedbPre()
+if __name__ == '__main__':
+	
+	arguments = docopt(__doc__)
+
+	if arguments['small']:
+		nzedbPre()	
+	elif arguments['large']:
+		largeNzedbPre()
