@@ -18,6 +18,7 @@ Options:
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+
 from pynab.db import db_session, engine, Pre, copy_file
 from pynab import releases
 import urllib
@@ -45,10 +46,10 @@ FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl
 COLNAMES = ["name","filename","nuked","category","pretime","source","requestid","requestgroup"]
 INSERTFAILS = []
 
+
 def nzedbPre():
 
 	downloadLinks = []
-
 
 	#Nab the HTML used in beautifulSoup
 	try:
@@ -63,6 +64,7 @@ def nzedbPre():
 	except:
 		print("Pre-Import: No existinfg file found, will attempt to download and insert all pres")
 		lastFileFromDisk = None
+
 
 	#Find all the download links, change the download from 0 to 1
 	for x in soup.findAll("a", {"class" : "filename-link"}):
@@ -80,6 +82,7 @@ def nzedbPre():
 		downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AAD2-CozDOXFxFDMgLZ6Dwv_a/0README.txt?dl=1')
 	except:
 		pass
+
 
 	#Try and process each of the csv's. If they are
 	for preCSV in downloadLinks:
@@ -102,6 +105,7 @@ def nzedbPre():
 			#Clean and process the file
 			process(dirtyFile, processingFile)
 
+
 		else:
 			print("Pre-Import: More than likely {} has already been imported".format(processingFile['lastfile']))
 			pass
@@ -118,7 +122,9 @@ def largeNzedbPre():
 	except:
 		print("Pre-Import: File predb_dump-062714.csv not found")
 	
+
 	i = 0
+
 	for chunk in dirtyChunk: 
 		process(chunk)
 		print("Pre-Import: Imported chunk {}".format(i))
@@ -149,6 +155,7 @@ def process(precsv, processingFile=None):
 
 	#Query to find any existing pres, we need to delete them so COPY doesn't fail
 	with db_session() as db:
+		
 		pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 
 		prenamelist = []
@@ -167,6 +174,7 @@ def process(precsv, processingFile=None):
 				db.delete(pre)
 		else:
 			print("Pre-Import: No pres to add from this file")
+		
 		db.commit()
 
 
