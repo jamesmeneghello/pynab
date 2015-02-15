@@ -122,13 +122,15 @@ def largeNzedbPre():
 	else:
 		try:
 			url = "https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1"
-			dest = "." # or '~/Downloads/' on linux
+			dest = "."
 
 			print("Pre-Import: File predb_dump-062714.csv not found, attempt to download - may take a while, its 300mb")
+			
 			obj = SmartDL(url, dest)
 			obj.start()
-			#urllib.request.urlretrieve('https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1', "predb_dump-062714.csv.gz") 
+
 			print("Pre-Import: Extracting file")		
+			
 			os.system('gunzip predb_dump-062714.csv.gz')
 			fileExists = True
 		except:
