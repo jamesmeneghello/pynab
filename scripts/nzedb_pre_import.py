@@ -155,4 +155,5 @@ def processNzedbPre():
 	if insertFails is not None:
 		print("Pre-Import: Failures: {}".format(insertFails))
 
-processNzedbPre()
+if __name__ == '__main__':
+    processNzedbPre()
