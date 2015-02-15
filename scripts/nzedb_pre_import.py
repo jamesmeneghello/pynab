@@ -26,6 +26,7 @@ import regex
 import json
 import io
 from docopt import docopt
+import shutil
 
 #Panadas is required
 try:
@@ -114,16 +115,32 @@ def nzedbPre():
 
 
 def largeNzedbPre():
-	
-	try:
+
+	if os.path.isfile('predb_dump-062714.csv'):
+		fileExists = True
+	else:
+		try:
+			print("Pre-Import: File predb_dump-062714.csv not found, attempt to download - may take a while, its 300mb")
+			urllib.request.urlretrieve('https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1', "predb_dump-062714.csv.gz") 
+			print("Pre-Import: Extracting file")		
+			os.system('gunzip predb_dump-062714.csv.gz')
+			fileExists = True
+		except:
+			print("Pre-Import: Error downloading/unzipping. Please try again.")
+			exit(0)
+
+
+	if fileExists:
 		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='python')
-	except:
-		print("Pre-Import: File predb_dump-062714.csv not found")
-	
+	else:
+		print("Pre-Import: File predb_dump-062714.csv not found, please try again.")	
+		exit(0)
+
 
 	i = 0
 	for chunk in dirtyChunk: 
 		process(chunk)
+		break
 		print("Pre-Import: Imported chunk {}".format(i))
 		i += 1
 
@@ -146,7 +163,10 @@ def process(precsv, processingFile=None):
 
 	#Add clean searchname column
 	precsv['searchname'] = precsv['name'].map(lambda name: releases.clean_release_name(name))
-		
+
+	#Drop the pres without requestid's
+	precsv = precsv[precsv.requestid != '0'] 		
+	
 	#Create a list of names to check if they exist
 	names = list(precsv.name)
 
