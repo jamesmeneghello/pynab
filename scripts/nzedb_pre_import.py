@@ -140,7 +140,6 @@ def largeNzedbPre():
 	i = 0
 	for chunk in dirtyChunk: 
 		process(chunk)
-		break
 		print("Pre-Import: Imported chunk {}".format(i))
 		i += 1
 
