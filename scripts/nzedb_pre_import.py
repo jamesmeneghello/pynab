@@ -138,10 +138,13 @@ def largeNzedbPre():
 
 
 	i = 0
-	for chunk in dirtyChunk: 
-		process(chunk)
-		print("Pre-Import: Imported chunk {}".format(i))
-		i += 1
+	try:
+		for chunk in dirtyChunk: 
+			process(chunk)
+			print("Pre-Import: Imported chunk {}".format(i))
+			i += 1
+	except:
+		print("Pre-Import: Chunk is corrupt, trying the next")
 
 
 def process(precsv, processingFile=None):
