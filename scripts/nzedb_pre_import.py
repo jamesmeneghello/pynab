@@ -27,6 +27,7 @@ import json
 import io
 from docopt import docopt
 import shutil
+from pySmartDL import SmartDL
 
 #Panadas is required
 try:
@@ -120,8 +121,13 @@ def largeNzedbPre():
 		fileExists = True
 	else:
 		try:
+			url = "https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1"
+			dest = "." # or '~/Downloads/' on linux
+
 			print("Pre-Import: File predb_dump-062714.csv not found, attempt to download - may take a while, its 300mb")
-			urllib.request.urlretrieve('https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1', "predb_dump-062714.csv.gz") 
+			obj = SmartDL(url, dest)
+			obj.start()
+			#urllib.request.urlretrieve('https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1', "predb_dump-062714.csv.gz") 
 			print("Pre-Import: Extracting file")		
 			os.system('gunzip predb_dump-062714.csv.gz')
 			fileExists = True
@@ -131,20 +137,17 @@ def largeNzedbPre():
 
 
 	if fileExists:
-		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='python')
+		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='c', error_bad_lines=False)
 	else:
 		print("Pre-Import: File predb_dump-062714.csv not found, please try again.")	
 		exit(0)
 
 
 	i = 0
-	try:
-		for chunk in dirtyChunk: 
-			process(chunk)
-			print("Pre-Import: Imported chunk {}".format(i))
-			i += 1
-	except:
-		print("Pre-Import: Chunk is corrupt, trying the next")
+	for chunk in dirtyChunk: 
+		process(chunk)
+		print("Pre-Import: Imported chunk {}".format(i))
+		i += 1
 
 
 def process(precsv, processingFile=None):
@@ -175,27 +178,27 @@ def process(precsv, processingFile=None):
 	#Query to find any existing pres, we need to delete them so COPY doesn't fail
 	with db_session() as db:
 		
-		pres = db.query(Pre).filter(Pre.name.in_(names)).all()
+		if names is not None:
+			pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 
-		prenamelist = []
-		for pre in pres:
-			prenamelist.append(pre.name)
+			prenamelist = []
+			for pre in pres:
+				prenamelist.append(pre.name)
 		
 		#Create the inverse list, basically contains pres that already exist
 		newdata = precsv[~precsv['name'].isin(prenamelist)]
 
 		data = io.StringIO()
-		newdata.to_csv(data, index=False, header=False)
+		precsv.to_csv(data, index=False, header=False)
 		
 		#Delete any pres found as we are essentially going to update them
 		if len(newdata) is not 0:
 			for pre in pres:
 				db.delete(pre)
+			db.commit()
 		else:
 			print("Pre-Import: No pres to add from this file")
 		
-		db.commit()
-
 
 	try:
 		if processingFile is not None:
