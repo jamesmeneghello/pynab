@@ -21,7 +21,7 @@ if __name__ == '__main__':
     import config
     from pynab.db import Base, engine, Session, User, Group, Category, TvShow, Movie
     import pynab.util
-    from pynab.scripts import nzedb_pre_import
+    from scripts import nzedb_pre_import
 
     db = Session()
 
