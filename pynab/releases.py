@@ -305,11 +305,42 @@ def process():
                     if pynab.nzbs.nzb_regex.search(part.subject):
                         nzb_count += 1
 
-                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    if nzb_count > 0:
-                        log.debug('release: [{}] - removed (nzb only)'.format(binary.name))
+                # handle min_archives
+                # keep, nzb, under
+                status = 'keep'
+                archive_rules = config.postprocess.get('min_archives', 1)
+                if isinstance(archive_rules, dict):
+                    # it's a dict
+                    if binary.group_name in archive_rules:
+                        group = binary.group_name
                     else:
+                        group = '*'
+
+                    # make sure the catchall exists
+                    if group not in archive_rules:
+                        archive_rules[group] = 1
+
+                    # found a special rule
+                    if rar_count + zip_count < archive_rules[group]:
+                        if nzb_count > 0:
+                            status = 'nzb'
+                        else:
+                            status = 'under'
+                else:
+                    # it's an integer, globalise that shit yo
+                    if rar_count + zip_count < archive_rules:
+                        if nzb_count > 0:
+                            status = 'nzb'
+                        else:
+                            status = 'under'
+
+                # if it's an nzb or we're under, kill it
+                if status in ['nzb', 'under']:
+                    if status == 'nzb':
+                        log.debug('release: [{}] - removed (nzb only)'.format(binary.name))
+                    elif status == 'under':
                         log.debug('release: [{}] - removed (less than minimum archives)'.format(binary.name))
+
                     db.query(Binary).filter(Binary.id == binary.id).delete()
                     db.commit()
                     continue
