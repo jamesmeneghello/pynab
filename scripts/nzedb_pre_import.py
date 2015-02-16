@@ -178,28 +178,26 @@ def process(precsv, processingFile=None):
 	names = list(precsv.name)
 
 	#Query to find any existing pres, we need to delete them so COPY doesn't fail
+	prenamelist = []
 	with db_session() as db:
 		
-		if names is not None:
+		if names:
 			pres = db.query(Pre).filter(Pre.name.in_(names)).all()
 
-			prenamelist = []
 			for pre in pres:
-				prenamelist.append(pre.name)
-		
-		#Create the inverse list, basically contains pres that already exist
-		cleanPres = precsv[~precsv['name'].isin(prenamelist)]
+				prenamelist.append(pre.name)	
 
 		data = io.StringIO()
-		cleanPres.to_csv(data, index=False, header=False)
+		precsv.to_csv(data, index=False, header=False)
 		
 		#Delete any pres found as we are essentially going to update them
-		if len(cleanPres) != 0:
+		if prenamelist:
 			for pre in pres:
 				db.delete(pre)
 			db.commit()
+			print("Pre-Import: Deleted {} pres that will re-inserted".format(len(prenamelist)))
 		else:
-			print("Pre-Import: No pres to add from this file")
+			print("Pre-Import: File clean, no pres need to be deleted before re-insert")
 		
 
 	try:
