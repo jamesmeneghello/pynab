@@ -188,13 +188,13 @@ def process(precsv, processingFile=None):
 				prenamelist.append(pre.name)
 		
 		#Create the inverse list, basically contains pres that already exist
-		newdata = precsv[~precsv['name'].isin(prenamelist)]
+		cleanPres = precsv[~precsv['name'].isin(prenamelist)]
 
 		data = io.StringIO()
-		precsv.to_csv(data, index=False, header=False)
+		cleanPres.to_csv(data, index=False, header=False)
 		
 		#Delete any pres found as we are essentially going to update them
-		if len(newdata) is not 0:
+		if len(cleanPres) is not 0:
 			for pre in pres:
 				db.delete(pre)
 			db.commit()
