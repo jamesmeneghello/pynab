@@ -67,9 +67,10 @@ def save_all(parts):
                     s.write("\n")
                 s.seek(0)
 
-                copy_file(engine, s, ordering, Part)
+                if not copy_file(engine, s, ordering, Part):
+                    return False
 
-                db.commit()
+                db.close()
 
         with db_session() as db:
             existing_parts = dict(
@@ -119,9 +120,10 @@ def save_all(parts):
                     s.write("\n")
                 s.seek(0)
 
-                copy_file(engine, s, ordering, Segment)
+                if not copy_file(engine, s, ordering, Segment):
+                    return False
 
-                db.commit()
+                db.close()
 
         end = time.time()
 

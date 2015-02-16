@@ -86,6 +86,7 @@ def main(mode='update', group=None, date=None):
     iterations = 0
     while True:
         iterations += 1
+        data = []
 
         # refresh the db session each iteration, just in case
         with db_session() as db:
@@ -113,7 +114,11 @@ def main(mode='update', group=None, date=None):
                         result = [executor.submit(update, active_group) for active_group in active_groups]
 
                     for r in concurrent.futures.as_completed(result):
-                        data = r.result()
+                        data.append(r.result())
+
+                    if mode == 'backfill':
+                        if all(data):
+                            return
 
                     # don't retry misses during backfill, it ain't gonna happen
                     if config.scan.get('retry_missed') and not mode == 'backfill':

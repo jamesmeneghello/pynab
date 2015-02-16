@@ -30,8 +30,16 @@ class Server:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.quit()
+
+    def quit(self):
         if self.connection:
-            self.connection.quit()
+            try:
+                self.connection.quit()
+            except:
+                self.connection = None
+            finally:
+                self.connection = None
 
     def group(self, group_name):
         self.connect()
@@ -61,7 +69,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('server: could not connect to news server: {}'.format(e))
+                log.error('server: could not connect to news server')
                 return False
 
         return True
@@ -124,7 +132,7 @@ class Server:
             log.error('server: [{}]: nntp error'.format(group_name))
             log.error('server: suspected dead nntp connection, restarting')
 
-            self.connection.quit()
+            self.quit()
             self.connect()
             return self.scan(group_name, first, last, message_ranges)
 
@@ -324,6 +332,13 @@ class Server:
         candidate_post = None
         target_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days)
         bottom_date = self.post_date(group_name, first)
+
+        if not bottom_date:
+            log.error('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
+                group_name
+            ))
+            return None
+
         # check bottom_date
         if target_date < bottom_date:
             log.info('server: {}: post was before first available, starting from the beginning'.format(
@@ -332,6 +347,13 @@ class Server:
             return first
 
         top_date = self.post_date(group_name, last)
+
+        if not top_date:
+            log.error('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
+                group_name
+            ))
+            return None
+
         if target_date > top_date:
             log.info('server: {}: requested post was newer than most recent, ending'.format(group_name))
             return None
