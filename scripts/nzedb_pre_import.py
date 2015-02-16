@@ -157,7 +157,7 @@ def process(precsv, processingFile=None):
 	ordering = ['name','filename','nuked','category','pretime','source','requestid','requestgroup','searchname']
 	
 	#Clean up the file a bit.
-	precsv.replace("'", '', inplace=True, regex=True)
+	precsv.replace("'", "", inplace=True, regex=True)
 	precsv["nuked"].replace("2", "0", inplace=True)
 	precsv["nuked"].replace("3", "1", inplace=True)
 	precsv["nuked"].replace("4", "1", inplace=True)
@@ -194,7 +194,7 @@ def process(precsv, processingFile=None):
 		cleanPres.to_csv(data, index=False, header=False)
 		
 		#Delete any pres found as we are essentially going to update them
-		if len(cleanPres) is not 0:
+		if len(cleanPres) != 0:
 			for pre in pres:
 				db.delete(pre)
 			db.commit()
