@@ -28,6 +28,7 @@ import io
 from docopt import docopt
 import shutil
 from pySmartDL import SmartDL
+import gzip
 
 #Panadas is required
 try:
@@ -117,7 +118,7 @@ def nzedbPre():
 
 def largeNzedbPre():
 
-	if os.path.isfile('predb_dump-062714.csv'):
+	if os.path.isfile('predb_dump-062714.csv.gz'):
 		fileExists = True
 	else:
 		try:
@@ -129,9 +130,6 @@ def largeNzedbPre():
 			obj = SmartDL(url, dest)
 			obj.start()
 
-			print("Pre-Import: Extracting file")		
-			
-			os.system('gunzip predb_dump-062714.csv.gz')
 			fileExists = True
 		except:
 			print("Pre-Import: Error downloading/unzipping. Please try again.")
@@ -139,7 +137,7 @@ def largeNzedbPre():
 
 
 	if fileExists:
-		dirtyChunk = pandas.read_table('predb_dump-062714.csv', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='c', error_bad_lines=False, warn_bad_lines=False)
+		dirtyChunk = pandas.read_table('predb_dump-062714.csv.gz', compression='gzip', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='c', error_bad_lines=False, warn_bad_lines=False)
 	else:
 		print("Pre-Import: File predb_dump-062714.csv not found, please try again.")	
 		exit(0)
