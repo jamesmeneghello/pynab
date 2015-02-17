@@ -121,7 +121,7 @@ This allows us to vastly increase the speed of segment writes. Without this, sca
     > sudo git clone https://github.com/Murodese/pynab.git
     > sudo chown -R www-data:www-data pynab
     > cd pynab
-    > sudo cp config.sample.py config.py
+    > sudo cp config_sample.py config.py
     > sudo vim config.py [fill in details as appropriate]
     > sudo pip3 install -r requirements.txt
 
@@ -140,7 +140,7 @@ Clone and configure:
     > [browse to desired directory]
     > git clone https://github.com/Murodese/pynab.git
     > [browse to pynab]
-    > [copy config.sample.py to config.py]
+    > [copy config_sample.py to config.py]
     > [fill in config as appropriate, ensuring to set logfile]
 
 Install pre-reqs. The following packages are available as Windows binaries from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
@@ -230,7 +230,7 @@ than cut over directly:
     > git clone https://github.com/Murodese/pynab.git pynab-postgres
     > cd /opt/pynab-postgres
     > git checkout development-postgres
-    > cp config.sample.py config.py
+    > cp config_sample.py config.py
     > [edit config.py to add mongo and postgres config]
     > python3 scripts/convert_mongo_to_postgre.py
 
@@ -311,7 +311,7 @@ while post-processing enriches releases with metadata useful for the API. This m
 TVRage IDs, IMDB IDs, whether a release is passworded, release size, etc.
 
 Before running pynab, you should ensure that you've read and edited config.py (copied from 
-config.sample.py). If log directories are set to unwritable locations, pynab will not run.
+config_sample.py). If log directories are set to unwritable locations, pynab will not run.
 
 If you want to manually start/stop processes or check their status:
 
@@ -545,7 +545,7 @@ F.A.Q.
 - I keep getting errors related to "config.<something>" and start.py stops.
 - e.g. AttributeError: 'module' object has no attribute 'monitor'
 
-This means that your config.py is out of date. Re-copy config.sample.py and re-enter your details.
+This means that your config.py is out of date. Re-copy config_sample.py and re-enter your details.
 Generally speaking this should become less of a problem as time goes on - only new features require new
 config options, and the project is mostly in bugfix mode at the moment.
 
