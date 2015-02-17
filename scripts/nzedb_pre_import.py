@@ -26,9 +26,7 @@ import regex
 import json
 import io
 from docopt import docopt
-import shutil
 from pySmartDL import SmartDL
-import gzip
 
 #Panadas is required
 try:
