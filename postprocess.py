@@ -209,6 +209,8 @@ def main():
                     pynab.db.vacuum(mode='postprocess', full=False)
                 iterations = 0
 
+        iterations += 1
+
         # wait for the configured amount of time between cycles
         postprocess_wait = config.postprocess.get('postprocess_wait', 300)
         log.info('sleeping for {:d} seconds...'.format(postprocess_wait))

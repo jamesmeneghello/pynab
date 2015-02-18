@@ -180,7 +180,15 @@ postprocess = {
     'min_size': {},
 
     # min_archives: the minimum number of archives in a binary to form a release
-    # setting this to 1 will cut out releases that only contain an nzb, etc.
+    # this is per-group or global
+    # for per-group:
+    # minimum 1 for every group except e-books, which is 0
+    # 'min_archives': {
+    #     'alt.binaries.e-books: 0,
+    #     '*': 1
+    # }
+    # or
+    # 'min_archives': 1 # 1 for all groups
     'min_archives': 1,
 
     # min_completion: the minimum completion % that a release should satisfy

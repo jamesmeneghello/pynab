@@ -113,12 +113,12 @@ def discover_name(release):
                         continue
             else:
                 # the old name was apparently fine
-                log.info('release: [{}] - old name was fine'.format(
+                log.debug('release: [{}] - old name was fine'.format(
                     release.search_name
                 ))
                 return False, calculated_old_category
 
-    log.info('release: no good name candidates [{}]'.format(
+    log.debug('release: no good name candidates [{}]'.format(
         release.search_name
     ))
     return None, None
@@ -219,7 +219,7 @@ def process():
                 oversized = est_size > config.postprocess.get('max_process_size', 10 * 1024 * 1024 * 1024)
 
                 if oversized and not config.postprocess.get('max_process_anyway', True):
-                    log.info('release: [{}] - removed (oversized)'.format(binary.name))
+                    log.debug('release: [{}] - removed (oversized)'.format(binary.name))
                     db.query(Binary).filter(Binary.id == completed_binary[0]).delete()
                     db.commit()
                     continue
@@ -247,7 +247,7 @@ def process():
                         # we're operating on binaries, not releases
                         field = 'name' if blacklist.field == 'subject' else blacklist.field
                         if regex.search(blacklist.regex, getattr(binary, field)):
-                            log.info('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
+                            log.debug('release: [{}] - removed (blacklisted: {})'.format(binary.name, blacklist.id))
                             db.query(Binary).filter(Binary.id == binary.id).delete()
                             db.commit()
                             blacklisted = True
@@ -281,7 +281,7 @@ def process():
                             break
 
                 if undersized:
-                    log.info('release: [{}] - removed (smaller than minimum size for group)'.format(
+                    log.debug('release: [{}] - removed (smaller than minimum size for group)'.format(
                         binary.name
                     ))
                     db.query(Binary).filter(Binary.id == binary.id).delete()
@@ -305,11 +305,42 @@ def process():
                     if pynab.nzbs.nzb_regex.search(part.subject):
                         nzb_count += 1
 
-                if rar_count + zip_count < config.postprocess.get('min_archives', 1):
-                    if nzb_count > 0:
-                        log.info('release: [{}] - removed (nzb only)'.format(binary.name))
+                # handle min_archives
+                # keep, nzb, under
+                status = 'keep'
+                archive_rules = config.postprocess.get('min_archives', 1)
+                if isinstance(archive_rules, dict):
+                    # it's a dict
+                    if binary.group_name in archive_rules:
+                        group = binary.group_name
                     else:
-                        log.info('release: [{}] - removed (less than minimum archives)'.format(binary.name))
+                        group = '*'
+
+                    # make sure the catchall exists
+                    if group not in archive_rules:
+                        archive_rules[group] = 1
+
+                    # found a special rule
+                    if rar_count + zip_count < archive_rules[group]:
+                        if nzb_count > 0:
+                            status = 'nzb'
+                        else:
+                            status = 'under'
+                else:
+                    # it's an integer, globalise that shit yo
+                    if rar_count + zip_count < archive_rules:
+                        if nzb_count > 0:
+                            status = 'nzb'
+                        else:
+                            status = 'under'
+
+                # if it's an nzb or we're under, kill it
+                if status in ['nzb', 'under']:
+                    if status == 'nzb':
+                        log.debug('release: [{}] - removed (nzb only)'.format(binary.name))
+                    elif status == 'under':
+                        log.debug('release: [{}] - removed (less than minimum archives)'.format(binary.name))
+
                     db.query(Binary).filter(Binary.id == binary.id).delete()
                     db.commit()
                     continue
@@ -332,7 +363,7 @@ def process():
                 if nzb:
                     added_count += 1
 
-                    log.debug('release: [{}]: added release ({} rars, {} rarparts)'.format(
+                    log.info('release: [{}]: added release ({} rars, {} rarparts)'.format(
                         release.search_name,
                         len(rars),
                         rar_count
@@ -349,7 +380,7 @@ def process():
                         # this sometimes raises if we get a duplicate
                         # this requires a post of the same name at exactly the same time (down to the second)
                         # pretty unlikely, but there we go
-                        log.warning('release: [{}]: duplicate release, discarded'.format(release.search_name))
+                        log.debug('release: [{}]: duplicate release, discarded'.format(release.search_name))
                         db.rollback()
 
                     # delete processed binaries
