@@ -86,7 +86,14 @@ if __name__ == '__main__':
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
 
-    print('Copying pre data into db...')
+    print('Copying large pre data into db...')
+    try:
+        nzedb_pre_import.largeNzedbPre()
+    except Exception as e:
+        print('Problem inserting data into database: {}'.format(e))
+        sys.exit(0)
+
+    print('Copying small pre data into db...')
     try:
         nzedb_pre_import.nzedbPre()
     except Exception as e:
