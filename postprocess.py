@@ -76,7 +76,7 @@ def main():
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    scripts.quick_postprocess.local_postprocess()
+    #scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -118,8 +118,14 @@ def main():
                 if config.postprocess.get('process_requests', True):
                     threads.append(executor.submit(process_requests))
 
-                for t in concurrent.futures.as_completed(threads):
-                    data = t.result()
+                #for t in concurrent.futures.as_completed(threads):
+                #    data = t.result()
+
+            # every 25 iterations (roughly), reset the unwanted status on releases
+            if iterations % 25 == 0:
+                log.info('postprocess: resetting unwanted status')
+                db.query(Release).filter(Release.unwanted==True).update({Release.unwanted: False})
+                db.commit()
 
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)
@@ -202,6 +208,8 @@ def main():
                 else:
                     pynab.db.vacuum(mode='postprocess', full=False)
                 iterations = 0
+
+        iterations += 1
 
         # wait for the configured amount of time between cycles
         postprocess_wait = config.postprocess.get('postprocess_wait', 300)
