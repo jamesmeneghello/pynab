@@ -27,4 +27,5 @@ colorama
 cymysql
 pandas
 beautifulsoup4
+pySmartDL
 git+https://github.com/PyMySQL/PyMySQL.git

@@ -34,6 +34,6 @@ config.py
 logs
 
 #files created by nzedb pre import
-scripts/formattedUL.csv
-scripts/unformattedDL.gz
+scripts/*.csv
+scripts/*.gz
 scripts/lastfile.json

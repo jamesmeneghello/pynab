@@ -54,9 +54,6 @@ class Server:
 
     def connect(self, compression=True):
         """Creates a connection to a news server."""
-        if not config.news.get('user') or not config.news.get('password'):
-            raise AuthException('no username or password supplied')
-
         if not self.connection:
             news_config = config.news.copy()
 
