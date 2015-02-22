@@ -20,7 +20,6 @@ except:
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab.db import db_session, Group, Category, Release, User, TvShow, Movie
-import config
 
 def convert_groups(mysql):
     """Converts Newznab groups table into Pynab. Only really
@@ -58,7 +57,7 @@ def convert_categories(mysql):
 
     with db_session() as db:
         from_query = """
-            SELECT ID, title, parentID, minsizetoformrelease, maxsizetoformrelease
+            SELECT ID, title, parentID
             FROM category;
         """
 
@@ -72,8 +71,6 @@ def convert_categories(mysql):
                 id=r[0],
                 name=r[1],
                 parent_id=r[2],
-                min_size=r[3],
-                max_size=r[4]
             )
 
             db.add(c)
@@ -148,7 +145,10 @@ def convert_imdb(mysql):
         cursor.execute(from_query)
 
         for r in cursor.fetchall():
-            movie = db.query(Movie).filter(Movie.id==r[0]).first()
+            if not r[2]:
+                # Blank years do not work, skip them
+                continue
+            movie = db.query(Movie).filter(Movie.id==str(r[0])).first()
             if not movie:
                 movie = Movie(
                     id=r[0],
