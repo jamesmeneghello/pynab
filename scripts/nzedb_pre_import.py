@@ -56,13 +56,13 @@ def nzedbPre():
 		preHTML = urllib.request.urlopen("https://www.dropbox.com/sh/fb2pffwwriruyco/AACy9Egno_v2kcziVHuvWbbxa")
 		soup = BeautifulSoup(preHTML.read())
 	except:
-		print("Pre-Import: Error connecting to dropbox, try again later")
+		print("pre-import: Error connecting to dropbox, try again later")
 
 	try:
 		data = open('lastfile.json')
 		lastFileFromDisk = json.load(data)
 	except:
-		print("Pre-Import: No existinfg file found, will attempt to download and insert all pres")
+		print("pre-import: No existinfg file found, will attempt to download and insert all pres")
 		lastFileFromDisk = None
 
 
@@ -91,10 +91,10 @@ def nzedbPre():
 		if lastFileFromDisk is None or int(processingFile['lastfile']) > lastFileFromDisk['lastfile']:
 			
 			try:
-				print("Pre-Import: Attempting to download file: {}".format(processingFile['lastfile']))
+				print("pre-import: Attempting to download file: {}".format(processingFile['lastfile']))
 				urllib.request.urlretrieve(preCSV, "unformattedDL.gz")
 			except:
-				print("Pre-Import: Error downloading: {} - Please run the process again".format(preCSV))
+				print("pre-import: Error downloading: {} - Please run the process again".format(preCSV))
 				INSERTFAILS.append(processingFile['lastfile'])
 				#The assumption here is, if one fails, you should probably just start again at that file.
 				break
@@ -106,12 +106,12 @@ def nzedbPre():
 			process(dirtyFile, processingFile)
 
 		else:
-			print("Pre-Import: More than likely {} has already been imported".format(processingFile['lastfile']))
+			print("pre-import: More than likely {} has already been imported".format(processingFile['lastfile']))
 			pass
 
 
 	if INSERTFAILS is not None:
-		print("Pre-Import: Failures: {}".format(INSERTFAILS))
+		print("pre-import: Failures: {}".format(INSERTFAILS))
 
 
 def largeNzedbPre():
@@ -123,28 +123,28 @@ def largeNzedbPre():
 			url = "https://www.dropbox.com/s/btr42dtzzyu3hh3/predb_dump-062714.csv.gz?dl=1"
 			dest = "."
 
-			print("Pre-Import: File predb_dump-062714.csv not found, attempt to download - may take a while, its 300mb")
+			print("pre-import: File predb_dump-062714.csv not found, attempt to download - may take a while, its 300mb")
 			
 			obj = SmartDL(url, dest)
 			obj.start()
 
 			fileExists = True
 		except:
-			print("Pre-Import: Error downloading/unzipping. Please try again.")
+			print("pre-import: Error downloading/unzipping. Please try again.")
 			exit(0)
 
 
 	if fileExists:
 		dirtyChunk = pandas.read_table('predb_dump-062714.csv.gz', compression='gzip', sep='\t', header=None, na_values='\\N', usecols=[0,8,10,14,16,18,20,22], names=COLNAMES, chunksize=10000, engine='c', error_bad_lines=False, warn_bad_lines=False)
 	else:
-		print("Pre-Import: File predb_dump-062714.csv not found, please try again.")	
+		print("pre-import: File predb_dump-062714.csv not found, please try again.")	
 		exit(0)
 
 
 	i = 0
 	for chunk in dirtyChunk: 
 		process(chunk)
-		print("Pre-Import: Imported chunk {}".format(i))
+		print("pre-import: Imported chunk {}".format(i))
 		i += 1
 
 
@@ -191,14 +191,14 @@ def process(precsv, processingFile=None):
 			for pre in pres:
 				db.delete(pre)
 			db.commit()
-			print("Pre-Import: Deleted {} pres that will re-inserted".format(len(prenamelist)))
+			print("pre-import: Deleted {} pres that will re-inserted".format(len(prenamelist)))
 		else:
-			print("Pre-Import: File clean, no pres need to be deleted before re-insert")
+			print("pre-import: File clean, no pres need to be deleted before re-insert")
 		
 
 	try:
 		if processingFile is not None:
-			print("Pre-Import: Attempting to add {} to the database".format(processingFile['lastfile']))
+			print("pre-import: Attempting to add {} to the database".format(processingFile['lastfile']))
 			
 			data.seek(0)
 			copy_file(engine, data, ordering, Pre)
@@ -211,15 +211,15 @@ def process(precsv, processingFile=None):
 			data.seek(0)
 			copy_file(engine, data, ordering, Pre)
 			data.close()
-			print("Pre-Import: Chunk import successful")
+			print("pre-import: Chunk import successful")
 	
 	except Exception as e:
-		print("Pre-Import: Error inserting into database - {}".format(e))
+		print("pre-import: Error inserting into database - {}".format(e))
 		
 		if processingFile is not None:
 			INSERTFAILS.append(processingFile['lastfile'])	
 		else:
-			print("Pre-Import: Error processing chunk")
+			print("pre-import: Error processing chunk")
 
 
 if __name__ == '__main__':

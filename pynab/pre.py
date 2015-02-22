@@ -21,9 +21,9 @@ def nzedbirc(unformattedPre):
 
         try:
             db.add(p)
-            log.info("Pre: Inserted/Updated - {}".format(formattedPre["name"]))
+            log.info("pre: Inserted/Updated - {}".format(formattedPre["name"]))
         except Exception as e:
-            log.debug("Pre: Error - {}".format(e))
+            log.debug("pre: Error - {}".format(e))
 
 
 #Message legend: DT: PRE Time(UTC) | TT: Title | SC: Source | CT: Category | RQ: Requestid | SZ: Size | FL: Files | FN: Filename
@@ -37,7 +37,7 @@ def parseNzedbirc(unformattedPre):
     try:
         formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
     except Exception as e:
-        log.debug("Pre: Error parsing nzedbirc - {}".format(e))
+        log.debug("pre: Error parsing nzedbirc - {}".format(e))
 
     if formattedPre['preType'] == "NUK":
         formattedPre['nuked'] = True
