@@ -6,50 +6,15 @@ NOTE: DESTRUCTIVE. DO NOT RUN ON ACTIVE PYNAB INSTALL.
 
 """
 
-# if you're using pycharm, don't install the bson package
-# it comes with pymongo
+import argparse
 import os
 import sys
 
-import cymysql
-
+import pymysql
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from pynab.db import db_session, Group, Category, Release, User, TvShow, Movie
-import config
-
-
-def dupe_notice():
-    error_text = '''
-        If there are duplicate rageID/tvdbID/imdbID's in their
-        respective tables, you'll need to trim duplicates first
-        or these scripts will fail. You can do so with:
-
-        alter ignore table tvrage add unique key (rageid);
-
-        If they're running InnoDB you can't always do this, so
-        you'll need to do:
-
-        alter table tvrage engine myisam;
-        alter ignore table tvrage add unique key (rageid);
-        alter table tvrage engine innodb;
-    '''
-
-    print(error_text)
-
-
-def mysql_connect(mysql_config):
-    mysql = cymysql.connect(
-        host=mysql_config['host'],
-        port=mysql_config['port'],
-        user=mysql_config['user'],
-        passwd=mysql_config['passwd'],
-        db=mysql_config['db']
-    )
-
-    return mysql
-
 
 def convert_groups(mysql):
     """Converts Newznab groups table into Pynab. Only really
@@ -87,7 +52,7 @@ def convert_categories(mysql):
 
     with db_session() as db:
         from_query = """
-            SELECT ID, title, parentID, minsizetoformrelease, maxsizetoformrelease
+            SELECT ID, title, parentID
             FROM category;
         """
 
@@ -101,8 +66,6 @@ def convert_categories(mysql):
                 id=r[0],
                 name=r[1],
                 parent_id=r[2],
-                min_size=r[3],
-                max_size=r[4]
             )
 
             db.add(c)
@@ -177,7 +140,10 @@ def convert_imdb(mysql):
         cursor.execute(from_query)
 
         for r in cursor.fetchall():
-            movie = db.query(Movie).filter(Movie.id==r[0]).first()
+            if not r[2]:
+                # Blank years do not work, skip them
+                continue
+            movie = db.query(Movie).filter(Movie.id==str(r[0])).first()
             if not movie:
                 movie = Movie(
                     id=r[0],
@@ -189,21 +155,60 @@ def convert_imdb(mysql):
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("mysql_host",
+                        help="Newznab MySQL Hostname")
+    parser.add_argument("mysql_db",
+                        help="Newznab MySQL Database Name")
+
+    parser.add_argument("--mysql-user", dest="mysql_user",
+                        help="Newznab MySQL Username")
+    parser.add_argument("--mysql-passwd", dest="mysql_passwd",
+                        help="Newznab MySQL Password")
+    parser.add_argument("--mysql-port", default=3306, type=int,
+                        dest="mysql_port",
+                        help="Newznab MySQL Port (default: 3306)")
+
+    parser.add_argument("--no-users", action="store_true", dest="no_users",
+                        help="Turn off users conversion.")
+    parser.add_argument("--no-groups", action="store_true", dest="no_groups",
+                        help="Turn off groups conversion.")
+    parser.add_argument("--no-categories", action="store_true",
+                        dest="no_categories",
+                        help="Turn off categories conversion.")
+    parser.add_argument("--no-imdb", action="store_true", dest="no_imdb",
+                        help="Turn off IMDB conversion.")
+    parser.add_argument("--no-tvrage", action="store_true", dest="no_tvrage",
+                        help="Turn off TVRage conversion.")
+
+    args = parser.parse_args()
+
     print('Convert Newznab to Pynab script.')
-    print('Please note that this script is destructive and will wipe the following Postgre tables:')
-    print('Groups, Categories, Users, TVRage, IMDB.')
-    print('If you don\'t want some of these to be replaced, edit this script and comment those lines out.')
-    print('Also ensure that you\'ve edited config.py to include the details of your MySQL server.')
+    print('Please note that this script is destructive.')
+    print('The following Postgres tables will be wiped:')
+    print('\tGroups\n\tCategories\n\tUsers\n\tTVRage\n\tIMDB.')
+    print('If you don\'t want some of these to be replaced, use the --no-<table> option.')
+    print('See --help for more information.')
+    print('')
     input('To continue, press enter. To exit, press ctrl-c.')
 
-    mysql = mysql_connect(config.mysql)
+    mysql = pymysql.connect(host=args.mysql_host,
+                            port=args.mysql_port,
+                            user=args.mysql_user,
+                            passwd=args.mysql_passwd,
+                            db=args.mysql_db)
 
-    # comment lines out if you don't want those collections replaced
-    convert_groups(mysql)
-    convert_categories(mysql)
-    convert_imdb(mysql)
-    convert_tvrage(mysql)
-    convert_users(mysql)
+    if not args.no_users:
+        convert_users(mysql)
+    if not args.no_groups:
+        convert_groups(mysql)
+    if not args.no_categories:
+        convert_categories(mysql)
+    if not args.no_imdb:
+        convert_imdb(mysql)
+    if not args.no_tvrage:
+        convert_tvrage(mysql)
 
-    print('Completed transfer. You can think about shutting down / removing MySQL from your server now.')
-    print('Unless you\'re using it for something else, in which case that\'d be dumb.')
+    print('Completed transfer.')

@@ -24,7 +24,6 @@ eventlet
 requests-futures
 irc
 colorama
-cymysql
 pandas
 beautifulsoup4
 pySmartDL

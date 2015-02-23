@@ -379,13 +379,3 @@ mongo = {
     # db: database name in mongo
     'db': 'pynab',
 }
-
-# only used for convert_from_newznab.py
-# you can probably leave this blank unless you know what you're doing
-mysql = {
-    'host': '',
-    'port': 3306,
-    'user': '',
-    'passwd': '',
-    'db': 'newznab',
-}
