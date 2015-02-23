@@ -186,18 +186,16 @@ You can also import a regex dump or create your own.
     things, newznab conversion will just copy - but better to be safe.
 
 Pynab can transfer some data across from Newznab - notably your groups (and settings),
-any regexes, blacklists, categories and TVRage/IMDB data, as well as user details
-and current API keys. This means that your users should only experience downtime for a
+categories and TVRage/IMDB data, as well as user details and current API keys.
+This means that your users should only experience downtime for a
 short period, and don't have to regenerate their API keys. Hate your users? No problem,
 they won't even notice the difference and you don't even have to tell them.
 
-To convert from a Newznab installation, you should first enter the details of your MySQL
-installation into config.py, and read the comment at the top of scripts/convert_from_newznab.py.
-You may need to delete duplicate data in certain tables before running a conversion.
-
 To run the conversion, first follow the normal installation instructions. Then:
 
-    > python3 scripts/convert_from_newznab.py
+    > python3 scripts/convert_from_newznab.py <mysql hostname> <newznab db>
+
+run --help for additional options.
 
 This will copy over relevant data from your Newznab installation. Because Pynab's method of
 storing NZBs and metadata is very different to Newznab, we can't do a direct releases table

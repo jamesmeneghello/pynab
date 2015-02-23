@@ -10,12 +10,7 @@ import argparse
 import os
 import sys
 
-try:
-    import cymysql
-except:
-    print("cymysql is required for conversion: pip install cymysql")
-    exit(-1)
-
+import pymysql
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
@@ -199,7 +194,7 @@ if __name__ == '__main__':
     print('')
     input('To continue, press enter. To exit, press ctrl-c.')
 
-    mysql = cymysql.connect(host=args.mysql_host,
+    mysql = pymysql.connect(host=args.mysql_host,
                             port=args.mysql_port,
                             user=args.mysql_user,
                             passwd=args.mysql_passwd,
