@@ -3,7 +3,8 @@
 
 Usage:
     pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot|checkconfig|stats
-    pynab.py user (create|delete) <email>
+    pynab.py user list
+    pynab.py user (create|delete|info) <email>
     pynab.py group (enable|disable|reset) <group>
 
 Options:
@@ -89,6 +90,16 @@ def update():
     call('pip3 install -q -r requirements.txt', shell=True)
     print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
 
+def list_users():
+    import pynab.users
+    user_list = pynab.users.list()
+    if user_list:
+        for user in user_list:
+            print("Email: %s\tAPI Key: %s\tGrabs: %s" % (user[0],
+                                                         user[1],
+                                                         user[2]))
+    else:
+        print('No users found.')
 
 def create_user(email):
     import pynab.users
@@ -98,13 +109,22 @@ def create_user(email):
 
 
 def delete_user(email):
-    with db_session() as db:
-        deleted = db.query(User).filter(User.email == email).delete()
-        if deleted:
-            db.commit()
-            print('user deleted.')
-        else:
-            print('user not found.')
+    import pynab.users
+    ret = pynab.users.delete(email)
+    if ret:
+        print('User deleted.')
+    else:
+        print('User not found.')
+
+def info_user(email):
+    import pynab.users
+    user = pynab.users.info(email)
+    if user:
+        print("Email: %s\tAPI Key: %s\tGrabs: %s" % (user[0],
+                                                     user[1],
+                                                     user[2]))
+    else:
+        print('User not found.')
 
 
 def enable_group(group):
@@ -201,6 +221,10 @@ if __name__ == '__main__':
             create_user(arguments['<email>'])
         elif arguments['delete']:
             delete_user(arguments['<email>'])
+        elif arguments['info']:
+            info_user(arguments['<email>'])
+        elif arguments['list']:
+            list_users()
     elif arguments['group']:
         if arguments['enable']:
             enable_group(arguments['<group>'])
