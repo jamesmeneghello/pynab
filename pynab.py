@@ -5,7 +5,8 @@ Usage:
     pynab.py start|stop|scan|postprocess|api|update|backfill|pubsub|regex|prebot|checkconfig|stats
     pynab.py user list
     pynab.py user (create|delete|info) <email>
-    pynab.py group (enable|disable|reset) <group>
+    pynab.py group list
+    pynab.py group (enable|disable|reset|info|add|remove) <group>
 
 Options:
     -h --help       Show this screen.
@@ -126,43 +127,64 @@ def info_user(email):
     else:
         print('User not found.')
 
+def add_group(group):
+    import pynab.groupctl
+    if pynab.groupctl.add_group(group):
+        print('group added and activated.')
+    else:
+        print('group not added.')
+
+def remove_group(group):
+    import pynab.groupctl
+    if pynab.groupctl.remove_group(group):
+        print('group removed.')
+    else:
+        print('group does not exist.')
 
 def enable_group(group):
-    with db_session() as db:
-        group = db.query(Group).filter(Group.name == group).first()
-        if group:
-            group.active = True
-            db.add(group)
-            db.commit()
-            print('group enabled.')
-        else:
-            print('group does not exist.')
+    import pynab.groupctl
+    if pynab.groupctl.enable_group(group):
+        print('group enabled.')
+    else:
+        print('group does not exist.')
 
 
 def disable_group(group):
-    with db_session() as db:
-        group = db.query(Group).filter(Group.name == group).first()
-        if group:
-            group.active = False
-            db.add(group)
-            db.commit()
-            print('group disabled.')
-        else:
-            print('group does not exist.')
-
+    import pynab.groupctl
+    if pynab.groupctl.disable_group(group):
+        print('group disabled.')
+    else:
+        print('group does not exist.')
 
 def reset_group(group):
-    with db_session() as db:
-        group = db.query(Group).filter(Group.name == group).first()
-        if group:
-            group.first = 0
-            group.last = 0
-            db.add(group)
-            db.commit()
-            print('group first/last reset.')
-        else:
-            print('group does not exist.')
+    import pynab.groupctl
+    if pynab.groupctl.disable_group(group):
+        print('group first/last reset.')
+    else:
+        print('group does not exist.')
 
+def group_info(group):
+    import pynab.groupctl
+    group = pynab.groupctl.group_info(group)
+    if group:
+        print("%s\t%s\t%s\t%s" % (group.name,
+                                  group.active,
+                                  group.first,
+                                  group.last))
+    else:
+        print('group does not exist.')
+
+def group_list():
+    import pynab.groupctl
+    groups = pynab.groupctl.group_list()
+    if groups:
+        for group in groups:
+            print("%s\t%s\t%s\t%s" % (group.name,
+                                      group.active,
+                                      group.first,
+                                      group.last))
+    else:
+        print('no groups configured.')
 
 def checkconfig():
     from pynab import check_config
@@ -232,6 +254,14 @@ if __name__ == '__main__':
             disable_group(arguments['<group>'])
         elif arguments['reset']:
             reset_group(arguments['<group>'])
+        elif arguments['info']:
+            group_info(arguments['<group>'])
+        elif arguments['list']:
+            group_list()
+        elif arguments['add']:
+            add_group(arguments['<group>'])
+        elif arguments['remove']:
+            remove_group(arguments['<group>'])
     elif arguments['regex']:
         update_regex()
     elif arguments['checkconfig']:
