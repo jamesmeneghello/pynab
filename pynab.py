@@ -156,7 +156,7 @@ def disable_group(group):
 
 def reset_group(group):
     import pynab.groupctl
-    if pynab.groupctl.disable_group(group):
+    if pynab.groupctl.reset_group(group):
         print('group first/last reset.')
     else:
         print('group does not exist.')
