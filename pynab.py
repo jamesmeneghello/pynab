@@ -21,8 +21,6 @@ from docopt import docopt
 
 import config
 import pynab.util
-from pynab.db import db_session, User, Group
-
 
 def scan():
     if monitor == 'supervisor':
