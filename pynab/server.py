@@ -358,6 +358,10 @@ class Server:
         bottom = first
         top = last
 
+        # Keep track of previously seen candidate posts so that we
+        # can adjust and avoid getting into a loop.
+        seen_post = {}
+
         # iterative, obviously
         while True:
             # do something like a binary search
@@ -387,6 +391,15 @@ class Server:
                         perc += addition
                     else:
                         perc += addition
+
+            # If we begin to see posts multiple times then we may need to
+            # slide our tolerance out a bit to compensate for holes in posts.
+            if candidate_post in seen_post:
+                tolerance_adjustment = tolerance / 2
+                log.debug('server: {}: Seen post more than once, increasing tolerance by {} to compensate.'.format(group_name, tolerance_adjustment))
+                tolerance += tolerance_adjustment
+            else:
+                seen_post[candidate_post] = 1
 
             # tolerance sliding scale, about 0.1% rounded to the nearest day
             # we don't need a lot of leeway, since this is a lot faster than previously
