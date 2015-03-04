@@ -271,7 +271,8 @@ def process(limit=None, category=0):
 
                         size = 0
                         for file in info:
-                            f = File(name=file['name'], size=file['size'])
+                            f = File(name=file['name'][:512],
+                                     size=file['size'])
                             f.release = release
                             size += file['size']
                             db.add(f)
