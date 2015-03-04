@@ -412,7 +412,7 @@ class Binary(Base):
     posted = Column(DateTime)
     posted_by = Column(String(200))
 
-    xref = Column(String(256))
+    xref = Column(String(1024))
     group_name = Column(String(200))
 
     regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
@@ -443,7 +443,7 @@ class Part(Base):
     posted = Column(DateTime, index=True)
     posted_by = Column(String(200))
 
-    xref = Column(String(256))
+    xref = Column(String(1024))
     group_name = Column(String(200), index=True)
 
     binary_id = Column(Integer, ForeignKey('binaries.id', ondelete='CASCADE'), index=True)
