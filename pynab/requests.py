@@ -33,7 +33,13 @@ def process(limit=None):
 
                 if group_name not in requests:
                     requests[group_name] = {}
-                requests[group_name][int(release.name.split(': ')[1])] = release
+
+                try:
+                    requests[group_name][int(release.name.split(': ')[1])] = release
+                except ValueError:
+                    # request hash?
+                    continue
+
         else:
             log.info("requests: no release requests to process")
 
