@@ -21,6 +21,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import pynab
 
+from pynab.db import db_session, Release
+
 def create_path(base_path, fileid):
     path = '/'.join([base_path, fileid[:1]])
     os.makedirs(path, exist_ok=True)
