@@ -1,29 +1,30 @@
-import argparse
+#!/usr/bin/env python3
+"""
+Usage:
+  export_nzbs.py [--verbose] PATH
+
+Arguments:
+  PATH          Path where exported NZBs will be written
+
+Options:
+  -h --help     Show help
+  -v --verbose  Verbose output
+"""
+
 import os
 import sys
 import uuid
 
+from docopt import docopt
+
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
-from pynab.db import db_session, Release
-
-# http://stackoverflow.com/questions/11415570/directory-path-types-with-argparse
-class writeable_dir(argparse.Action):
-    def __call__(self,parser, namespace, values, option_string=None):
-        prospective_dir=values
-        if not os.path.isdir(prospective_dir):
-            raise argparse.ArgumentTypeError("writeable_dir:{0} is not a valid path".format(prospective_dir))
-        if os.access(prospective_dir, os.W_OK):
-            setattr(namespace,self.dest,prospective_dir)
-        else:
-            raise argparse.ArgumentTypeError("writeable_dir:{0} is not a writeable dir".format(prospective_dir))
-
+import pynab
 
 def create_path(base_path, fileid):
     path = '/'.join([base_path, fileid[:1]])
     os.makedirs(path, exist_ok=True)
     return path
-
 
 def export_nzbs(base_path):
     with db_session() as db:
@@ -35,7 +36,7 @@ def export_nzbs(base_path):
             fileid = str(uuid.uuid4()).replace('-', '')+str(release.nzb_id)+".gz"
             path = create_path(base_path, fileid)
             filepath = '/'.join([path, fileid])
-            if args.verbose:
+            if arguments['--verbose']:
                 print("Release ID: %s\nPath: %s" % (release.nzb_id, filepath))
             try:
                 with open(filepath, 'wb') as f:
@@ -48,15 +49,11 @@ def export_nzbs(base_path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    arguments = docopt(__doc__, version=pynab.__version__)
 
-    parser.add_argument("export_path", metavar="PATH",
-                        help="Path where nzb files will be exported.",
-                        action=writeable_dir)
+    if not os.path.isdir(arguments['PATH']):
+        raise Exception("{} is not a vaid path.".format(arguments['PATH']))
+    if not os.access(arguments['PATH'], os.W_OK):
+        raise Exception("Unable to write files to {}.".format(arguments['PATH']))
 
-    parser.add_argument("--verbose","-v", action="store_true",
-                        help="Turn on verbose output.")
-
-    args = parser.parse_args()
-
-    export_nzbs(args.export_path)
+    export_nzbs(arguments['PATH'])
