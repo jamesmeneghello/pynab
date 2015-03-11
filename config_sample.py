@@ -62,7 +62,11 @@ api = {
 
     # api_port: port number to bind the api
     # usually 8080
-    'api_port': 8080
+    'api_port': 8080,
+
+    # postprocessed_only: whether to wait for some postproc to finish before showing results
+    # effectively, only releases that've gone through inner rar checking will be shown by the api
+    'postprocessed_only': False
 }
 
 scan = {

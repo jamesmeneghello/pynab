@@ -336,6 +336,9 @@ def search(dataset=None, query=None):
                     for term in search_terms.split(' '):
                         query = query.filter(Release.search_name.ilike('%{}%'.format(term)))
 
+            if config.api.get('postprocessed_only', False):
+                query = query.filter(Release.passworded!='UNKNOWN')
+
             query = query.order_by(Release.posted.desc())
 
             query = query.limit(limit)
