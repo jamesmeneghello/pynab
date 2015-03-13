@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Backup Database Data
+
+Backup user critical data necessary for restoring an installation to working
+order.  NOTE: This does not include NZB files, you need to export those
+separately.
+
 Usage:
   backup_database_data.py [--gzip] [--no-users] [--no-groups] [--no-categories] [--no-movie] [--no-tvshow] PATH
 

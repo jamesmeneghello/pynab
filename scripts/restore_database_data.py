@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+Restore Database Data
+
+Restore critical data necessary for a working installation.  You will need to
+also import a set of NZB files or just start scanning/backfilling.
+
 Usage:
   restore_database_data.py [--users=FILE] [--groups=FILE] [--categories=FILE] [--movie=FILE] [--tvshow=FILE]
 

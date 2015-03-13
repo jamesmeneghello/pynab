@@ -82,6 +82,28 @@ def copy_file(engine, data, ordering, type):
 
     return True
 
+def truncate_table(engine, table_type):
+    """
+    Handles truncate table for given table type.
+    """
+    if 'mysql' in config.db.get('engine'):
+        query = "TRUNCATE {}".format(table_type.__tablename__)
+    elif 'postgre' in config.db.get('engine'):
+        # RESTART IDENTITY - reset sequences
+        # CASCADE - follow FK references
+        query = 'TRUNCATE {} RESTART IDENTITY CASCADE'.format(table_type.__tablename__)
+
+    try:
+        conn = engine.raw_connection()
+        cur = conn.cursor()
+        cur.execute((query))
+        conn.commit()
+        cur.close
+    except Exception as e:
+        log.error(e)
+        return False
+
+    return True
 
 def vacuum(mode='scan', full=False):
     conn = engine.connect()
