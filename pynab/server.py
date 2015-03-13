@@ -36,8 +36,7 @@ class Server:
         if self.connection:
             try:
                 self.connection.quit()
-            except Exception as e:
-                log.debug('server: Error closing connection: {}'.format(e))
+            except:
                 self.connection = None
             finally:
                 self.connection = None
@@ -127,7 +126,7 @@ class Server:
             else:
                 status, overviews = self.connection.over((first, last))
         except Exception as e:
-            log.error('server: [{}]: nntp error: {}'.format(group_name, e))
+            log.error('server: [{}]: nntp error'.format(group_name))
             log.error('server: suspected dead nntp connection, restarting')
 
             self.quit()
