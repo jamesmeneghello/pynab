@@ -63,7 +63,7 @@ def save_all(parts):
                             # leave off the comma
                             s.write('"' + part[item].replace('"', '\\"') + '"')
                         else:
-                            s.write('"' + str(part[item].encode('utf-8', 'replace').decode()).replace('"', '\\"') + '",')
+                            s.write('"' + str(part[item]).encode('utf-8', 'replace').decode().replace('"', '\\"') + '",')
                     s.write("\n")
                 s.seek(0)
 
