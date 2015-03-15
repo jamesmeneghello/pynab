@@ -494,6 +494,40 @@ config.py.
 
     > python3 scripts/stats.py
 
+### Backup and Restore ###
+
+Generally the best way to backup your data is to take a database
+dump.  However it is understood that that is not always possible or
+practical, for instance if you are working to transition databases.
+
+For this the following scripts are provided.
+
+    > python3 scripts/export_nzbs.py [--verbose] PATH
+
+For each release with an existing saved NZB file export that NZB (as a
+gzipped file) to the given PATH.  The files will have a random unique
+file name and separated into multiple directories.
+
+    > python scripts/backup_database_data.py [--gzip] [--no-users] [--no-groups] [--no-categories] [--no-movie] [--no-tvshow] PATH
+
+Backup user critical data from various tables in the database to JSON
+files.  The goal is that given a restore of this data an installation
+should be able to operate with or without an import of additional NZB
+files.  If you utilize the --gzip option then the data will be
+gzipped.  Depending on how much data you are backing up this process
+may take awhile.
+
+    > python scripts/restore_database_data.py [--users=FILE] [--groups=FILE] [--categories=FILE] [--movie=FILE] [--tvshow=FILE]
+
+Restore the user critical data.  Only data provided will be restored
+and the existing table will be cleared before it is restored.  For
+each table you must supply the full path and filename of the file you
+want restored.  Files may be gzipped.  Depending on how much data you
+are restoring this process may take awhile.
+
+    > python scripts/import.py PATH
+
+See above for information for the NZB import script.
 
 ### Building the WebUI ###
 
