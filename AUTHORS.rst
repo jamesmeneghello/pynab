@@ -17,3 +17,4 @@ Contributors
 * @traxo-xx - NZB360 compatibility
 * @brookesy2 - pre-bot, various fixes
 * @AlanKK - Bugfixes, monitoring
+* @Herkemer - Backup/restore, various fixes
