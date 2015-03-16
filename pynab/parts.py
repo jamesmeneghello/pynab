@@ -61,7 +61,7 @@ def save_all(parts):
                                                                                                                 '\\"') + '",')
                         elif item == 'xref':
                             # leave off the comma
-                            s.write('"' + part[item].replace('"', '\\"') + '"')
+                            s.write('"' + part[item].encode('utf-8', 'replace').decode('utf-8').replace('"', '\\"') + '"')
                         else:
                             s.write('"' + str(part[item]).encode('utf-8', 'replace').decode().replace('"', '\\"') + '",')
                     s.write("\n")
@@ -116,7 +116,7 @@ def save_all(parts):
                             # leave off the tab
                             s.write('"' + str(segment[item]).replace('"', '\\"') + '"')
                         else:
-                            s.write('"' + str(segment[item]).replace('"', '\\"') + '",')
+                            s.write('"' + str(segment[item]).encode('utf-8', 'replace').decode('utf-8').replace('"', '\\"') + '",')
                     s.write("\n")
                 s.seek(0)
 
