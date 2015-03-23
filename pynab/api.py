@@ -148,7 +148,7 @@ def tv_search(dataset=None):
                 episode = request.query.ep or None
 
                 if season or episode:
-                    query = query.join(Episode, Release)
+                    query = query.join(Episode, Release.episode_id==Episode.id)
 
                     if season:
                         # 2014, do nothing
