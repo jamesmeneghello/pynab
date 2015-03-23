@@ -49,7 +49,7 @@ def get_size(nzb):
             size += int(bytes)
         except:
             # too bad, there was a problem
-            return 0
+            pass
 
     return size
 
