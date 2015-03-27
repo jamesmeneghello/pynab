@@ -319,6 +319,7 @@ db = {
     'engine': 'postgresql',
     'host': '',
     'port': 5432,
+    'unix_socket': '',
     'user': '',
     'pass': '',
     'db': 'pynab',

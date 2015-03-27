@@ -19,7 +19,16 @@ from pynab import log
 
 
 def sqlalchemy_url():
-    return '{engine}://{user}:{pass}@{host}:{port}/{db}'.format(**config.db)
+    conn_string = '{engine}://{user}:{pass}@{host}'.format(**config.db)
+    if 'port' in config.db and config.db.get('port'):
+        conn_string += ':{}'.format(config.db.get('port'))
+
+    conn_string += '/{}'.format(config.db.get('db'))
+
+    if 'unix_socket' in config.db and config.db.get('unix_socket'):
+        conn_string += '?unix_socket={}'.format(config.db.get('unix_socket'))
+
+    return conn_string
 
 
 def copy_file(engine, data, ordering, type):
