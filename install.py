@@ -86,20 +86,6 @@ if __name__ == '__main__':
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
 
-    print('Copying large pre data into db...')
-    try:
-        nzedb_pre_import.largeNzedbPre()
-    except Exception as e:
-        print('Problem inserting data into database: {}'.format(e))
-        sys.exit(0)
-
-    print('Copying small pre data into db...')
-    try:
-        nzedb_pre_import.nzedbPre()
-    except Exception as e:
-        print('Problem inserting data into database: {}'.format(e))
-        sys.exit(0)
-
     if config.postprocess.get('regex_url'):
         print('Updating regex...')
         pynab.util.update_regex()
@@ -114,6 +100,20 @@ if __name__ == '__main__':
     else:
         print(
             'Could not update blacklist. Try the URL in config.py manually - if it doesn\'t work, post an issue on Github.')
+
+    print('Copying large pre data into db...')
+    try:
+        nzedb_pre_import.largeNzedbPre()
+    except Exception as e:
+        print('Problem inserting data into database: {}'.format(e))
+        sys.exit(0)
+
+    print('Copying small pre data into db...')
+    try:
+        nzedb_pre_import.nzedbPre()
+    except Exception as e:
+        print('Problem inserting data into database: {}'.format(e))
+        sys.exit(0)
 
     end = time.time()
 

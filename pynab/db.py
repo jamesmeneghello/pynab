@@ -5,6 +5,7 @@ import copy
 import time
 import tempfile
 import os
+import hashlib
 
 import psycopg2
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
@@ -307,11 +308,18 @@ def to_json(obj):
     obj = json.dumps(dict, default=json_serial)
     return obj
 
+def create_hash(context):
+    return hashlib.sha1('{}.{}.{}'.format(
+        context.current_parameters['name'],
+        context.current_parameters['group_id'],
+        context.current_parameters['posted']
+    ).encode('utf-8')).hexdigest()
 
 class Release(Base):
     __tablename__ = 'releases'
 
     id = Column(Integer, primary_key=True)
+    uniqhash = Column(String(40), default=create_hash, unique=True)
 
     added = Column(DateTime, default=func.now())
     posted = Column(DateTime)
@@ -369,7 +377,12 @@ class Release(Base):
     pre_id = Column(Integer, ForeignKey('pres.id'), index=True)
     pre = relationship('Pre', backref=backref('pre'))
 
-    __table_args__ = (UniqueConstraint(name, group_id, posted),)
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class MetaBlack(Base):
@@ -391,6 +404,13 @@ class MetaBlack(Base):
     rar = relationship('Release', cascade='all, delete, delete-orphan', uselist=False,
                        foreign_keys=[Release.rar_metablack_id])
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class Episode(Base):
     __tablename__ = 'episodes'
@@ -406,7 +426,13 @@ class Episode(Base):
     air_date = Column(String(16))
     year = Column(String(8))
 
-    __table_args__ = (UniqueConstraint(tvshow_id, series_full),)
+    __table_args__ = (
+        UniqueConstraint(tvshow_id, series_full),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class File(Base):
@@ -419,6 +445,13 @@ class File(Base):
 
     release_id = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'), index=True)
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class Group(Base):
     __tablename__ = 'groups'
@@ -429,6 +462,13 @@ class Group(Base):
     first = Column(BigInteger)
     last = Column(BigInteger)
     name = Column(String(200))
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class Binary(Base):
@@ -459,6 +499,12 @@ class Binary(Base):
 
         return size
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 # it's unlikely these will ever be used in sqlalchemy
 # for performance reasons, but keep them to create tables etc
@@ -481,7 +527,12 @@ class Part(Base):
 
     segments = relationship('Segment', passive_deletes=True, order_by="asc(Segment.segment)")
 
-    # __table_args__ = (UniqueConstraint(subject),)
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 # likewise
@@ -496,7 +547,12 @@ class Segment(Base):
 
     part_id = Column(BigInteger, ForeignKey('parts.id', ondelete='CASCADE'), index=True)
 
-    # __table_args__ = (UniqueConstraint(part_id, segment),)
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class Miss(Base):
@@ -508,6 +564,13 @@ class Miss(Base):
     message = Column(BigInteger, index=True, nullable=False)
 
     attempts = Column(Integer)
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class Regex(Base):
@@ -524,6 +587,13 @@ class Regex(Base):
     # sometimes regex
     group_name = Column(String(200))
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class Blacklist(Base):
     __tablename__ = 'blacklists'
@@ -536,6 +606,13 @@ class Blacklist(Base):
     regex = Column(Text)
     status = Column(Boolean, default=False)
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class Category(Base):
     __tablename__ = 'categories'
@@ -547,6 +624,13 @@ class Category(Base):
     parent = relationship('Category', remote_side=[id])
     children = relationship('Category')
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -557,12 +641,26 @@ class User(Base):
     email = Column(String(256), unique=True)
     grabs = Column(Integer)
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class NZB(Base):
     __tablename__ = 'nzbs'
 
     id = Column(Integer, primary_key=True)
     data = Column(LargeBinary)
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class NFO(Base):
@@ -571,12 +669,26 @@ class NFO(Base):
     id = Column(Integer, primary_key=True)
     data = Column(LargeBinary)
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class SFV(Base):
     __tablename__ = 'sfvs'
 
     id = Column(Integer, primary_key=True)
     data = Column(LargeBinary)
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class Movie(Base):
@@ -588,6 +700,13 @@ class Movie(Base):
     genre = Column(String(256))
     year = Column(Integer, index=True)
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class TvShow(Base):
     __tablename__ = 'tvshows'
@@ -596,6 +715,13 @@ class TvShow(Base):
     name = Column(String(256), index=True)
     country = Column(String(5))
 
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
 
 class DataLog(Base):
     __tablename__ = 'datalogs'
@@ -603,6 +729,13 @@ class DataLog(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String(256), index=True)
     data = Column(Text)
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
 
 
 class Pre(Base):
@@ -620,4 +753,12 @@ class Pre(Base):
     filename = Column(String(512))
     nuked = Column(Boolean, default=False)
 
-    __table_args__ = (UniqueConstraint(name),)
+    __table_args__ = (
+        UniqueConstraint(requestid, pretime, requestgroup),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8'
+        }
+    )
+
+
