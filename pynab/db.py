@@ -380,7 +380,8 @@ class Release(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -407,7 +408,8 @@ class MetaBlack(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -430,7 +432,8 @@ class Episode(Base):
         UniqueConstraint(tvshow_id, series_full),
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -448,7 +451,8 @@ class File(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -466,7 +470,8 @@ class Group(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -502,7 +507,8 @@ class Binary(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -530,7 +536,8 @@ class Part(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -550,7 +557,8 @@ class Segment(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -568,7 +576,8 @@ class Miss(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -590,7 +599,8 @@ class Regex(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -609,7 +619,8 @@ class Blacklist(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -627,7 +638,8 @@ class Category(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -644,7 +656,8 @@ class User(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -658,7 +671,8 @@ class NZB(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -672,7 +686,8 @@ class NFO(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -686,7 +701,8 @@ class SFV(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -703,7 +719,8 @@ class Movie(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -718,7 +735,8 @@ class TvShow(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -733,7 +751,8 @@ class DataLog(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 
@@ -757,7 +776,8 @@ class Pre(Base):
         UniqueConstraint(requestid, pretime, requestgroup),
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
         }
     )
 

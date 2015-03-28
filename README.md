@@ -109,9 +109,12 @@ And a few packages required by psycopg2 (you need these even if you're using MyS
 
     > sudo apt-get install postgresql-server-dev-9.3
 
-If you're using MySQL, you'll also need to add a line to your /etc/mysql/my.cnf, under [mysqld]:
+If you're using MySQL, you'll also need to several lines to your /etc/mysql/my.cnf, under [mysqld]:
 
     local_infile = 1
+    innodb_large_prefix = 1
+    innodb_file_format = Barracuda
+    innodb_file_per_table = 1
     
 This allows us to vastly increase the speed of segment writes. Without this, scanning will be impossibly slow!
 
