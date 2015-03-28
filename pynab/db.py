@@ -158,7 +158,7 @@ def vacuum(mode='scan', full=False):
 
 connect_args = {}
 if 'mysql' in config.db.get('engine'):
-    connect_args = {'charset': 'utf8', 'local_infile': 1}
+    connect_args = {'charset': 'latin1', 'local_infile': 1}
 
 Base = declarative_base()
 engine = create_engine(sqlalchemy_url(), pool_recycle=3600, connect_args=connect_args)
@@ -380,7 +380,7 @@ class Release(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -407,7 +407,7 @@ class MetaBlack(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -430,7 +430,7 @@ class Episode(Base):
         UniqueConstraint(tvshow_id, series_full),
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -448,7 +448,7 @@ class File(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -466,7 +466,7 @@ class Group(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -502,7 +502,7 @@ class Binary(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -530,7 +530,7 @@ class Part(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -550,7 +550,7 @@ class Segment(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -568,7 +568,7 @@ class Miss(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -590,7 +590,7 @@ class Regex(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -609,7 +609,7 @@ class Blacklist(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -627,7 +627,7 @@ class Category(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -644,7 +644,7 @@ class User(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -658,7 +658,7 @@ class NZB(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -672,7 +672,7 @@ class NFO(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -686,7 +686,7 @@ class SFV(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -703,7 +703,7 @@ class Movie(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -718,7 +718,7 @@ class TvShow(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -733,7 +733,7 @@ class DataLog(Base):
     __table_args__ = (
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
@@ -757,7 +757,7 @@ class Pre(Base):
         UniqueConstraint(requestid, pretime, requestgroup),
         {
             'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8'
+            'mysql_charset': 'latin1'
         }
     )
 
