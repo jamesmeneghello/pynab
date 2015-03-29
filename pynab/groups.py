@@ -32,10 +32,10 @@ def scan(group_name, direction='forward', date=None, limit=None):
                     # check that our firsts and lasts are valid
                     if group.first < first:
                         log.error('group: {}: first article was older than first on server'.format(group_name))
-                        return False
+                        return True
                     elif group.last > last:
                         log.error('group: {}: last article was newer than last on server'.format(group_name))
-                        return False
+                        return True
 
                     db.merge(group)
 
@@ -56,7 +56,7 @@ def scan(group_name, direction='forward', date=None, limit=None):
 
                     if not target:
                         log.info('group: {}: unable to continue'.format(group_name))
-                        return False
+                        return True
 
                     if group.first <= target <= group.last:
                         log.info('group: {}: nothing to do, already have target'.format(group_name))
@@ -64,7 +64,7 @@ def scan(group_name, direction='forward', date=None, limit=None):
 
                     if first > target or last < target:
                         log.error('group: {}: server doesn\'t carry target article'.format(group_name))
-                        return False
+                        return True
 
                     iterations = 0
                     for i in range(start, target, config.scan.get('message_scan_limit') * mult):
