@@ -666,7 +666,7 @@ class NZB(Base):
     __tablename__ = 'nzbs'
 
     id = Column(Integer, primary_key=True)
-    data = Column(LargeBinary)
+    data = Column(LargeBinary((2**32)-1))
 
     __table_args__ = (
         {
