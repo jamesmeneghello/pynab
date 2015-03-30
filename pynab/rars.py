@@ -253,6 +253,7 @@ def process(limit=None, category=0):
                 releases = query.order_by(Release.posted.desc()).all()
 
             for release in releases:
+                log.debug('rar: processing {}'.format(release.search_name))
                 nzb = pynab.nzbs.get_nzb_details(release.nzb)
 
                 if nzb and nzb['rars']:
