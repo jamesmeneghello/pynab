@@ -90,10 +90,14 @@ def main(mode='update', group=None, date=None):
 
         # refresh the db session each iteration, just in case
         with db_session() as db:
-            if mode == 'update':
-                if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
+            if db.query(Segment).count() > config.scan.get('early_process_threshold', 50000000):
+                if mode == 'update':
                     log.info('scan: backlog of segments detected, processing first')
                     process()
+                else:
+                    log.info('scan: backlog of segments detected during backfill, waiting until update has cleared them')
+                    time.sleep(config.scan.get('update_wait', 600))
+                    continue
 
             if not group:
                 active_groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
