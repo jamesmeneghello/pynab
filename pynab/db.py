@@ -96,6 +96,7 @@ def truncate_table(engine, table_type):
     """
     Handles truncate table for given table type.
     """
+    query = ''
     if 'mysql' in config.db.get('engine'):
         query = "TRUNCATE {}".format(table_type.__tablename__)
     elif 'postgre' in config.db.get('engine'):
@@ -108,7 +109,7 @@ def truncate_table(engine, table_type):
         cur = conn.cursor()
         cur.execute((query))
         conn.commit()
-        cur.close
+        cur.close()
     except Exception as e:
         log.error(e)
         return False
