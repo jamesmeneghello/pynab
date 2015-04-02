@@ -2,6 +2,7 @@ import time
 import io
 import pyhashxx
 import struct
+#from memory_profiler import profile
 
 import regex
 from sqlalchemy.orm import Load, subqueryload
@@ -17,9 +18,9 @@ def generate_hash(subject, posted_by, group_name, total_segments):
     )
 
 
+#@profile
 def save_all(parts):
     """Save a set of parts to the DB, in a batch if possible."""
-
     if parts:
         start = time.time()
         group_name = list(parts.values())[0]['group_name']
@@ -70,6 +71,7 @@ def save_all(parts):
                 if not copy_file(engine, s, ordering, Part):
                     return False
 
+                s.close()
                 db.close()
 
         with db_session() as db:
@@ -123,6 +125,7 @@ def save_all(parts):
                 if not copy_file(engine, s, ordering, Segment):
                     return False
 
+                s.close()
                 db.close()
 
         end = time.time()
@@ -132,6 +135,9 @@ def save_all(parts):
             len(segment_inserts),
             end - start
         ))
+
+        del part_inserts[:]
+        del segment_inserts[:]
 
     return True
 
