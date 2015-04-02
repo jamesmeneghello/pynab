@@ -109,22 +109,23 @@ class Server:
         messages_missed = []
 
         start = time.time()
-        try:
-            # grab the headers we're after
-            self.connection.group(group_name)
-            if message_ranges:
-                overviews = []
-                for first, last in message_ranges:
-                    log.debug('server: getting range {}-{}'.format(first, last))
-                    status, range_overviews = self.connection.over((first, last))
-                    if range_overviews:
-                        overviews += range_overviews
-                    else:
-                        # we missed them
-                        messages_missed += range(first, last + 1)
 
-            else:
-                status, overviews = self.connection.over((first, last))
+        # grab the headers we're after
+        self.connection.group(group_name)
+        if message_ranges:
+            overviews = []
+            for first, last in message_ranges:
+                log.debug('server: getting range {}-{}'.format(first, last))
+                status, range_overviews = self.connection.over((first, last))
+                if range_overviews:
+                    overviews += range_overviews
+                else:
+                    # we missed them
+                    messages_missed += range(first, last + 1)
+        else:
+            log.debug('server: getting range {}-{}'.format(first, last))
+            status, overviews = self.connection.over((first, last))
+        """
         except Exception as e:
             log.error('server: [{}]: nntp error: {}'.format(group_name, e))
             log.error('server: suspected dead nntp connection, restarting')
@@ -132,6 +133,7 @@ class Server:
             self.quit()
             self.connect()
             return self.scan(group_name, first, last, message_ranges)
+        """
 
         parts = {}
         messages = []
