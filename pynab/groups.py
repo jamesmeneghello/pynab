@@ -6,10 +6,14 @@ from pynab.db import db_session, Group, Miss
 from pynab.server import Server
 import pynab.parts
 import config
-
+from pympler import tracker
 
 def scan(group_name, direction='forward', date=None, limit=None):
     log.info('group: {}: scanning group'.format(group_name))
+
+    memory_tracker = tracker.SummaryTracker()
+    log.debug('--initial[{}]--'.format(group_name))
+    log.debug(memory_tracker.diff())
 
     with Server() as server:
         _, count, first, last, _ = server.group(group_name)
@@ -66,8 +70,14 @@ def scan(group_name, direction='forward', date=None, limit=None):
                         log.error('group: {}: server doesn\'t carry target article'.format(group_name))
                         return True
 
+                    log.debug('--before_iteration[{}]--'.format(group_name))
+                    log.debug(memory_tracker.diff())
+
                     iterations = 0
                     for i in range(start, target, config.scan.get('message_scan_limit') * mult):
+                        log.debug('--scanloop_start[{}]--'.format(group_name))
+                        log.debug(memory_tracker.diff())
+
                         # set the beginning and ends of the scan to their respective values
                         begin = i + mult
                         end = i + (mult * config.scan.get('message_scan_limit'))
@@ -82,6 +92,9 @@ def scan(group_name, direction='forward', date=None, limit=None):
                         begin, end = (begin, end) if begin < end else (end, begin)
 
                         status, parts, messages, missed = server.scan(group_name, first=begin, last=end)
+
+                        log.debug('--after_scan[{}]--'.format(group_name))
+                        log.debug(memory_tracker.diff())
 
                         try:
                             if direction == 'forward':
@@ -103,6 +116,9 @@ def scan(group_name, direction='forward', date=None, limit=None):
                             else:
                                 log.error('group: {}: problem saving parts to db, restarting scan'.format(group_name))
                                 return False
+
+                        log.debug('--after_save[{}]--'.format(group_name))
+                        log.debug(memory_tracker.diff())
 
                         to_go = abs(target - end)
                         log.info('group: {}: {:.0f} iterations ({} messages) to go'.format(
