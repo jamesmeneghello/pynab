@@ -46,6 +46,9 @@ class Server:
 
         try:
             response, count, first, last, name = self.connection.group(group_name)
+        except socket.timeout as e:
+            log.error('server: {}: connection to server timed out'.format(group_name))
+            return None, False, None, None, None
         except Exception as e:
             log.error('server: {}: couldn\'t send group command'.format(group_name))
             return None, False, None, None, None
@@ -66,7 +69,7 @@ class Server:
                 else:
                     self.connection = nntplib.NNTP(compression=compression, **news_config)
             except Exception as e:
-                log.error('server: could not connect to news server')
+                log.error('server: could not connect to news server: {}'.format(e))
                 return False
 
         return True
@@ -115,16 +118,29 @@ class Server:
         if message_ranges:
             overviews = []
             for first, last in message_ranges:
-                log.debug('server: getting range {}-{}'.format(first, last))
-                status, range_overviews = self.connection.over((first, last))
-                if range_overviews:
-                    overviews += range_overviews
-                else:
-                    # we missed them
-                    messages_missed += range(first, last + 1)
+                range_overviews = None
+                while True:
+                    log.debug('server: getting range {}-{}'.format(first, last))
+                    try:
+                        status, range_overviews = self.connection.over((first, last))
+                    except socket.timeout as e:
+                        log.error('server: connection timed out while getting range, retrying in 5s')
+                        time.sleep(5)
+                    if range_overviews:
+                        overviews += range_overviews
+                    else:
+                        # we missed them
+                        messages_missed += range(first, last + 1)
+                    break
         else:
-            log.debug('server: getting range {}-{}'.format(first, last))
-            status, overviews = self.connection.over((first, last))
+            while True:
+                log.debug('server: getting range {}-{}'.format(first, last))
+                try:
+                    status, overviews = self.connection.over((first, last))
+                    break
+                except socket.timeout as e:
+                    log.error('server: connection timed out while getting range, retrying in 5s')
+                    time.sleep(5)
         """
         except Exception as e:
             log.error('server: [{}]: nntp error: {}'.format(group_name, e))
@@ -276,6 +292,9 @@ class Server:
             log.debug('server: unable to get date of message {}: {}'.format(article, e))
             # leave this alone - we don't expect any data back
             return None
+        except socket.timeout as e:
+            log.error('server: connection to server timed out')
+            return None
 
         if art_num and overview:
             # overview[0] = article number
@@ -316,6 +335,7 @@ class Server:
         log.info('server: {}: finding post {} days old...'.format(group_name, days))
 
         _, count, first, last, _ = self.connection.group(group_name)
+
 
         # calculate tolerance
         if days <= 50:
