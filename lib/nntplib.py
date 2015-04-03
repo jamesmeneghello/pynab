@@ -71,6 +71,8 @@ import zlib
 
 import regex
 
+from pynab import log
+
 
 try:
     import ssl
@@ -212,7 +214,12 @@ def _parse_overview(lines, fmt, data_process_func=None):
     for line in lines:
         fields = {}
         article_number, *tokens = line.split('\t')
-        article_number = int(article_number)
+        try:
+            article_number = int(article_number)
+        except Exception as e:
+            log.error(e)
+            log.error(line)
+            raise e
         valid = True
         for i, token in enumerate(tokens):
             if i >= len(fmt):
