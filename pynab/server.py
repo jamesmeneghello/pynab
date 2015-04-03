@@ -46,8 +46,11 @@ class Server:
 
         try:
             response, count, first, last, name = self.connection.group(group_name)
-        except socket.timeout as e:
+        except socket.timeout:
             log.error('server: {}: connection to server timed out'.format(group_name))
+            time.sleep(5)
+            self.connection = None
+            self.connect()
             return None, False, None, None, None
         except Exception as e:
             log.error('server: {}: couldn\'t send group command'.format(group_name))
@@ -96,7 +99,8 @@ class Server:
                 self.connect()
                 return None
             except socket.timeout:
-                log.error('server: socket timed out, reconnecting')
+                log.error('server: socket timed out, reconnecting in 5s')
+                time.sleep(5)
                 self.connection = None
                 self.connect()
                 return None
@@ -123,9 +127,11 @@ class Server:
                     log.debug('server: getting range {}-{}'.format(first, last))
                     try:
                         status, range_overviews = self.connection.over((first, last))
-                    except socket.timeout as e:
+                    except socket.timeout:
                         log.error('server: connection timed out while getting range, retrying in 5s')
                         time.sleep(5)
+                        self.connection = None
+                        self.connect()
                     if range_overviews:
                         overviews += range_overviews
                     else:
@@ -138,9 +144,11 @@ class Server:
                 try:
                     status, overviews = self.connection.over((first, last))
                     break
-                except socket.timeout as e:
+                except socket.timeout:
                     log.error('server: connection timed out while getting range, retrying in 5s')
                     time.sleep(5)
+                    self.connection = None
+                    self.connect()
         """
         except Exception as e:
             log.error('server: [{}]: nntp error: {}'.format(group_name, e))
@@ -292,8 +300,11 @@ class Server:
             log.debug('server: unable to get date of message {}: {}'.format(article, e))
             # leave this alone - we don't expect any data back
             return None
-        except socket.timeout as e:
+        except socket.timeout:
             log.error('server: connection to server timed out')
+            time.sleep(5)
+            self.connection = None
+            self.connect()
             return None
 
         if art_num and overview:
