@@ -13,13 +13,38 @@ from pynab.db import db_session, Blacklist
 import pynab.parts
 import pynab.yenc
 import config
-
+import contextlib
 
 SEGMENT_REGEX = regex.compile('\((\d+)[\/](\d+)\)', regex.I)
 
 
 class AuthException(Exception):
     pass
+
+
+@contextlib.contextmanager
+def nntp_handler(conn, group=None):
+    def reconn(conn, delay=5, group=None):
+        time.sleep(delay)
+        conn.reconnect()
+        if group:
+            conn.group(group)
+    try:
+        yield
+    except (socket.timeout, socket.error, IOError):
+        log.warning('server: local socket timed out, reconnecting in 10s...')
+        reconn(conn, 10, group)
+        raise Exception
+    except nntplib.NNTPTemporaryError as e:
+        log.warning('server: error with remote host ({}), reconnecting in 30s...'.format(e))
+        reconn(conn, 30, group)
+        raise Exception
+    except nntplib.NNTPError as e:
+        log.error('server: nntp error: {}'.format(e))
+        raise Exception
+    except Exception as e:
+        log.error('server: error: {}'.format(e))
+        raise Exception
 
 
 class Server:
@@ -31,6 +56,10 @@ class Server:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.quit()
+
+    def reconnect(self):
+        self.quit()
+        self.connect()
 
     def quit(self):
         if self.connection:
@@ -45,15 +74,9 @@ class Server:
         self.connect()
 
         try:
-            response, count, first, last, name = self.connection.group(group_name)
-        except socket.timeout:
-            log.error('server: {}: connection to server timed out'.format(group_name))
-            time.sleep(5)
-            self.connection = None
-            self.connect()
-            return None, False, None, None, None
-        except Exception as e:
-            log.error('server: {}: couldn\'t send group command'.format(group_name))
+            with nntp_handler(self):
+                response, count, first, last, name = self.connection.group(group_name)
+        except:
             return None, False, None, None, None
 
         return response, count, first, last, name
@@ -84,25 +107,17 @@ class Server:
         data = ''
         if messages:
             try:
-                _, total, first, last, _ = self.connection.group(group_name)
-                for message in messages:
-                    article = '<{}>'.format(message)
-                    response, (number, message_id, lines) = self.connection.body(article)
-                    res = pynab.yenc.yenc_decode(lines)
-                    if res:
-                        data += res
-                    else:
-                        return None
-            except nntplib.NNTPError as nntpe:
-                log.error('server: [{}]: problem retrieving messages: {}.'.format(group_name, nntpe))
-                self.connection = None
-                self.connect()
-                return None
-            except socket.timeout:
-                log.error('server: socket timed out, reconnecting in 5s')
-                time.sleep(5)
-                self.connection = None
-                self.connect()
+                with nntp_handler(self, group_name):
+                    _, total, first, last, _ = self.connection.group(group_name)
+                    for message in messages:
+                        article = '<{}>'.format(message)
+                        response, (number, message_id, lines) = self.connection.body(article)
+                        res = pynab.yenc.yenc_decode(lines)
+                        if res:
+                            data += res
+                        else:
+                            return None
+            except:
                 return None
 
             return data
@@ -114,25 +129,23 @@ class Server:
         self.connect()
 
         messages_missed = []
+        overviews = []
 
         start = time.time()
 
         # grab the headers we're after
         self.connection.group(group_name)
         if message_ranges:
-            overviews = []
             for first, last in message_ranges:
                 range_overviews = None
                 while True:
                     log.debug('server: getting range {}-{}'.format(first, last))
                     try:
-                        status, range_overviews = self.connection.over((first, last))
-                    except socket.timeout:
-                        log.error('server: connection timed out while getting range, retrying in 5s')
-                        time.sleep(5)
-                        self.connection = None
-                        self.connect()
-                        self.connection.group(group_name)
+                        with nntp_handler(self, group_name):
+                            status, range_overviews = self.connection.over((first, last))
+                    except:
+                        continue
+
                     if range_overviews:
                         overviews += range_overviews
                     else:
@@ -143,14 +156,11 @@ class Server:
             while True:
                 log.debug('server: getting range {}-{}'.format(first, last))
                 try:
-                    status, overviews = self.connection.over((first, last))
-                    break
-                except socket.timeout:
-                    log.error('server: connection timed out while getting range, retrying in 5s')
-                    time.sleep(5)
-                    self.connection = None
-                    self.connect()
-                    self.connection.group(group_name)
+                    with nntp_handler(self, group_name):
+                        status, overviews = self.connection.over((first, last))
+                        break
+                except:
+                    continue
 
         parts = {}
         messages = []
@@ -287,17 +297,10 @@ class Server:
         overview = None
 
         try:
-            self.connection.group(group_name)
-            art_num, overview = self.connection.head('{0:d}'.format(article))
-        except nntplib.NNTPError as e:
-            log.debug('server: unable to get date of message {}: {}'.format(article, e))
-            # leave this alone - we don't expect any data back
-            return None
-        except socket.timeout:
-            log.error('server: connection to server timed out')
-            time.sleep(5)
-            self.connection = None
-            self.connect()
+            with nntp_handler(self, group_name):
+                self.connection.group(group_name)
+                art_num, overview = self.connection.head('{0:d}'.format(article))
+        except:
             return None
 
         if art_num and overview:
@@ -338,8 +341,11 @@ class Server:
 
         log.info('server: {}: finding post {} days old...'.format(group_name, days))
 
-        _, count, first, last, _ = self.connection.group(group_name)
-
+        try:
+            with nntp_handler(self, group_name):
+                _, count, first, last, _ = self.connection.group(group_name)
+        except:
+            return None
 
         # calculate tolerance
         if days <= 50:
