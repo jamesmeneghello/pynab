@@ -132,6 +132,7 @@ class Server:
                         time.sleep(5)
                         self.connection = None
                         self.connect()
+                        self.connection.group(group_name)
                     if range_overviews:
                         overviews += range_overviews
                     else:
@@ -149,15 +150,7 @@ class Server:
                     time.sleep(5)
                     self.connection = None
                     self.connect()
-        """
-        except Exception as e:
-            log.error('server: [{}]: nntp error: {}'.format(group_name, e))
-            log.error('server: suspected dead nntp connection, restarting')
-
-            self.quit()
-            self.connect()
-            return self.scan(group_name, first, last, message_ranges)
-        """
+                    self.connection.group(group_name)
 
         parts = {}
         messages = []
