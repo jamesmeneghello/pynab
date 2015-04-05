@@ -216,10 +216,8 @@ def _parse_overview(lines, fmt, data_process_func=None):
         article_number, *tokens = line.split('\t')
         try:
             article_number = int(article_number)
-        except Exception as e:
-            log.error(e)
-            log.error(line)
-            raise e
+        except ValueError as e:
+            continue
         valid = True
         for i, token in enumerate(tokens):
             if i >= len(fmt):
