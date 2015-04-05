@@ -36,10 +36,6 @@ def nntp_handler(conn, group=None):
         log.warning(e)
         reconn(conn, 30, group)
         raise e
-    except nntplib.NNTPTemporaryError as e:
-        log.warning('server: error with remote host ({}), reconnecting in 30s...'.format(e))
-        reconn(conn, 30, group)
-        raise e
     except nntplib.NNTPError as e:
         log.error('server: nntp error: {}'.format(e))
         raise e
@@ -74,13 +70,16 @@ class Server:
     def group(self, group_name):
         self.connect()
 
-        try:
-            with nntp_handler(self):
-                response, count, first, last, name = self.connection.group(group_name)
-        except:
-            return None, False, None, None, None
+        if self.connection:
+            try:
+                with nntp_handler(self):
+                    response, count, first, last, name = self.connection.group(group_name)
+            except:
+                return None, False, None, None, None
 
-        return response, count, first, last, name
+            return response, count, first, last, name
+        else:
+            return None, False, None, None, None
 
     def connect(self, compression=True):
         """Creates a connection to a news server."""
