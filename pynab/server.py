@@ -139,7 +139,7 @@ class Server:
             for first, last in message_ranges:
                 range_overviews = None
                 while True:
-                    log.debug('server: getting range {}-{}'.format(first, last))
+                    log.debug('server: {}: getting range {}-{}'.format(group_name, first, last))
                     try:
                         with nntp_handler(self, group_name):
                             status, range_overviews = self.connection.over((first, last))
@@ -154,7 +154,7 @@ class Server:
                     break
         else:
             while True:
-                log.debug('server: getting range {}-{}'.format(first, last))
+                log.debug('server: {}: getting range {}-{}'.format(group_name, first, last))
                 try:
                     with nntp_handler(self, group_name):
                         status, overviews = self.connection.over((first, last))
