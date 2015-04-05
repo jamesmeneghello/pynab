@@ -134,17 +134,24 @@ class Server:
 
         start = time.time()
 
+        i = 0
+
         # grab the headers we're after
         self.connection.group(group_name)
         if message_ranges:
             for first, last in message_ranges:
                 range_overviews = None
                 while True:
+                    i += 1
                     log.debug('server: {}: getting range {}-{}'.format(group_name, first, last))
                     try:
                         with nntp_handler(self, group_name):
                             status, range_overviews = self.connection.over((first, last))
                     except:
+                        # 3 attempts
+                        if i == 3:
+                            log.warning('server: {}: timed out a bunch, we\'ll try again later'.format(group_name))
+                            break
                         continue
 
                     if range_overviews:
@@ -155,12 +162,17 @@ class Server:
                     break
         else:
             while True:
+                i += 1
                 log.debug('server: {}: getting range {}-{}'.format(group_name, first, last))
                 try:
                     with nntp_handler(self, group_name):
                         status, overviews = self.connection.over((first, last))
                         break
                 except:
+                    # 3 attempts
+                    if i == 3:
+                        log.warning('server: {}: timed out a bunch, we\'ll try again later'.format(group_name))
+                        break
                     continue
 
         parts = {}
