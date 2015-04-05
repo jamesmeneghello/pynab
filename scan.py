@@ -161,9 +161,9 @@ def main(mode='update', group=None, date=None):
                     # so it doesn't count to infinity
                     if config.scan.get('full_vacuum', True):
                         pynab.db.vacuum(mode='scan', full=True)
-                    else:
-                        pynab.db.vacuum(mode='scan', full=False)
                     iterations = 0
+                else:
+                    pynab.db.vacuum(mode='scan', full=False)
             else:
                 iterations = 0
 
