@@ -152,6 +152,7 @@ Select the appropriate package for your version of python (ie. py34 for 3.4, etc
     - lxml
     - sqlalchemy
     - psycopg2
+    - markupsafe
 
 Two packages used in pynab require a compiler, such as [MinGW](http://www.mingw.org/). This may also require
  you to modify some config vars to make pip see the compiler, see [here](http://stackoverflow.com/questions/2817869/error-unable-to-find-vcvarsall-bat/2838827#2838827).
