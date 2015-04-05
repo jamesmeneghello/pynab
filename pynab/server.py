@@ -33,6 +33,7 @@ def nntp_handler(conn, group=None):
         yield
     except (socket.timeout, socket.error, IOError) as e:
         log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e))
+        log.warning(e)
         reconn(conn, 30, group)
         raise e
     except nntplib.NNTPTemporaryError as e:
