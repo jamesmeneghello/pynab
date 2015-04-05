@@ -34,17 +34,17 @@ def nntp_handler(conn, group=None):
     except (socket.timeout, socket.error, IOError) as e:
         log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e))
         reconn(conn, 30, group)
-        raise Exception
+        raise e
     except nntplib.NNTPTemporaryError as e:
         log.warning('server: error with remote host ({}), reconnecting in 30s...'.format(e))
         reconn(conn, 30, group)
-        raise Exception
+        raise e
     except nntplib.NNTPError as e:
         log.error('server: nntp error: {}'.format(e))
-        raise Exception
+        raise e
     except Exception as e:
         log.error('server: error: {}'.format(e))
-        raise Exception
+        raise e
 
 
 class Server:
