@@ -262,6 +262,8 @@ def stats(dataset=None):
         dataset['categories'] = db.query(Category, func.count(Release.id)).join(Release).group_by(Category).order_by(
             desc(func.count(Release.id))).all()
 
+        dataset['groups'] = db.query(Group, func.min(Release.posted), func.count(Release.id)).join(Release).group_by(Group).order_by(desc(func.count(Release.id))).all()
+
         try:
             tmpl = Template(
                 filename=os.path.join(root_dir, 'templates/api/stats.mako'))

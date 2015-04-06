@@ -12,7 +12,7 @@
     "angular-sanitize": "1.2.6",
     "angular-route": "1.2.6",
     "angular-bootstrap": "~0.10.0",
-    "angular-moment": "~0.6.2"
+    "angular-moment": "~0.9.2"
   },
   "devDependencies": {
     "angular-mocks": "1.2.6",

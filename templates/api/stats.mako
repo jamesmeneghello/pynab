@@ -10,4 +10,9 @@
             <category label="${category.parent.name} > ${category.name}" value="${value}"></category>
         % endfor
     </categories>
+    <groups>
+        % for group, posted, value in groups:
+            <group label="${group.name}" oldest="${posted}" value="${value}"></group>
+        % endfor
+    </groups>
 </stats>

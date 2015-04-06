@@ -38,5 +38,19 @@
         </tr>
     </table>
     <hr>
+    <h3>Groups</h3>
+    <table class="table table-striped">
+        <tr>
+            <th>Name</th>
+            <th>Releases</th>
+            <th>Retention</th>
+        </tr>
+        <tr ng-repeat="group in groups">
+            <td>{{group.label}}</td>
+            <td>{{group.value}}</td>
+            <td>{{group.oldest | amDifference : null : 'days'| abs}} days</td>
+        </tr>
+    </table>
+    <hr>
 	<a class=".btn" href="#/search">Click here to begin searching.</a>
 </div>
