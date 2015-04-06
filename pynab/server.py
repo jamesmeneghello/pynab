@@ -33,11 +33,10 @@ def nntp_handler(conn, group=None):
         yield
     except (socket.timeout, socket.error, IOError) as e:
         log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e))
-        log.warning(e)
         reconn(conn, 30, group)
         raise e
     except nntplib.NNTPError as e:
-        log.error('server: nntp error: {}'.format(e))
+        log.warning('server: nntp error: {}'.format(e))
         raise e
     except Exception as e:
         log.error('server: error: {}'.format(e))
@@ -390,7 +389,7 @@ class Server:
         top_date = self.post_date(group_name, last)
 
         if not top_date:
-            log.error('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
+            log.warning('server: {}: can\'t get first date on group, fatal group error. try again later?'.format(
                 group_name
             ))
             return None

@@ -218,7 +218,7 @@ def process():
                         deleted = 0
 
                     db.commit()
-                    log.debug(
+                    log.info(
                         'binary: saved {} binaries and deleted {} dead parts ({} parts left)...'.format(len(binaries),
                                                                                                         deleted,
                                                                                                         total_parts))
