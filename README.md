@@ -454,6 +454,14 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
     processes = 4 [or whatever number of cpu cores you have]
     threads = 2
 
+Apache using `mod_wsgi` is also very easy (thanks @Enverex):
+
+    WSGYPythonPath /opt/pynab
+    <VirtualHost *:80>
+        ServerName mysite.com
+        WSGIScriptAlias / /opt/pynab.api.py
+    </VirtualHost>
+
 Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS
 environment variable for requests. For example, with Apache:
 
