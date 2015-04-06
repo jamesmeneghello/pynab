@@ -35,6 +35,9 @@ def nntp_handler(conn, group=None):
         log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e))
         reconn(conn, 30, group)
         raise e
+    except nntplib.NNTPProtocolError as e:
+        log.warning('server: unrecoverable nntp error')
+        raise e
     except nntplib.NNTPError as e:
         log.warning('server: nntp error: {}'.format(e))
         raise e

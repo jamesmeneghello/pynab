@@ -71,9 +71,6 @@ import zlib
 
 import regex
 
-from pynab import log
-
-
 try:
     import ssl
 except ImportError:
