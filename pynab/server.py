@@ -138,7 +138,9 @@ class Server:
         i = 0
 
         # grab the headers we're after
-        self.connection.group(group_name)
+        with nntp_handler(self):
+            self.connection.group(group_name)
+
         if message_ranges:
             for first, last in message_ranges:
                 range_overviews = None
