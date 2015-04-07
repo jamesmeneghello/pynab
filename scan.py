@@ -96,9 +96,12 @@ def main(mode='update', group=None, date=None):
                     if db.query(Group).filter(Group.name == group).first():
                         groups = [group]
                 for group in groups:
-                    active_groups[group] = server.day_to_post(group,
-                                                        server.days_old(pytz.utc.localize(dateutil.parser.parse(date))) if date else config.scan.get('backfill_days',
-                                                                                                       10))
+                    target = server.day_to_post(group,
+                                                server.days_old(pytz.utc.localize(dateutil.parser.parse(date)))
+                                                if date else config.scan.get('backfill_days', 10)
+                                                )
+                    if target:
+                        active_groups[group] = target
 
     iterations = 0
     while True:
