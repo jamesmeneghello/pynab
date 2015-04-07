@@ -83,19 +83,20 @@ def main(mode='update', group=None, date=None):
 
     log.info('scan: starting {}...'.format(mode))
 
-    targets = {}
+    groups = []
+    active_groups = {}
 
     if mode == 'backfill':
         log.info('scan: finding targets for backfill...')
         with pynab.server.Server() as server:
             with db_session() as db:
                 if not group:
-                    active_groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
+                    groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
                 else:
                     if db.query(Group).filter(Group.name == group).first():
-                        active_groups = [group]
-                for group in active_groups:
-                    targets[group] = server.day_to_post(group,
+                        groups = [group]
+                for group in groups:
+                    active_groups[group] = server.day_to_post(group,
                                                         server.days_old(pytz.utc.localize(dateutil.parser.parse(date))) if date else config.scan.get('backfill_days',
                                                                                                        10))
 
@@ -115,23 +116,26 @@ def main(mode='update', group=None, date=None):
                     time.sleep(config.scan.get('update_wait', 600))
                     continue
 
-            if not group:
-                active_groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
-            else:
-                if db.query(Group).filter(Group.name == group).first():
-                    active_groups = [group]
+            # for scanning, we want to re-check active groups each iteration
+            # we don't want to do that for backfilling, though
+            if mode == 'scan':
+                if not group:
+                    active_groups = {group.name: None for group in db.query(Group).filter(Group.active == True).all()}
                 else:
-                    log.error('scan: no such group exists')
-                    return
+                    if db.query(Group).filter(Group.name == group).first():
+                        active_groups = [group]
+                    else:
+                        log.error('scan: no such group exists')
+                        return
 
             if active_groups:
                 with concurrent.futures.ThreadPoolExecutor(config.scan.get('update_threads', None)) as executor:
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
                     if mode == 'backfill':
-                        result = [executor.submit(backfill, active_group, date, targets[active_group]) for active_group in active_groups]
+                        result = [executor.submit(backfill, active_group, date, target) for active_group, target in active_groups.items()]
                     else:
-                        result = [executor.submit(update, active_group) for active_group in active_groups]
+                        result = [executor.submit(update, active_group) for active_group in active_groups.keys()]
 
                     for r in concurrent.futures.as_completed(result):
                         data.append(r.result())
