@@ -162,8 +162,6 @@ def main(mode='update', group=None, date=None):
                     if config.scan.get('full_vacuum', True):
                         pynab.db.vacuum(mode='scan', full=True)
                     iterations = 0
-                else:
-                    pynab.db.vacuum(mode='scan', full=False)
             else:
                 iterations = 0
 
