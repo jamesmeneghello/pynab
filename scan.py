@@ -45,13 +45,13 @@ def update(group_name):
         ))
 
 
-def backfill(group_name, date=None):
+def backfill(group_name, date=None, target=None):
     if date:
         date = pytz.utc.localize(dateutil.parser.parse(date))
     else:
         date = pytz.utc.localize(datetime.datetime.now() - datetime.timedelta(config.scan.get('backfill_days', 10)))
     try:
-        return pynab.groups.scan(group_name, direction='backward', date=date,
+        return pynab.groups.scan(group_name, direction='backward', date=date, target=target,
                                  limit=config.scan.get('group_scan_limit', 2000000))
     except Exception as e:
         log.error('scan: nntp server is flipping out, hopefully they fix their shit: {}'.format(
@@ -83,6 +83,22 @@ def main(mode='update', group=None, date=None):
 
     log.info('scan: starting {}...'.format(mode))
 
+    targets = {}
+
+    if mode == 'backfill':
+        log.info('scan: finding targets for backfill...')
+        with pynab.server.Server() as server:
+            with db_session() as db:
+                if not group:
+                    active_groups = [group.name for group in db.query(Group).filter(Group.active == True).all()]
+                else:
+                    if db.query(Group).filter(Group.name == group).first():
+                        active_groups = [group]
+                for group in active_groups:
+                    targets[group] = server.day_to_post(group,
+                                                        server.days_old(pytz.utc.localize(dateutil.parser.parse(date))) if date else config.scan.get('backfill_days',
+                                                                                                       10))
+
     iterations = 0
     while True:
         iterations += 1
@@ -113,7 +129,7 @@ def main(mode='update', group=None, date=None):
                     # if maxtasksperchild is more than 1, everything breaks
                     # they're long processes usually, so no problem having one task per child
                     if mode == 'backfill':
-                        result = [executor.submit(backfill, active_group, date) for active_group in active_groups]
+                        result = [executor.submit(backfill, active_group, date, targets[active_group]) for active_group in active_groups]
                     else:
                         result = [executor.submit(update, active_group) for active_group in active_groups]
 

@@ -9,7 +9,7 @@ import pynab.parts
 import config
 
 #@profile
-def scan(group_name, direction='forward', date=None, limit=None):
+def scan(group_name, direction='forward', date=None, target=None, limit=None):
     log.info('group: {}: scanning group'.format(group_name))
 
     with Server() as server:
@@ -42,7 +42,6 @@ def scan(group_name, direction='forward', date=None, limit=None):
 
                     # sort out a target
                     start = 0
-                    target = 0
                     mult = 0
                     if direction == 'forward':
                         start = group.last
@@ -50,7 +49,8 @@ def scan(group_name, direction='forward', date=None, limit=None):
                         mult = 1
                     elif direction == 'backward':
                         start = group.first
-                        target = server.day_to_post(group_name,
+                        if not target:
+                            target = server.day_to_post(group_name,
                                                     server.days_old(date) if date else config.scan.get('backfill_days',
                                                                                                        10))
                         mult = -1
