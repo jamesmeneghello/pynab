@@ -118,7 +118,7 @@ def main(mode='update', group=None, date=None):
 
             # for scanning, we want to re-check active groups each iteration
             # we don't want to do that for backfilling, though
-            if mode == 'scan':
+            if mode == 'update':
                 if not group:
                     active_groups = {group.name: None for group in db.query(Group).filter(Group.active == True).all()}
                 else:
