@@ -36,7 +36,7 @@ def nntp_handler(conn, group=None):
         reconn(conn, 30, group)
         raise e
     except nntplib.NNTPProtocolError as e:
-        log.warning('server: unrecoverable nntp error')
+        log.warning('server: unrecoverable nntp error: {}'.format(repr(e).encode('utf-8', 'replace').decode()))
         raise e
     except nntplib.NNTPError as e:
         log.warning('server: nntp error: {}'.format(e))
