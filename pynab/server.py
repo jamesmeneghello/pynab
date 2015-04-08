@@ -10,6 +10,7 @@ import pytz
 import lib.nntplib as nntplib
 from pynab import log
 from pynab.db import db_session, Blacklist
+import pynab.util
 import pynab.parts
 import pynab.yenc
 import config
@@ -36,9 +37,9 @@ def nntp_handler(conn, group=None):
         reconn(conn, 30, group)
         raise e
     except nntplib.NNTPProtocolError as e:
-        log.warning('server: unrecoverable nntp error: {}'.format(repr(e).encode('utf-8', 'replace').decode()))
+        log.warning('server: unrecoverable nntp error')
         raise e
-    except nntplib.NNTPError as e:
+    except (nntplib.NNTPError, nntplib.NNTPTemporaryError) as e:
         log.warning('server: nntp error: {}'.format(e))
         raise e
     except Exception as e:
@@ -255,7 +256,7 @@ class Server:
                                 'posted': dateutil.parser.parse(overview['date']),
                                 'posted_by': posted_by,
                                 'group_name': group_name,
-                                'xref': overview['xref'],
+                                'xref': pynab.util.smart_truncate(overview['xref'], length=1024),
                                 'total_segments': int(total_segments),
                                 'available_segments': 1,
                                 'segments': {segment_number: segment, },

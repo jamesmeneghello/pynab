@@ -131,3 +131,6 @@ def memory_usage(where):
     log.debug("Memory summary: {}".format(where))
     summary.print_(mem_summary, limit=2)
     log.debug("VM: {:2f}Mb".format(get_virtual_memory_usage_kb() / 1024.0))
+
+def smart_truncate(content, length, suffix=''):
+    return content if len(content) <= length else content[:length-len(suffix)].rsplit(' ', 1)[0] + suffix
