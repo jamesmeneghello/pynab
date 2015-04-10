@@ -107,7 +107,7 @@ def update_regex():
             # add pynab regex
             for reg in regex_data.additions:
                 r = Regex(**reg)
-                db.add(r)
+                db.merge(r)
 
             log.info('Added/modified {:d} Pynab regexes.'.format(len(regex_data.additions)))
             db.commit()
