@@ -6,7 +6,7 @@ import psutil
 from pynab.db import db_session, Regex, Blacklist, engine
 from pynab import log
 import config
-import db.regex
+import db.regex as regex_data
 
 
 class Match(object):
@@ -86,7 +86,7 @@ def update_regex():
 
             # if the parsing actually worked
             if len(regexes) > 0:
-                curr_total = db.query(Regex).count()
+                curr_total = db.query(Regex).filter(Regex.id <= 100000).count()
                 change = len(regexes) - curr_total
 
                 # this will show a negative if we add our own, but who cares for the moment
@@ -94,7 +94,7 @@ def update_regex():
 
                 ids = []
                 regexes = modify_regex(regexes)
-                for reg in regexes:
+                for reg in regexes.values():
                     r = Regex(**reg)
                     ids.append(r.id)
                     db.merge(r)
@@ -105,11 +105,11 @@ def update_regex():
                 log.info('Disabled {:d} removed regexes.'.format(removed))
 
             # add pynab regex
-            for reg in db.regex.additions:
+            for reg in regex_data.additions:
                 r = Regex(**reg)
-                db.merge(r)
+                db.add(r)
 
-            log.info('Added {:d} Pynab regexes.'.format(len(db.regex.additions)))
+            log.info('Added/modified {:d} Pynab regexes.'.format(len(regex_data.additions)))
             db.commit()
 
             return True
@@ -119,7 +119,7 @@ def update_regex():
 
 
 def modify_regex(regexes):
-    for key, replacement in db.regex.replacements.items():
+    for key, replacement in regex_data.replacements.items():
         regexes[key] = replacement
 
     return regexes
