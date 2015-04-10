@@ -147,6 +147,7 @@ class Server:
                     return False, None, None, None
                 with nntp_handler(self):
                     self.connection.group(group_name)
+                    break
             except:
                 continue
 
