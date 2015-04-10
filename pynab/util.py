@@ -62,7 +62,7 @@ def update_regex():
                 log.info('Regex at revision: {:d}'.format(revision))
 
             # and parse the rest of the lines, since they're an sql dump
-            regexes = []
+            regexes = {}
             for line in lines:
                 reg = regex.search('\((\d+), \'(.*)\', \'(.*)\', (\d+), (\d+), (.*), (.*)\);$', line)
                 if reg:
@@ -72,14 +72,14 @@ def update_regex():
                         else:
                             description = reg.group(6).replace('\'', '')
 
-                        regexes.append({
+                        regexes[int(reg.group(1))] = {
                             'id': int(reg.group(1)),
                             'group_name': reg.group(2),
                             'regex': reg.group(3).replace('\\\\', '\\'),
                             'ordinal': int(reg.group(4)),
                             'status': bool(reg.group(5)),
                             'description': description
-                        })
+                        }
                     except:
                         log.error('Problem importing regex dump.')
                         return False
@@ -102,11 +102,17 @@ def update_regex():
                 removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update(
                     {Regex.status: False}, synchronize_session='fetch')
 
-                db.commit()
-
                 log.info('Disabled {:d} removed regexes.'.format(removed))
 
-                return True
+            # add pynab regex
+            for regex in db.regex.additions:
+                r = Regex(**regex)
+                db.merge(r)
+
+            log.info('Added {:d} Pynab regexes.'.format(len(db.regex.additions)))
+            db.commit()
+
+            return True
         else:
             log.error('No config item set for regex_url - do you own newznab plus?')
             return False
