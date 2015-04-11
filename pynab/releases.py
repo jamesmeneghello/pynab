@@ -260,6 +260,7 @@ def process():
 
                 release = Release()
                 release.name = binary.name
+                release.original_name = binary.name
                 release.posted = binary.posted
                 release.posted_by = binary.posted_by
                 release.regex_id = binary.regex_id

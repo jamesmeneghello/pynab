@@ -327,6 +327,7 @@ class Release(Base):
 
     name = Column(String(512))
     search_name = Column(String(512), index=True)
+    original_name = Column(String(512))
     posted_by = Column(String(200))
 
     status = Column(Integer)
