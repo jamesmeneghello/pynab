@@ -212,9 +212,13 @@ def process():
                 # we only care if it's a really big file
                 # abs in case it's a 1 part release (abs(1 - 2) = 1)
                 # int(/2) works fine (int(1/2) = 0, array is 0-indexed)
-                est_size = (abs(binary.total_parts - 2) *
-                            binary.parts[int(binary.total_parts / 2)].total_segments *
-                            binary.parts[int(binary.total_parts / 2)].segments[0].size)
+                try:
+                    est_size = (abs(binary.total_parts - 2) *
+                                binary.parts[int(binary.total_parts / 2)].total_segments *
+                                binary.parts[int(binary.total_parts / 2)].segments[0].size)
+                except IndexError:
+                    log.error('release: binary [{}] - couldn\'t estimate size - bad regex: {}?'.format(binary.id, binary.regex_id))
+                    continue
 
                 oversized = est_size > config.postprocess.get('max_process_size', 10 * 1024 * 1024 * 1024)
 
