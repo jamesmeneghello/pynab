@@ -99,6 +99,8 @@ def update_regex():
                     ids.append(r.id)
                     db.merge(r)
 
+                log.info('Added/modified {:d} regexes from Newznab\'s collection'.format(len(regexes)))
+
                 removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update(
                     {Regex.status: False}, synchronize_session='fetch')
 
