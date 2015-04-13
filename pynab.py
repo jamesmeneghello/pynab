@@ -236,6 +236,7 @@ if __name__ == '__main__':
     elif arguments['update']:
         update()
         checkconfig()
+        update_regex()
     elif arguments['user']:
         if arguments['create']:
             create_user(arguments['<email>'])
