@@ -33,17 +33,17 @@ def nntp_handler(conn, group=None):
     try:
         yield
     except (socket.timeout, socket.error, IOError) as e:
-        log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e))
+        log.warning('server: local socket error ({}), reconnecting in 30s...'.format(e.__repr__().encode('utf-8', 'ignore').decode('utf-8')))
         reconn(conn, 30, group)
         raise e
     except nntplib.NNTPProtocolError as e:
         log.warning('server: unrecoverable nntp error')
         raise e
     except (nntplib.NNTPError, nntplib.NNTPTemporaryError) as e:
-        log.warning('server: nntp error: {}'.format(e))
+        log.warning('server: nntp error: {}'.format(e.__repr__().encode('utf-8', 'ignore').decode('utf-8')))
         raise e
     except Exception as e:
-        log.error('server: error: {}'.format(e))
+        log.error('server: error: {}'.format(e.__repr__().encode('utf-8', 'ignore').decode('utf-8')))
         raise e
 
 
