@@ -52,11 +52,9 @@ def rename_bad_releases(category):
                     release.status = 1
 
                     db.merge(release)
-            else:
-                # bad release!
-                release.status = 0
-                release.unwanted = True
-                db.merge(release)
+
+        # at this point, everything left in the category is unwanted
+        db.query(Release).filter((Release.status!=1)&(Release.category_id==category)).update({Release.unwanted: False})
         db.commit()
 
     if for_deletion:
