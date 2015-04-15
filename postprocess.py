@@ -122,10 +122,12 @@ def main():
                 #    data = t.result()
 
             # every 25 iterations (roughly), reset the unwanted status on releases
+            """
             if iterations % 25 == 0:
                 log.info('postprocess: resetting unwanted status')
                 db.query(Release).filter(Release.unwanted==True).update({Release.unwanted: False})
                 db.commit()
+            """
 
             # rename misc->other and all ebooks
             scripts.rename_bad_releases.rename_bad_releases(8010)
