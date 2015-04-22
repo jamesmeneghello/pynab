@@ -77,7 +77,12 @@ def process(limit=None, online=True):
                 if rage:
                     method = 'local'
                 elif not rage and online:
-                    rage_data = search(api_session, show)
+                    try:
+                        rage_data = search(api_session, show)
+                    except Exception as e:
+                        log.error('tvrage: couldn\'t access tvrage - their api getting hammered?')
+                        continue
+
                     if rage_data:
                         method = 'online'
                         rage = db.query(TvShow).filter(TvShow.id == rage_data['showid']).first()
@@ -135,11 +140,7 @@ def process(limit=None, online=True):
 
 def search(session, show):
     """Search TVRage's online API for show data."""
-    try:
-        r = session.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
-    except Exception as e:
-        log.error(e)
-        return None
+    r = session.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
 
     content = r.content
     return search_lxml(show, content)
