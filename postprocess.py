@@ -76,7 +76,7 @@ def main():
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    #scripts.quick_postprocess.local_postprocess()
+    scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
