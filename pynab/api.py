@@ -85,13 +85,13 @@ def get_nzb(dataset=None):
                     db.commit()
 
                     data = release.nzb.data
-                    response.set_header('Content-type', 'application/x-nzb')
+                    response.set_header('Content-type', 'application/x-nzb-compressed-gzip')
                     response.set_header('X-DNZB-Name', release.search_name)
                     response.set_header('X-DNZB-Category', release.category.name)
                     response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                                        .format(release.search_name.replace(' ', '_') + '.nzb')
+                                        .format(release.search_name.replace(' ', '_') + '.nzb.gz')
                     )
-                    return gzip.decompress(data)
+                    return data
                 else:
                     return api_error(300)
         else:
