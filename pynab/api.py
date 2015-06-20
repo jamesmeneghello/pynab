@@ -91,7 +91,7 @@ def get_nzb(dataset=None):
                     response.set_header('Content-Disposition', 'attachment; filename="{0}"'
                                         .format(release.search_name.replace(' ', '_') + '.nzb.gz')
                     )
-                    return data
+                    return gzip.decompress(data)
                 else:
                     return api_error(300)
         else:
@@ -148,7 +148,8 @@ def tv_search(dataset=None):
                 episode = request.query.ep or None
 
                 if season or episode:
-                    query = query.join(Episode, Release.episode_id==Episode.id)
+                    release_alias = aliased(Release)
+                    query = query.join(Episode, release_alias)
 
                     if season:
                         # 2014, do nothing
