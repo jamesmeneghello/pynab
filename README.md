@@ -457,7 +457,7 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
 
 Apache using `mod_wsgi` is also very easy (thanks @Enverex):
 
-    WSGYPythonPath /opt/pynab
+    WSGIPythonPath /opt/pynab
     <VirtualHost *:80>
         ServerName mysite.com
         WSGIScriptAlias / /opt/pynab.api.py
