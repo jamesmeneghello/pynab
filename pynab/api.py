@@ -74,6 +74,9 @@ def get_nzb(dataset=None):
         if not id:
             id = request.query.id or None
 
+        # couchpotato doesn't support nzb.gzs, so decompress them
+        decompress = 'CouchPotato' in request.headers.get('User-Agent')
+
         if id:
             with db_session() as db:
                 release = db.query(Release).join(NZB).join(Category).filter(Release.id == id).one()
@@ -84,14 +87,24 @@ def get_nzb(dataset=None):
                     db.merge(user)
                     db.commit()
 
-                    data = release.nzb.data
-                    response.set_header('Content-type', 'application/x-nzb-compressed-gzip')
-                    response.set_header('X-DNZB-Name', release.search_name)
-                    response.set_header('X-DNZB-Category', release.category.name)
-                    response.set_header('Content-Disposition', 'attachment; filename="{0}"'
-                                        .format(release.search_name.replace(' ', '_') + '.nzb.gz')
-                    )
-                    return gzip.decompress(data)
+                    if decompress:
+                        data = release.nzb.data
+                        response.set_header('Content-type', 'application/x-nzb')
+                        response.set_header('X-DNZB-Name', release.search_name)
+                        response.set_header('X-DNZB-Category', release.category.name)
+                        response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                                            .format(release.search_name.replace(' ', '_') + '.nzb')
+                        )
+                        return gzip.decompress(data)
+                    else:
+                        data = release.nzb.data
+                        response.set_header('Content-type', 'application/x-nzb-compressed-gzip')
+                        response.set_header('X-DNZB-Name', release.search_name)
+                        response.set_header('X-DNZB-Category', release.category.name)
+                        response.set_header('Content-Disposition', 'attachment; filename="{0}"'
+                                            .format(release.search_name.replace(' ', '_') + '.nzb.gz')
+                        )
+                        return data
                 else:
                     return api_error(300)
         else:
