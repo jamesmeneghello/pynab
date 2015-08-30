@@ -30,7 +30,7 @@ def nzedbirc(unformattedPre):
 #Sample: NEW: [DT: 2015-01-09 16:08:45][TT: Sample-Release][SC: sample-source][CT: 0DAY][RQ: N/A][SZ: N/A][FL: N/A][FN: N/A]
 def parseNzedbirc(unformattedPre):
     PRE_REGEX = regex.compile(
-        '(?P<preType>.+): \[DT: (?<pretime>.+)\]\[TT: (?P<name>.+)\]\[SC: (?P<source>.+)\]\[CT: (?P<category>.+)\]\[RQ: (?P<request>.+)\]\[SZ: (?P<size>.+)\]\[FL: (?P<files>.+)\]\[FN: (?P<filename>.+)\]')
+        '(?P<preType>.+): \[DT: (?<pretime>.+)\] \[TT: (?P<name>.+)\] \[SC: (?P<source>.+)\] \[CT: (?P<category>.+)\] \[RQ: (?P<request>.+)\] \[SZ: (?P<size>.+)\] \[FL: (?P<files>.+)\] \[FN: (?P<filename>.+)\]')
 
     formattedPre = {}
 
