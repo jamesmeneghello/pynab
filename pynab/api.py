@@ -51,7 +51,7 @@ def get_nfo(dataset=None):
         id = request.query.guid or None
         if id:
             with db_session() as db:
-                release = db.query(Release).join(NFO).filter(Release.id == id).one()
+                release = db.query(Release).join(NFO).filter(Release.id == id).first()
                 if release:
                     data = release.nfo.data
                     response.set_header('Content-type', 'application/x-nfo')
@@ -79,7 +79,7 @@ def get_nzb(dataset=None):
 
         if id:
             with db_session() as db:
-                release = db.query(Release).join(NZB).join(Category).filter(Release.id == id).one()
+                release = db.query(Release).join(NZB).join(Category).filter(Release.id == id).first()
                 if release:
                     release.grabs += 1
                     user.grabs += 1
@@ -191,7 +191,7 @@ def details(dataset=None):
     if auth():
         if request.query.id:
             with db_session() as db:
-                release = db.query(Release).filter(Release.id == request.query.id).one()
+                release = db.query(Release).filter(Release.id == request.query.id).first()
                 if release:
                     dataset['releases'] = [release]
                     dataset['detail'] = True
