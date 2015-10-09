@@ -57,6 +57,7 @@ import zlib
 _struct_blockHeader = struct.Struct("<HBHH")
 _struct_addSize = struct.Struct('<L')
 _struct_fileHead_add1 = struct.Struct("<LBLLBBHL") # Plus FILE_NAME and everything after it
+_struct_bigFileHead_add1 = struct.Struct("<LBLLBBHLLL") # Plus FILE_NAME and everything after it
 
 
 class BadRarFile(Exception):
@@ -220,9 +221,15 @@ class RarFile(object):
 
             # TODO: Rework handling of file headers.
             elif head_type == 0x74:
+                high_unp_size = 0
                 try:
-                    unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
-                        _struct_fileHead_add1)
+                    if head_flags & 0x0100:
+                        unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr, high_p_size, high_unp_size = self._read_struct(
+                            _struct_bigFileHead_add1)
+                    else:
+                        unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
+                            _struct_fileHead_add1)
+
                 except:
                     raise BadRarFile("Problem reading file")
 
@@ -231,7 +238,7 @@ class RarFile(object):
                 fileinfo = RarInfo(self.fp.read(name_size), ftime)
                 fileinfo.compress_size = add_size
                 fileinfo.header_offset = offset
-                fileinfo.file_size = unp_size   #TODO: What about >2GiB files? (Zip64 equivalent?)
+                fileinfo.file_size = unp_size + (high_unp_size << 32)
                 fileinfo.CRC = file_crc         #TODO: Verify the format matches that ZipInfo uses.
                 fileinfo.compress_type = method
 
