@@ -11,6 +11,7 @@ import pynab.groups
 import pynab.binaries
 import pynab.releases
 import pynab.tvrage
+import pynab.tvmaze
 import pynab.rars
 import pynab.nfos
 import pynab.sfvs
@@ -20,13 +21,20 @@ import scripts.quick_postprocess
 import scripts.rename_bad_releases
 import config
 
+def process_tvmaze():
+    try:
+        return pynab.tvmaze.process(500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
 
-def process_tvrage():
+"""def process_tvrage():
     try:
         return pynab.tvrage.process(500)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
+"""
 
 
 def process_nfos():
@@ -76,7 +84,7 @@ def main():
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    scripts.quick_postprocess.local_postprocess()
+    #scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -96,8 +104,11 @@ def main():
                 threads = []
 
                 # grab and append tvrage data to tv releases
+                #if config.postprocess.get('process_tvrage', True):
+                #    threads.append(executor.submit(process_tvrage))
+
                 if config.postprocess.get('process_tvrage', True):
-                    threads.append(executor.submit(process_tvrage))
+                    threads.append(executor.submit(process_tvmaze()))
 
                 if config.postprocess.get('process_imdb', True):
                     threads.append(executor.submit(process_imdb))
