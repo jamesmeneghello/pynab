@@ -342,6 +342,9 @@ news = {
 
     # ssl: True if you want to use SSL, False if not
     'ssl': True,
+    
+    # timeout: don't change this
+    'timeout': 60,
 }
 
 # xmpp pubsub bot
