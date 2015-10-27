@@ -23,7 +23,7 @@ import config
 
 def process_tvrage():
     try:
-        return pynab.tvrage.process(500)
+        return pynab.tvrage.process(500, online=False)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
