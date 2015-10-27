@@ -1,3 +1,4 @@
+#All credit to https://github.com/srob650/pytvmaze as this was only modified to support python3
 import urllib.request
 import json
 from datetime import datetime
