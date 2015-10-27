@@ -22,9 +22,6 @@ PROCESS_CHUNK_SIZE = 500
 TVMAZE_SEARCH_URL = ' http://api.tvmaze.com/search/shows'
 
 
-RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
-
-
 def process(limit=None, online=True):
     """Processes [limit] releases to add TVRage information."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
@@ -70,11 +67,14 @@ def process(limit=None, online=True):
                 elif not maze and online:
                     try:
                         if show['year']:
-                            maze_data = search(show['clean_name'][:-4]) 
+                            #maze_data = search(show['clean_name'][:-4]) 
+                            maze_data = show_search(show['clean_name'][:-4])
                         else:
-                            maze_data = search(show['clean_name']) 
+                            #maze_data = search(show['clean_name']) 
+                            maze_data = show_search(show['clean_name']) 
                     except Exception as e:
                         log.error('tvmaze: couldn\'t access tvmaze - their api getting hammered?')
+                        log.error('ERROR: ' + e)
                         continue
 
                     if maze_data:
@@ -85,7 +85,7 @@ def process(limit=None, online=True):
                             db.add(maze)
 
                     # wait slightly so we don't smash the api
-                    time.sleep(1)
+                    time.sleep(5)
 
                 if maze:
                     log.info('tvmaze: add {} [{}]'.format(
@@ -137,52 +137,28 @@ def search(show):
     maze_show = pytvmaze.get_show(show)
 
     if maze_show is not None:
-        log.info("tvmaze: returning show - {} with id - {}".format(maze_show.name, maze_show.id))
+        log.info('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
         return maze_show
     else:
-        log.info("tvmaze: No show found")
+        log.info('tvmaze: No show found')
         return None
 
+def show_search(show):
+    maze_shows = pytvmaze.show_search(show)
 
-def extract_names(xmlshow):
-    """Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"""
-    for name in XPATH_NAME(xmlshow):
-        yield name
-    for aka in XPATH_AKA(xmlshow):
-        yield aka
-    link = XPATH_LINK(xmlshow)[0]
-    link_result = RE_LINK.search(link)
-    if link_result:
-        for link in link_result.groups():
-            yield link
+    #This is a bit shonky, I need a better way to test it premiered shows up as a key
+    if maze_shows is not None:
+        for maze_show in maze_shows:
+            
+            premiered = datetime.strptime(show['show']['premiered'], '%Y%m%d').date()
+            
+            if show['year'] == premiered.year:
+                return maze_show
+                break
 
-def search_lxml(show, content):
-    """Search TVRage online API for show data."""
-    try:
-        tree = etree.fromstring(content)
-    except:
-        log.critical('Problem parsing XML with lxml')
+    else:
+        log.info('tvmaze: No show found')
         return None
-
-    matches = defaultdict(list)
-    # parse show names in the same order as returned by tvrage, first one is usually the good one
-    for xml_show in XPATH_SHOW(tree):
-        for name in extract_names(xml_show):
-            ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(name)).ratio() * 100)
-            if ratio == 100:
-                return xmltodict.parse(etree.tostring(xml_show))['show']
-            matches[ratio].append(xml_show)
-
-    # if no 100% is found, check highest ratio matches
-    for ratio, xml_matches in sorted(matches.items(), reverse=True):
-        for xml_match in xml_matches:
-            if ratio >= 80:
-                return xmltodict.parse(etree.tostring(xml_match))['show']
-            elif 80 > ratio > 60:
-                if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
-                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)[0]):
-                        return xmltodict.parse(etree.tostring(xml_match))['show']
-
 
 def clean_name(name):
     """Cleans a show name for searching."""
@@ -363,8 +339,3 @@ def parse_show(search_name):
         return show
 
     return False
-
-
-
-
-
