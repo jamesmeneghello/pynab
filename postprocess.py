@@ -108,7 +108,7 @@ def main():
                 #    threads.append(executor.submit(process_tvrage))
 
                 if config.postprocess.get('process_tvrage', True):
-                    threads.append(executor.submit(process_tvmaze()))
+                    threads.append(executor.submit(process_tvmaze))
 
                 if config.postprocess.get('process_imdb', True):
                     threads.append(executor.submit(process_imdb))

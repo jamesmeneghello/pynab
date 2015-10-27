@@ -69,7 +69,10 @@ def process(limit=None, online=True):
                     method = 'local'
                 elif not maze and online:
                     try:
-                        maze_data = search(show['clean_name'])
+                        if show['year']:
+                            maze_data = search(show['clean_name'][:-4]) 
+                        else:
+                            maze_data = search(show['clean_name']) 
                     except Exception as e:
                         log.error('tvmaze: couldn\'t access tvmaze - their api getting hammered?')
                         continue
@@ -132,10 +135,12 @@ def process(limit=None, online=True):
 def search(show):
     """Search TVRage's online API for show data."""
     maze_show = pytvmaze.get_show(show)
-    if maze_show:
-        log.info("returning {} id and {} name".format(maze_show.id, maze_show.name))
+
+    if maze_show is not None:
+        log.info("tvmaze: returning show - {} with id - {}".format(maze_show.name, maze_show.id))
         return maze_show
     else:
+        log.info("tvmaze: No show found")
         return None
 
 
@@ -150,21 +155,6 @@ def extract_names(xmlshow):
     if link_result:
         for link in link_result.groups():
             yield link
-
-def search_json(show, content):
-    """test"""
-
-    try:
-        data = json.loads(conent)
-    except:
-        log.critical('Problem parsing json')
-        return None
-
-    matches = defaultdict(list)
-
-    print(data[0])
-
-
 
 def search_lxml(show, content):
     """Search TVRage online API for show data."""

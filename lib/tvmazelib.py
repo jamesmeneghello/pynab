@@ -43,6 +43,7 @@ def query(url):
     with urllib.request.urlopen(url) as response:
       data = response.read()
   except:
+    print('Show not found')
     return None
 
   try:
