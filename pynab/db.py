@@ -9,10 +9,9 @@ import hashlib
 
 import psycopg2
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
-    create_engine, UniqueConstraint, Enum, Index
+    create_engine, UniqueConstraint, Enum, Index, func, and_, exc, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
-from sqlalchemy import func, and_, exc, event
 from sqlalchemy.pool import Pool
 
 import config
