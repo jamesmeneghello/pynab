@@ -28,8 +28,6 @@ def upgrade():
         sa.Column('db', sa.Enum('TVRAGE', 'TVMAZE', 'OMDB', 'IMDB', name='enum_dbid_name'), nullable=True),
         sa.Column('tvshow_id', sa.Integer(), nullable=True),
         sa.Column('movie_id', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['movie_id'], ['movies.id'], ),
-        sa.ForeignKeyConstraint(['tvshow_id'], ['tvshows.id'], ),
         sa.PrimaryKeyConstraint('id'),
         mysql_charset='utf8',
         mysql_engine='InnoDB',
@@ -76,6 +74,7 @@ def upgrade():
     bind.execute(CreateSequence(Sequence('movies_id_seq', start=i)))
 
 
+
     if config.db.get('engine') == 'postgresql':
         bind.execute('ALTER TABLE movies ALTER COLUMN id TYPE INTEGER USING id::integer')
         bind.execute('ALTER TABLE releases ALTER COLUMN movie_id TYPE INTEGER USING movie_id::integer')
@@ -94,6 +93,8 @@ def upgrade():
         )
 
     op.create_foreign_key('releases_movie_id_fkey', 'releases', 'movies', ['movie_id'], ['id'])
+    op.create_foreign_key('dbids_tvshow_id_fkey', 'dbids', 'tvshows', ['tvshow_id'], ['id'])
+    op.create_foreign_key('dbids_movie_id_fkey', 'dbids', 'movies', ['movie_id'], ['id'])
     ### end Alembic commands ###
 
 
