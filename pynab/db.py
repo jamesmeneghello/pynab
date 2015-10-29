@@ -9,10 +9,9 @@ import hashlib
 
 import psycopg2
 from sqlalchemy import Column, Integer, BigInteger, LargeBinary, Text, String, Boolean, DateTime, ForeignKey, \
-    create_engine, UniqueConstraint, Enum
+    create_engine, UniqueConstraint, Enum, Index, func, and_, exc, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker, scoped_session
-from sqlalchemy import func, and_, exc, event
 from sqlalchemy.pool import Pool
 
 import config
@@ -351,7 +350,7 @@ class Release(Base):
     tvshow_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='SET NULL'), index=True)
     tvshow_metablack = relationship('MetaBlack', foreign_keys=[tvshow_metablack_id])
 
-    movie_id = Column(String(20), ForeignKey('movies.id'), index=True)
+    movie_id = Column(Integer, ForeignKey('movies.id'), index=True)
     movie = relationship('Movie', backref=backref('releases'))
     movie_metablack_id = Column(Integer, ForeignKey('metablack.id', ondelete='SET NULL'), index=True)
     movie_metablack = relationship('MetaBlack', foreign_keys=[movie_metablack_id])
@@ -709,40 +708,6 @@ class SFV(Base):
     )
 
 
-class Movie(Base):
-    __tablename__ = 'movies'
-
-    id = Column(String(20), primary_key=True)
-
-    name = Column(String(256), index=True)
-    genre = Column(String(256))
-    year = Column(Integer, index=True)
-
-    __table_args__ = (
-        {
-            'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8',
-            'mysql_row_format': 'DYNAMIC'
-        }
-    )
-
-
-class TvShow(Base):
-    __tablename__ = 'tvshows'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(256), index=True)
-    country = Column(String(5))
-
-    __table_args__ = (
-        {
-            'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8',
-            'mysql_row_format': 'DYNAMIC'
-        }
-    )
-
-
 class DataLog(Base):
     __tablename__ = 'datalogs'
 
@@ -783,4 +748,60 @@ class Pre(Base):
         }
     )
 
+# --------------------------------
+# for dealing with tv/movie db ids
+# --------------------------------
 
+class DBID(Base):
+    __tablename__ = 'dbids'
+
+    id = Column(BigInteger, primary_key=True)
+    db_id = Column(String(50))
+    db = Column(Enum('TVRAGE', 'TVMAZE', 'OMDB', 'IMDB', name='enum_dbid_name'))
+
+    tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
+    movie_id = Column(Integer, ForeignKey('movies.id'), index=True)
+
+    __table_args__ = (
+        (
+            Index('idx_db_id_db', 'db_id', 'db')
+        ),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
+        }
+    )
+
+
+class Movie(Base):
+    __tablename__ = 'movies'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(256), index=True)
+    genre = Column(String(256))
+    year = Column(Integer, index=True)
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
+        }
+    )
+
+
+class TvShow(Base):
+    __tablename__ = 'tvshows'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(256), index=True)
+    country = Column(String(5))
+
+    __table_args__ = (
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8',
+            'mysql_row_format': 'DYNAMIC'
+        }
+    )
