@@ -145,7 +145,7 @@ def process():
 
                         # make sure the regex returns at least some name
                         if not match.get('name'):
-                            continue
+                            match['name'] = ' '.join(match.values())
 
                         # if regex are shitty, look for parts manually
                         # segment numbers have been stripped by this point, so don't worry

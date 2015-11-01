@@ -10,7 +10,7 @@ additions = [
     }
 ]
 
-replacements = {
+nn_replacements = {
     '677': {
         'id': 677,
         'regex': '/^.*?\"(?P<name>.*?)\.(pdb|htm|prc|lit|epub|lrf|txt|pdf|rtf|doc|chf|chn|mobi|chm|doc|par|rar|sfv|nfo|nzb|srt|ass|txt|zip|ssa|r\d{1,3}|7z|tar|idx|t\d{1,2}|u\d{1,3})/i',
@@ -47,3 +47,5 @@ replacements = {
         'group_name': 'alt.binaries.ebook.flood'
     },
 }
+
+nzedb_replacements = {}
