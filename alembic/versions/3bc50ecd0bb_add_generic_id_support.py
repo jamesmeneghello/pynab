@@ -44,8 +44,9 @@ def upgrade():
     releases = sa.Table('releases', meta, autoload=True, autoload_with=bind)
     movies = sa.Table('movies', meta, autoload=True, autoload_with=bind)
     tvshows = sa.Table('tvshows', meta, autoload=True, autoload_with=bind)
+    episodes = sa.Table('episodes', meta, autoload=True, autoload_with=bind)
 
-    op.drop_constraint('releases_movie_id_fkey', 'releases')
+    #op.drop_constraint('releases_movie_id_fkey', 'releases')
 
     for show in bind.execute(tvshows.select()):
         bind.execute(dbid.insert().values(
@@ -54,8 +55,9 @@ def upgrade():
             db_id=show[tvshows.c.id],
             tvshow_id=i
         ))
-        bind.execute(tvshows.update().where(tvshows.c.id==show[tvshows.c.id]).values(id=i))
         bind.execute(releases.update().where(releases.c.tvshow_id==show[tvshows.c.id]).values(tvshow_id=i))
+        bind.execute(episodes.update().where(episodes.c.tvshow_id==show[tvshows.c.id]).values(tvshow_id=i))
+        bind.execute(tvshows.update().where(tvshows.c.id==show[tvshows.c.id]).values(id=i))
 
         i += 1
 
@@ -66,8 +68,8 @@ def upgrade():
             db_id=movie[movies.c.id],
             movie_id=i
         ))
-        bind.execute(movies.update().where(movies.c.id==movie[movies.c.id]).values(id=i))
         bind.execute(releases.update().where(releases.c.movie_id==movie[movies.c.id]).values(movie_id=i))
+        bind.execute(movies.update().where(movies.c.id==movie[movies.c.id]).values(id=i))
 
         i += 1
 
@@ -92,7 +94,7 @@ def upgrade():
                    existing_nullable=False
         )
 
-    op.create_foreign_key('releases_movie_id_fkey', 'releases', 'movies', ['movie_id'], ['id'])
+    #op.create_foreign_key('releases_movie_id_fkey', 'releases', 'movies', ['movie_id'], ['id'])
     op.create_foreign_key('dbids_tvshow_id_fkey', 'dbids', 'tvshows', ['tvshow_id'], ['id'])
     op.create_foreign_key('dbids_movie_id_fkey', 'dbids', 'movies', ['movie_id'], ['id'])
     ### end Alembic commands ###
