@@ -46,7 +46,9 @@ def upgrade():
     tvshows = sa.Table('tvshows', meta, autoload=True, autoload_with=bind)
     episodes = sa.Table('episodes', meta, autoload=True, autoload_with=bind)
 
-    #op.drop_constraint('releases_movie_id_fkey', 'releases')
+    op.drop_constraint('releases_movie_id_fkey', 'releases')
+    op.drop_constraint('releases_tvshow_id_fkey', 'releases')
+    op.drop_constraint('episodes_tvshow_id_fkey', 'episodes')
 
     for show in bind.execute(tvshows.select()):
         bind.execute(dbid.insert().values(
@@ -94,7 +96,9 @@ def upgrade():
                    existing_nullable=False
         )
 
-    #op.create_foreign_key('releases_movie_id_fkey', 'releases', 'movies', ['movie_id'], ['id'])
+    op.create_foreign_key('releases_movie_id_fkey', 'releases', 'movies', ['movie_id'], ['id'])
+    op.create_foreign_key('releases_tvshow_id_fkey', 'releases', 'tvshows', ['tvshow_id'], ['id'])
+    op.create_foreign_key('episodes_tvshow_id_fkey', 'episodes', 'tvshows', ['tvshow_id'], ['id'])
     op.create_foreign_key('dbids_tvshow_id_fkey', 'dbids', 'tvshows', ['tvshow_id'], ['id'])
     op.create_foreign_key('dbids_movie_id_fkey', 'dbids', 'movies', ['movie_id'], ['id'])
     ### end Alembic commands ###
