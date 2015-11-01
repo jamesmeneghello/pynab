@@ -343,7 +343,7 @@ class Release(Base):
     category_id = Column(Integer, ForeignKey('categories.id'), index=True)
     category = relationship('Category', backref=backref('releases'))
 
-    regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
+    regex_id = Column(Integer, ForeignKey('regexes.id', ondelete='SET NULL'), index=True)
     regex = relationship('Regex', backref=backref('releases'))
 
     tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
