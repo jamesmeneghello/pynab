@@ -493,7 +493,7 @@ class Binary(Base):
     xref = Column(String(1024))
     group_name = Column(String(200))
 
-    regex_id = Column(Integer, ForeignKey('regexes.id'), index=True)
+    regex_id = Column(Integer, ForeignKey('regexes.id', ondelete='SET NULL'), index=True)
     regex = relationship('Regex', backref=backref('binaries'))
 
     parts = relationship('Part', passive_deletes=True, order_by="asc(Part.subject)")
