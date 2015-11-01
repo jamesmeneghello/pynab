@@ -104,7 +104,11 @@ def process():
                 flags = r[r.rfind('/') + 1:]
                 r = r[r.find('/') + 1:r.rfind('/')]
                 regex_flags = regex.I if 'i' in flags else 0
-                compiled_regex[reg.id] = regex.compile(r, regex_flags)
+                try:
+                    compiled_regex[reg.id] = regex.compile(r, regex_flags)
+                except Exception as e:
+                    log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
+                    db.query(Regex).filter(reg.id).remove()
 
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id == None)
             total_parts = query.count()
