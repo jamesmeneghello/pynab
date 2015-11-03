@@ -11,7 +11,7 @@ PROCESS_CHUNK_SIZE = 5000
 
 # revision identifiers, used by Alembic.
 revision = '3bc50ecd0bb'
-down_revision = '18ced36d0df'
+down_revision = '30688404cda'
 
 from alembic import op
 import sqlalchemy as sa
