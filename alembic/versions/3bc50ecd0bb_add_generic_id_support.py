@@ -57,6 +57,8 @@ def upgrade():
             db_id=show[tvshows.c.id],
             tvshow_id=i
         ))
+
+        print('changing show {} from {} to {}'.format(show[tvshows.c.name], show[tvshows.c.id], i))
         bind.execute(releases.update().where(releases.c.tvshow_id==show[tvshows.c.id]).values(tvshow_id=i))
         bind.execute(episodes.update().where(episodes.c.tvshow_id==show[tvshows.c.id]).values(tvshow_id=i))
         bind.execute(tvshows.update().where(tvshows.c.id==show[tvshows.c.id]).values(id=i))
