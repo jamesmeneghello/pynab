@@ -26,7 +26,7 @@ def scan():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:scan', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab Update (close to quit)" python scan.py update', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def backfill():

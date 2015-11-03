@@ -279,11 +279,13 @@ postprocess = {
     # regex update settings
     # ---------------------
 
+    # regex_type: type of dump: nn+ or nzedb
     # regex_url: url to retrieve regex updates from
     # this can be newznab's if you bought plus, include your id, ie.
     # expects data in newznab sql dump format
     # 'http://www.newznab.com/getregex.php?newznabID=<id>'
-    'regex_url': '',
+    'regex_type': 'nzedb',
+    'regex_url': 'https://raw.githubusercontent.com/nZEDb/nZEDb/master/resources/db/schema/data/10-release_naming_regexes.tsv',
 
     # blacklist_url: url to retrieve blacklists from
     # generally leave alone
