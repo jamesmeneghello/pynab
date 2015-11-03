@@ -10,7 +10,7 @@ import xmltodict
 import pytz
 import json
 
-from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog, windowed_query
+from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog, windowed_query, DBID
 import lib.tvmazelib as pytvmaze
 from pynab import log
 import pynab.util
@@ -55,11 +55,13 @@ def process(limit=None, online=True):
                 if release.tvshow:
                     maze = release.tvshow
                 else:
+                    #Change to query dbid with db tvmaze and name
                     maze = db.query(TvShow).filter(
                         TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
                     ).first()
 
                 if not maze and 'and' in show['clean_name']:
+                    #Change to query dbid with db tvmaze and name
                     maze = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
 
                 if maze:
@@ -67,10 +69,8 @@ def process(limit=None, online=True):
                 elif not maze and online:
                     try:
                         if show['year']:
-                            #maze_data = search(show['clean_name'][:-4]) 
                             maze_data = show_search(show['clean_name'][:-4])
                         else:
-                            #maze_data = search(show['clean_name']) 
                             maze_data = show_search(show['clean_name']) 
                     except Exception as e:
                         log.error('tvmaze: couldn\'t access tvmaze - their api getting hammered?')
@@ -79,23 +79,26 @@ def process(limit=None, online=True):
 
                     if maze_data:
                         method = 'online'
+                        #Change to query dbid for the tvshowid and db name = maze
                         maze = db.query(TvShow).filter(TvShow.id == maze_data.id).first()
                         if not maze:
+                            #change to add a new tvshow and related dbid record
                             maze = TvShow(id=maze_data.id, name=maze_data.name, country=maze_data.network['country']['code'])
                             db.add(maze)
 
                     # wait slightly so we don't smash the api
-                    time.sleep(5)
+                    time.sleep(2)
 
                 if maze:
                     log.info('tvmaze: add {} [{}]'.format(
                         method,
                         release.search_name
                     ))
-
+                    #Need to pull the dbid tvshowid first then search
                     e = db.query(Episode).filter(Episode.tvshow_id == maze.id).filter(
                         Episode.series_full == show['series_full']).first()
                     if not e:
+                        #Create a tvshow and dbid record, then add the episode
                         e = Episode(
                             season=show.get('season'),
                             episode=show.get('episode'),
