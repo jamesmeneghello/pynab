@@ -49,62 +49,74 @@ def update_blacklist():
 def update_regex():
     """Check for NN+ regex update and load them into db."""
     with db_session() as db:
+        regex_type = config.postprocess.get('regex_type')
         regex_url = config.postprocess.get('regex_url')
         if regex_url:
+            regexes = {}
             response = requests.get(regex_url)
             lines = response.text.splitlines()
 
-            # get the revision by itself
+            # get the revision or headers by itself
             first_line = lines.pop(0)
-            revision = regex.search('\$Rev: (\d+) \$', first_line)
-            if revision:
-                revision = int(revision.group(1))
-                log.info('Regex at revision: {:d}'.format(revision))
 
-            # and parse the rest of the lines, since they're an sql dump
-            regexes = {}
-            for line in lines:
-                reg = regex.search('\((\d+), \'(.*)\', \'(.*)\', (\d+), (\d+), (.*), (.*)\);$', line)
-                if reg:
+            if regex_type == 'nzedb':
+                for line in lines:
                     try:
-                        if reg.group(6) == 'NULL':
-                            description = ''
-                        else:
-                            description = reg.group(6).replace('\'', '')
+                        id, group, reg, status, desc, ordinal = tuple(line.split('\t'))
+                    except ValueError:
+                        # broken line
+                        continue
 
-                        regexes[int(reg.group(1))] = {
-                            'id': int(reg.group(1)),
-                            'group_name': reg.group(2),
-                            'regex': reg.group(3).replace('\\\\', '\\'),
-                            'ordinal': int(reg.group(4)),
-                            'status': bool(reg.group(5)),
-                            'description': description
-                        }
-                    except:
-                        log.error('Problem importing regex dump.')
-                        return False
+                    regexes[int(id)] = {
+                        'id': int(id),
+                        'group_name': group.replace('^', '').replace('\\', '').replace('$', ''),
+                        'regex': reg.replace('\\\\', '\\'),
+                        'ordinal': ordinal,
+                        'status': bool(status),
+                        'description': desc[:255]
+                    }
+            else:
+                revision = regex.search('\$Rev: (\d+) \$', first_line)
+                if revision:
+                    revision = int(revision.group(1))
+                    log.info('Regex at revision: {:d}'.format(revision))
+
+                # and parse the rest of the lines, since they're an sql dump
+                for line in lines:
+                    reg = regex.search('\((\d+), \'(.*)\', \'(.*)\', (\d+), (\d+), (.*), (.*)\);$', line)
+                    if reg:
+                        try:
+                            if reg.group(6) == 'NULL':
+                                description = ''
+                            else:
+                                description = reg.group(6).replace('\'', '')
+
+                            regexes[int(reg.group(1))] = {
+                                'id': int(reg.group(1)),
+                                'group_name': reg.group(2),
+                                'regex': reg.group(3).replace('\\\\', '\\'),
+                                'ordinal': int(reg.group(4)),
+                                'status': bool(reg.group(5)),
+                                'description': description
+                            }
+                        except:
+                            log.error('Problem importing regex dump.')
+                            return False
 
             # if the parsing actually worked
             if len(regexes) > 0:
-                curr_total = db.query(Regex).filter(Regex.id <= 100000).count()
-                change = len(regexes) - curr_total
+                db.query(Regex).filter(Regex.id<100000).delete()
 
-                # this will show a negative if we add our own, but who cares for the moment
-                log.info('Retrieved {:d} regexes, {:d} new.'.format(len(regexes), change))
+                log.info('Retrieved {:d} regexes.'.format(len(regexes)))
 
                 ids = []
-                regexes = modify_regex(regexes)
+                regexes = modify_regex(regexes, regex_type)
                 for reg in regexes.values():
                     r = Regex(**reg)
                     ids.append(r.id)
                     db.merge(r)
 
-                log.info('Added/modified {:d} regexes from Newznab\'s collection'.format(len(regexes)))
-
-                removed = db.query(Regex).filter(~Regex.id.in_(ids)).filter(Regex.id <= 100000).update(
-                    {Regex.status: False}, synchronize_session='fetch')
-
-                log.info('Disabled {:d} removed regexes.'.format(removed))
+                log.info('Added/modified {:d} regexes.'.format(len(regexes)))
 
             # add pynab regex
             for reg in regex_data.additions:
@@ -120,8 +132,14 @@ def update_regex():
             return False
 
 
-def modify_regex(regexes):
-    for key, replacement in regex_data.replacements.items():
+def modify_regex(regexes, type):
+    reps = None
+    if type == 'nzedb':
+        reps = regex_data.nzedb_replacements
+    else:
+        reps = regex_data.nn_replacements
+
+    for key, replacement in reps.items():
         regexes[key] = replacement
 
     return regexes
