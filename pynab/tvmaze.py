@@ -55,12 +55,14 @@ def process(limit=None, online=True):
                 if release.tvshow:
                     maze = release.tvshow
                 else:
+                    ################
                     tvshow = db.query(TvShow).filter(TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))).first()
-                    maze = db.query(DBID).filter(and_(DBID.tvshow_id == tvshow.id. DBID.db == 'TVMAZE'))
+                    maze = db.query(DBID).filter(DBID.tvshow_id == tvshow.id, DBID.db == 'TVMAZE').first()
 
                 if not maze and 'and' in show['clean_name']:
+                    ###################
                     tvshow = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
-                    maze = db.query(DBID).filter(and_(DBID.tvshow_id == tvshow.id. DBID.db == 'TVMAZE'))
+                    maze = db.query(DBID).filter(DBID.tvshow_id == tvshow.id, DBID.db == 'TVMAZE').first()
 
                 if maze:
                     method = 'local'
@@ -77,11 +79,12 @@ def process(limit=None, online=True):
 
                     if maze_data:
                         method = 'online'
-                        #Change to query dbid for the tvshowid and db name = maze
-                        maze = db.query(TvShow).filter(TvShow.id == maze_data.id).first()
+                        #################
+                        maze = db.query(DBID).filter(DBID.tvshow_id == maze_data.id, DBID.db == 'TVMAZE').first()
+
                         if not maze:
-                            #change to add a new tvshow and related dbid record
-                            maze = TvShow(id=maze_data.id, name=maze_data.name, country=maze_data.network['country']['code'])
+                            ########### Cant add the DBID record until after commit? ###########
+                            maze = TvShow(name=maze_data.name, country=maze_data.network['country']['code'])
                             db.add(maze)
 
                     # wait slightly so we don't smash the api
@@ -93,8 +96,9 @@ def process(limit=None, online=True):
                         release.search_name
                     ))
                     #Need to pull the dbid tvshowid first then search
-                    e = db.query(Episode).filter(Episode.tvshow_id == maze.id).filter(
-                        Episode.series_full == show['series_full']).first()
+                    tvshow = db.query(DBID).filter(DBID.db_id == maze.id, DBID.db == 'TVMAZE').first()
+                    e = db.query(Episode).filter(Episode.tvshow_id == tvshow.id).filter(Episode.series_full == show['series_full']).first()
+
                     if not e:
                         #Create a tvshow and dbid record, then add the episode
                         e = Episode(
@@ -105,6 +109,7 @@ def process(limit=None, online=True):
                             year=show.get('year'),
                             tvshow_id=maze.id
                         )
+                    ### This should be tvshow, figure out scope ###
                     release.tvshow = maze
                     release.tvshow_metablack_id = None
                     release.episode = e
