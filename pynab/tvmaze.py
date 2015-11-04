@@ -55,14 +55,12 @@ def process(limit=None, online=True):
                 if release.tvshow:
                     maze = release.tvshow
                 else:
-                    #Change to query dbid with db tvmaze and name
-                    maze = db.query(TvShow).filter(
-                        TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
-                    ).first()
+                    tvshow = db.query(TvShow).filter(TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))).first()
+                    maze = db.query(DBID).filter(and_(DBID.tvshow_id == tvshow.id. DBID.db == 'TVMAZE'))
 
                 if not maze and 'and' in show['clean_name']:
-                    #Change to query dbid with db tvmaze and name
-                    maze = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
+                    tvshow = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
+                    maze = db.query(DBID).filter(and_(DBID.tvshow_id == tvshow.id. DBID.db == 'TVMAZE'))
 
                 if maze:
                     method = 'local'
