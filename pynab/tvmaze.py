@@ -55,16 +55,18 @@ def process(limit=None, online=True):
                 if release.tvshow:
                     maze = release.tvshow
                 else:
-                    ################
                     maze = db.query(TvShow).filter(TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))).first()
-                    #maze = db.query(DBID).filter(DBID.tvshow_id == tvshow.id, DBID.db == 'TVMAZE').first()
 
                 if not maze and 'and' in show['clean_name']:
-                    ###################
                     maze = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
-                    #maze = db.query(DBID).filter(DBID.tvshow_id == tvshow.id, DBID.db == 'TVMAZE').first()
 
+                #Check if its REALLY in the db
                 if maze:
+                    tvmaze = db.query(DBID).filter(DBID.tvshow_id == maze.id).filter(DBID.db == 'TVMAZE').first()
+                else:
+                    tvmaze = None
+
+                if maze and tvmaze:
                     method = 'local'
                 elif not maze and online:
                     try:
@@ -76,21 +78,31 @@ def process(limit=None, online=True):
 
                     if maze_data:
                         method = 'online'
-                        #################
-                        maze = db.query(DBID).filter(DBID.tvshow_id == maze_data['show']['id']).filter(DBID.db == 'TVMAZE').first()
-                        #maze = db.query(TvShow).filter(TvShow.id == tvmaze.tvshow_id).first()
+                        tvmaze = db.query(DBID).filter(DBID.db_id == str(maze_data['show']['id'])).filter(DBID.db == 'TVMAZE').first()
 
-                        if not maze:
-                            ########### Cant add the DBID record until after commit? ###########
-                            maze = TvShow(name=maze_data['show']['name'], country=maze_data['show']['network']['country']['code'])
-                            dbid = DBID(db='TVMAZE', db_id=maze_data['show']['id'], tvshow_id=maze)
+                        if tvmaze:
+                            print('I found a tvmaze record')
+                            maze = db.query(TvShow).filter(TvShow.id == tvmaze.tvshow_id).first()
+                        else:
+                            print('NO RECORD FOUND MAKING ONE')
+                            try:
+                                country = maze_data['show']['network']['country']['code']
+                            except:
+                                country = None
+                                log.info('tvmaze: No country found for - {}'.format(maze_data['show']['name']))
+
+                            if country:
+                                maze = TvShow(name=maze_data['show']['name'], country=country)
+                            else:
+                                maze = TvShow(name=maze_data['show']['name'])
                             db.add(maze)
+
+                            dbid = DBID(db='TVMAZE', db_id=maze_data['show']['id'], tvshow_id=maze.id)
                             db.add(dbid)
 
                     # wait slightly so we don't smash the api
-                    time.sleep(2)
+                    time.sleep(1)
 
-                #### Unsure if this is smart, but I needed access to the DBID stuff and tvshow stuff
                 if maze:
                     log.info('tvmaze: add {} [{}]'.format(
                         method,
@@ -100,7 +112,6 @@ def process(limit=None, online=True):
                     e = db.query(Episode).filter(Episode.tvshow_id == maze.id).filter(Episode.series_full == show['series_full']).first()
 
                     if not e:
-                        #Create a tvshow and dbid record, then add the episode
                         e = Episode(
                             season=show.get('season'),
                             episode=show.get('episode'),
@@ -151,28 +162,34 @@ def search(show):
 def show_search(show):
 
     has_year = show.get('year')
-    print('TRYING TO FIND: ' + show['name'])
 
     if has_year:
+        print('TRYING TO FIND IN HAS YEAR: ' + show['clean_name'][:-4])
         maze_shows = pytvmaze.show_search(show['clean_name'][:-4])
-        #print('IN HAS YEAR: ' + str(maze_shows))
     else:
+        print('TRYING TO FIND: ' + show['clean_name'])
         maze_shows = pytvmaze.show_search(show['clean_name'])
-        #print('IN NO YEAR' + str(maze_shows))
 
     #This is a bit shonky, I need a better way to test it premiered shows up as a key
     if maze_shows is not None:
         for maze_show in maze_shows:
-            premiered = datetime.datetime.strptime(maze_show['show']['premiered'], '%Y-%m-%d').date()
 
-            if has_year:
+            #Not all the shows in tvmaze have dates
+            try:
+                premiered = datetime.datetime.strptime(maze_show['show']['premiered'], '%Y-%m-%d').date()
+                has_premier = True
+            except:
+                log.info('No premiered date found, probably unaired')
+                has_premier = False
+
+            if has_year and has_premier:
+                print('trying to match year')
+                print('show year ' + show['year'] + ' ' + premiered.year)
                 if show['year'] == premiered.year:
-                    print('RETURNING ' + str(maze_show))
                     return maze_show
                     break
-            else:
+            if not has_year:
                 return maze_show
-                break
 
     else:
         log.info('tvmaze: No show found')
