@@ -36,7 +36,7 @@ def process_tvmaze():
         raise Exception
 """
 
-'''
+
 def process_nfos():
     try:
         return pynab.nfos.process(500)
@@ -67,7 +67,7 @@ def process_imdb():
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
-'''
+
 
 def process_requests():
     try:
@@ -84,7 +84,7 @@ def main():
 
     # start with a quick post-process
     log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    #scripts.quick_postprocess.local_postprocess()
+    scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -109,7 +109,7 @@ def main():
 
                 if config.postprocess.get('process_tvrage', True):
                     threads.append(executor.submit(process_tvmaze))
-                '''
+
                 if config.postprocess.get('process_imdb', True):
                     threads.append(executor.submit(process_imdb))
 
@@ -128,7 +128,7 @@ def main():
                 # check for requests in local pre table
                 if config.postprocess.get('process_requests', True):
                     threads.append(executor.submit(process_requests))
-                '''
+
                 #for t in concurrent.futures.as_completed(threads):
                 #    data = t.result()
 
