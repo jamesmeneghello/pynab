@@ -1,17 +1,12 @@
 import unicodedata
-import difflib
 import datetime
 import time
-from collections import defaultdict
 
 import regex
 import roman
-import xmltodict
 import pytz
-import json
 
 from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog, windowed_query, DBID
-#import lib.tvmazelib as pytvmaze
 import pytvmaze
 from pynab import log
 import pynab.util
@@ -71,40 +66,30 @@ def process(limit=None, online=True):
                     method = 'local'
                 elif not maze and online:
                     try:
-                        maze_data = search2(show)
+                        maze_data = search(show)
                     except Exception as e:
                         log.error('tvmaze: couldn\'t access tvmaze - their api getting hammered?')
-                        log.error('ERROR: ' + e)
                         continue
 
                     if maze_data:
                         method = 'online'
-                        print('I found matching show ' + maze_data.name)
-                        #tvmaze = db.query(DBID).filter(DBID.db_id == str(maze_data['show']['id'])).filter(DBID.db == 'TVMAZE').first()
                         tvmaze = db.query(DBID).filter(DBID.db_id == str(maze_data.id)).filter(DBID.db == 'TVMAZE').first()
 
                         if tvmaze:
-                            print('I found a tvmaze record')
                             maze = db.query(TvShow).filter(TvShow.id == tvmaze.tvshow_id).first()
                         else:
-                            print('NO RECORD FOUND MAKING ONE')
                             try:
-                                #country = maze_data['show']['network']['country']['code']
                                 country = maze_data.network['country']['code']
-                            except:
+                            except Exception as e:
                                 country = None
-                                #log.info('tvmaze: No country found for - {}'.format(maze_data['show']['name']))
                                 log.info('tvmaze: No country found for - {}'.format(maze_data.name))
 
                             if country:
-                                #maze = TvShow(name=maze_data['show']['name'], country=country)
                                 maze = TvShow(name=maze_data.name, country=country)
                             else:
-                                #maze = TvShow(name=maze_data['show']['name'])
                                 maze = TvShow(name=maze_data.name)
                             db.add(maze)
 
-                            #dbid = DBID(db='TVMAZE', db_id=maze_data['show']['id'], tvshow_id=maze.id)
                             dbid = DBID(db='TVMAZE', db_id=maze_data.id, tvshow_id=maze.id)
                             db.add(dbid)
 
@@ -156,7 +141,7 @@ def process(limit=None, online=True):
             db.commit()
 
 
-def search2(show):
+def search(show):
     print('TRYING TO FIND: ' + show['clean_name'])
     maze_show = pytvmaze.get_show(show['clean_name'])
 
@@ -167,53 +152,6 @@ def search2(show):
         log.info('tvmaze: No show found')
         return None
 
-
-def search(show):
-    """Search TVRage's online API for show data."""
-    maze_show = pytvmaze.get_show(show)
-
-    if maze_show is not None:
-        log.info('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
-        return maze_show
-    else:
-        log.info('tvmaze: No show found')
-        return None
-
-def show_search(show):
-
-    has_year = show.get('year')
-
-    if has_year:
-        print('TRYING TO FIND IN HAS YEAR: ' + show['clean_name'][:-4])
-        maze_shows = pytvmaze.show_search(show['clean_name'][:-4])
-    else:
-        print('TRYING TO FIND: ' + show['clean_name'])
-        maze_shows = pytvmaze.show_search(show['clean_name'])
-
-    #This is a bit shonky, I need a better way to test it premiered shows up as a key
-    if maze_shows is not None:
-        for maze_show in maze_shows:
-
-            #Not all the shows in tvmaze have dates
-            try:
-                premiered = datetime.datetime.strptime(maze_show['show']['premiered'], '%Y-%m-%d').date()
-                has_premier = True
-            except:
-                log.info('No premiered date found, probably unaired')
-                has_premier = False
-
-            if has_year and has_premier:
-                print('trying to match year')
-                print('show year ' + str(show['year']) + ' ' + str(premiered.year))
-                if show['year'] == premiered.year:
-                    return maze_show
-                    break
-            if not has_year:
-                return maze_show
-
-    else:
-        log.info('tvmaze: No show found')
-        return None
 
 def clean_name(name):
     """Cleans a show name for searching."""
