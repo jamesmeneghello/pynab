@@ -257,7 +257,11 @@ postprocess = {
 
     # process_tvrage: match TV releases against TVRage
     # sickbeard sometimes depends on this data for API usage, definitely recommended
-    'process_tvrage': True,
+    'process_tvrage': False,
+
+    # process_tvmaze: match TV releases against tvmaze
+    # sickbeard sometimes depends on this data for API usage, definitely recommended
+    'process_tvmaze': True,
 
     # process_nfos: grab NFOs for releases for other use
     # this can be used to clean release names, etc

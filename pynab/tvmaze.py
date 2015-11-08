@@ -19,7 +19,7 @@ TVMAZE_SEARCH_URL = ' http://api.tvmaze.com/search/shows'
 
 
 def process(limit=None, online=True):
-    """Processes [limit] releases to add TVRage information."""
+    """Processes [limit] releases to add TVMaze information."""
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     with db_session() as db:
@@ -142,7 +142,6 @@ def process(limit=None, online=True):
 
 
 def search(show):
-    print('TRYING TO FIND: ' + show['clean_name'])
     maze_show = pytvmaze.get_show(show['clean_name'])
 
     if maze_show is not None:
