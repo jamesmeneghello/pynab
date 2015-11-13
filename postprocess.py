@@ -75,7 +75,7 @@ def main():
     log.info('postprocess: starting post-processing...')
 
     # start with a quick post-process
-    log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
+    #log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
     #scripts.quick_postprocess.local_postprocess()
 
     iterations = 0

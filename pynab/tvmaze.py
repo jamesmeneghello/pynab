@@ -68,7 +68,7 @@ def process(limit=None, online=True):
                     try:
                         maze_data = search(show)
                     except Exception as e:
-                        log.error('tvmaze: couldn\'t access tvmaze - their api getting hammered?')
+                        log.error('tvmaze: either the show wasn\'t found or tvmaze is down')
                         continue
 
                     if maze_data:
@@ -142,7 +142,21 @@ def process(limit=None, online=True):
 
 
 def search(show):
-    maze_show = pytvmaze.get_show(show['clean_name'])
+    """Searches tvmaze for show details"""
+    year = show.get('year')
+    country = show.get('country')
+
+    log.info('tvmaze: attempting to find {} online'.format(show))
+
+    #This could use some work, its a bit messy with the years
+    if year and country:
+        maze_show = pytvmaze.get_show(show_name=show['clean_name'][:-4], show_year=year, show_country=country)
+    elif country:
+        maze_show = pytvmaze.get_show(show_name=show['clean_name'], show_country=country)
+    elif year:
+        maze_show = pytvmaze.get_show(show_name=show['clean_name'][:-4], show_year=year)
+    else:
+        maze_show = pytvmaze.get_show(show_name=show['clean_name'])
 
     if maze_show is not None:
         log.info('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
