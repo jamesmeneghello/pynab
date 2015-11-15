@@ -146,17 +146,19 @@ def search(show):
     year = show.get('year')
     country = show.get('country')
 
-    log.info('tvmaze: attempting to find {} online'.format(show))
+    log.info('tvmaze: attempting to find {} online'.format(show['clean_name']))
 
-    #This could use some work, its a bit messy with the years
-    if year and country:
-        maze_show = pytvmaze.get_show(show_name=show['clean_name'][:-4], show_year=year, show_country=country)
-    elif country:
-        maze_show = pytvmaze.get_show(show_name=show['clean_name'], show_country=country)
-    elif year:
-        maze_show = pytvmaze.get_show(show_name=show['clean_name'][:-4], show_year=year)
-    else:
-        maze_show = pytvmaze.get_show(show_name=show['clean_name'])
+    #Code contributed by srob650 (https://github.com/srob650)
+    if year:
+        showname = show['clean_name'][:-5]
+
+    if country:
+        showname = show['clean_name'].split(country)[0].strip()
+
+    if not year or country:
+        showname = show['clean_name']
+
+    maze_show = pytvmaze.get_show(show_name=showname, show_year=year, show_country=country)
 
     if maze_show is not None:
         log.info('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
