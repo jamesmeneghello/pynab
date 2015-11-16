@@ -461,7 +461,7 @@ Apache using `mod_wsgi` is also very easy (thanks @Enverex):
     WSGIPythonPath /opt/pynab
     <VirtualHost *:80>
         ServerName mysite.com
-        WSGIScriptAlias / /opt/pynab.api.py
+        WSGIScriptAlias / /opt/pynab/api.py
     </VirtualHost>
 
 Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS
