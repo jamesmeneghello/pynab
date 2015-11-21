@@ -43,18 +43,15 @@ except:
 
 
 #Regex used to strip out the file name
-FILENAME_REGEX = regex.compile('https:\/\/.+\/sh\/.+\/(?P<lastfile>.+)_.+_.+\?dl=1')
+FILENAME_REGEX =regex.compile("https:\/\/raw.githubusercontent.com\/nZEDb\/nZEDbPre_Dumps\/master\/dumps\/(?P<lastfile>.+)_.+_.+")
 COLNAMES = ["name", "filename", "nuked", "category", "pretime", "source", "requestid", "requestgroup"]
 INSERTFAILS = []
 
-
 def nzedbPre():
-    downloadLinks = []
 
-    #Nab the HTML used in beautifulSoup
+    downloadLinks = []
     try:
-        preHTML = urllib.request.urlopen("https://www.dropbox.com/sh/fb2pffwwriruyco/AACy9Egno_v2kcziVHuvWbbxa")
-        soup = BeautifulSoup(preHTML.read())
+        rawpreJSON = urllib.request.urlopen("https://api.github.com/repositories/45781004/contents/dumps").read()
     except:
         print("pre-import: Error connecting to dropbox, try again later")
 
@@ -65,25 +62,11 @@ def nzedbPre():
         print("pre-import: No existinfg file found, will attempt to download and insert all pres")
         lastFileFromDisk = None
 
+    preJSON = json.loads(rawpreJSON.decode('utf8'))
 
-    #Find all the download links, change the download from 0 to 1
-    for x in soup.findAll("a", {"class": "filename-link"}):
-        cleanLink = x['href'][:-1] + '1'
-        downloadLinks.append(cleanLink)
-
-
-    #try remove the top two links (if they exist)
-    try:
-        downloadLinks.remove(
-            'https://www.dropbox.com/sh/fb2pffwwriruyco/AADGwFkXBXgW8vhQmo7S1L3Sa/0_batch_import.php?dl=1')
-    except:
-        pass
-
-    try:
-        downloadLinks.remove('https://www.dropbox.com/sh/fb2pffwwriruyco/AAD2-CozDOXFxFDMgLZ6Dwv_a/0README.txt?dl=1')
-    except:
-        pass
-
+    for x in preJSON:
+        if x["name"] != "0README.txt":
+            downloadLinks.append(x["download_url"])
 
     #Try and process each of the csv's. If they are
     for preCSV in downloadLinks:
@@ -113,7 +96,6 @@ def nzedbPre():
 
     if INSERTFAILS is not None:
         print("pre-import: Failures: {}".format(INSERTFAILS))
-
 
 def largeNzedbPre():
     if os.path.isfile('predb_dump-062714.csv.gz'):
