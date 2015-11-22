@@ -134,6 +134,7 @@ def process():
                     except:
                         log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
                         db.query(Regex).filter(Regex.id==reg.id).delete()
+                        db.commit()
                         continue
 
                     match = result.groupdict() if result else None
@@ -150,7 +151,7 @@ def process():
 
                         # make sure the regex returns at least some name
                         if not match.get('name'):
-                            match['name'] = ' '.join(match.values())
+                            match['name'] = ' '.join([v for v in match.values() if v])
 
                         # if regex are shitty, look for parts manually
                         # segment numbers have been stripped by this point, so don't worry
