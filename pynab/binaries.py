@@ -133,6 +133,7 @@ def process():
                         result = compiled_regex[reg.id].search(part.subject)
                     except:
                         log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
+                        all_regex.remove(reg)
                         db.query(Regex).filter(Regex.id==reg.id).delete()
                         db.commit()
                         continue
