@@ -48,4 +48,12 @@ nn_replacements = {
     },
 }
 
-nzedb_replacements = {}
+nzedb_replacements = {
+    '1030': {
+        'id': 1030,
+        'regex': '/^\(\?+\)[-_\s]{0,3}[\(\[]\d+\/\d+[\]\)][-_\s]{0,3}"(?P<match0>.+?([-_](proof|sample|thumbs?))*(\.part\d*(\.rar)?|\.rar)?(\d{1,3}\.rev|\.vol.+?|\.[A-Za-z0-9]{2,4}).)"[-_\s]{0,3}yEnc$/i',
+        'status': True,
+        'ordinal': 65,
+        'group_name': 'alt.binaries.tv'
+    }
+}
