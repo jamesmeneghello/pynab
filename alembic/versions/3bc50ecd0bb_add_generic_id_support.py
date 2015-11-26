@@ -114,6 +114,10 @@ def upgrade():
     op.create_foreign_key('episodes_tvshow_id_fkey', 'episodes', 'tvshows', ['tvshow_id'], ['id'])
     op.create_foreign_key('dbids_tvshow_id_fkey', 'dbids', 'tvshows', ['tvshow_id'], ['id'])
     op.create_foreign_key('dbids_movie_id_fkey', 'dbids', 'movies', ['movie_id'], ['id'])
+
+    bind.execute("select setval('dbids_id_seq', (select max(id) from dbids));")
+    bind.execute("select setval('tvshows_id_seq', (select max(id) from tvshows));")
+    bind.execute("select setval('movies_id_seq', (select max(id) from movies));")
     ### end Alembic commands ###
 
 
