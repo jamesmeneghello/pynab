@@ -6,24 +6,31 @@ import datetime
 import pytz
 
 from pynab import log, log_init
-from pynab.db import db_session, Release, Blacklist, Group, MetaBlack, NZB, NFO, SFV
+from pynab.db import db_session, Release, Blacklist, Group, MetaBlack, NZB, NFO, SFV, vacuum
 import pynab.groups
 import pynab.binaries
 import pynab.releases
-import pynab.tvmaze
 import pynab.rars
 import pynab.nfos
 import pynab.sfvs
-import pynab.imdb
 import pynab.requests
+import pynab.ids
 import scripts.quick_postprocess
 import scripts.rename_bad_releases
 import config
 
 
-def process_tvmaze():
+def process_tvshows():
     try:
-        return pynab.tvmaze.process(500)
+        return pynab.ids.process('tv', interfaces=config.postprocess.get('process_tvshows'), limit=500)
+    except Exception as e:
+        log.critical(traceback.format_exc())
+        raise Exception
+
+
+def process_movies():
+    try:
+        return pynab.ids.process('movie', interfaces=config.postprocess.get('process_movies'),limit=500)
     except Exception as e:
         log.critical(traceback.format_exc())
         raise Exception
@@ -53,14 +60,6 @@ def process_rars():
         raise Exception
 
 
-def process_imdb():
-    try:
-        return pynab.imdb.process(500)
-    except Exception as e:
-        log.critical(traceback.format_exc())
-        raise Exception
-
-
 def process_requests():
     try:
         return pynab.requests.process(500)
@@ -76,7 +75,7 @@ def main():
 
     # start with a quick post-process
     #log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    #scripts.quick_postprocess.local_postprocess()
+    scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -95,11 +94,11 @@ def main():
             with concurrent.futures.ThreadPoolExecutor(4) as executor:
                 threads = []
 
-                if config.postprocess.get('process_tvmaze', True):
-                    threads.append(executor.submit(process_tvmaze))
+                if config.postprocess.get('process_tvshows', True):
+                    threads.append(executor.submit(process_tvshows))
 
-                if config.postprocess.get('process_imdb', True):
-                    threads.append(executor.submit(process_imdb))
+                if config.postprocess.get('process_movies', True):
+                    threads.append(executor.submit(process_movies))
 
                 # grab and append nfo data to all releases
                 if config.postprocess.get('process_nfos', True):
@@ -205,9 +204,9 @@ def main():
                 # this may look weird, but we want to reset iterations even if full_vacuums are off
                 # so it doesn't count to infinity
                 if config.scan.get('full_vacuum', True):
-                    pynab.db.vacuum(mode='postprocess', full=True)
+                    vacuum(mode='postprocess', full=True)
                 else:
-                    pynab.db.vacuum(mode='postprocess', full=False)
+                    vacuum(mode='postprocess', full=False)
                 iterations = 0
 
         iterations += 1

@@ -53,6 +53,7 @@ def api():
         if regex.search(r, function):
             dataset = dict()
             dataset['get_link'] = get_link
+            dataset['function'] = function
             data = func(dataset)
             return switch_output(data)
 

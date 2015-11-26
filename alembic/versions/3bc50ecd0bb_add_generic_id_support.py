@@ -50,7 +50,14 @@ def upgrade():
     op.drop_constraint('releases_tvshow_id_fkey', 'releases')
     op.drop_constraint('episodes_tvshow_id_fkey', 'episodes')
 
+    print('Starting ID conversion.')
     for show in bind.execute(tvshows.select().order_by(tvshows.c.id)):
+        try:
+            print('TVRAGE: {} ({}) -> {}'.format(show[tvshows.c.name], show[tvshows.c.id], i))
+        except:
+            # it's just for show, it doesn't matter
+            pass
+
         bind.execute(dbid.insert().values(
             id=i,
             db='TVRAGE',
@@ -65,10 +72,15 @@ def upgrade():
         i += 1
 
     for movie in bind.execute(movies.select().order_by(movies.c.id)):
+        try:
+            print('IMDB: {} ({}) -> {}'.format(movie[movies.c.name], movie[movies.c.id], i))
+        except:
+            pass
+
         bind.execute(dbid.insert().values(
             id=i,
             db='IMDB',
-            db_id=movie[movies.c.id],
+            db_id='tt{}'.format(movie[movies.c.id]),
             movie_id=i
         ))
         bind.execute(releases.update().where(releases.c.movie_id==movie[movies.c.id]).values(movie_id=i))

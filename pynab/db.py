@@ -757,9 +757,12 @@ class DBID(Base):
 
     id = Column(BigInteger, primary_key=True)
     db_id = Column(String(50))
-    db = Column(Enum('TVRAGE', 'TVMAZE', 'OMDB', 'IMDB', name='enum_dbid_name'))
+    db = Column(Enum('TVRAGE', 'TVMAZE', 'OMDB', name='enum_dbid_name'))
 
+    tvshow = relationship('TvShow', backref='ids')
     tvshow_id = Column(Integer, ForeignKey('tvshows.id'), index=True)
+
+    movie = relationship('Movie', backref='ids')
     movie_id = Column(Integer, ForeignKey('movies.id'), index=True)
 
     __table_args__ = (
@@ -805,3 +808,5 @@ class TvShow(Base):
             'mysql_row_format': 'DYNAMIC'
         }
     )
+
+

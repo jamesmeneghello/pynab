@@ -8,7 +8,7 @@ from bottle import request, response
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, func, desc
 
-from pynab.db import db_session, NZB, NFO, Release, User, Category, Movie, TvShow, Group, Episode
+from pynab.db import db_session, NZB, NFO, Release, User, Category, Group, Episode, Movie, DBID, TvShow
 from pynab import log, root_dir
 import config
 
@@ -44,6 +44,17 @@ def api_error(code):
         error = 'Something really, really bad happened.'
 
     return '{0}\n<error code=\"{1:d}\" description=\"{2}\" />'.format(xml_header, code, error)
+
+
+def auth():
+    api_key = request.query.apikey or ''
+
+    with db_session() as db:
+        user = db.query(User).filter(User.api_key == api_key).first()
+        if user:
+            return user
+        else:
+            return None
 
 
 def get_nfo(dataset=None):
@@ -113,76 +124,154 @@ def get_nzb(dataset=None):
         return api_error(100)
 
 
-def auth():
-    api_key = request.query.apikey or ''
-
-    with db_session() as db:
-        user = db.query(User).filter(User.api_key == api_key).first()
-        if user:
-            return user
-        else:
-            return False
-
-
-def movie_search(dataset=None):
+def search(dataset=None):
     if auth():
         with db_session() as db:
             query = db.query(Release)
 
             try:
-                imdb_id = request.query.imdbid or None
-                if imdb_id:
-                    query = query.join(Movie).filter(Movie.id == 'tt' + imdb_id)
+                dbid = None
+                dbname = None
+                cat_ids = []
 
-                genres = request.query.genre or None
-                if genres:
+                # handle tv/movie searches
+                if dataset['function'] in ['tv', 'tvsearch']:
+                    # set categories
+                    cat_ids.append(5000)
+
+                    query = query.join(TvShow)
+
+                    # edge case for nn compat
+                    if request.query.rid:
+                        dbid = request.query.rid
+                        dbname = 'TVRAGE'
+
+                    # seasons and episodes
+                    season = request.query.season or None
+                    episode = request.query.ep or None
+
+                    if season or episode:
+                        release_alias = aliased(Release)
+                        query = query.join(Episode, release_alias)
+
+                        if season:
+                            # 2014, do nothing
+                            if season.isdigit() and len(season) <= 2:
+                                # 2, convert to S02
+                                season = 'S{:02d}'.format(int(season))
+
+                            query = query.filter(Episode.season == season)
+
+                        if episode:
+                            # 23/10, do nothing
+                            if episode.isdigit() and '/' not in episode:
+                                # 15, convert to E15
+                                episode = 'E{:02d}'.format(int(episode))
+
+                            query = query.filter(Episode.episode == episode)
+
+                if dataset['function'] in ['m', 'movie']:
+                    cat_ids.append(2000)
+
                     query = query.join(Movie)
-                    for genre in genres.split(','):
-                        query = query.filter(or_(Movie.genre.ilike('%{}%'.format(genre))))
-            except:
+
+                    # edge case for imdb compat
+                    if request.query.imdbid:
+                        dbid = 'tt' + request.query.imdbid
+                        dbname = 'OMDB'
+
+                    genres = request.query.genre or None
+                    if genres:
+                        for genre in genres.split(','):
+                            query = query.filter(or_(Movie.genre.ilike('%{}%'.format(genre))))
+
+                # but if we have a proper set, use them instead
+                if request.query.dbname and request.query.dbid:
+                    dbid = request.query.dbid
+                    dbname = request.query.dbname.upper()
+
+                # filter by id
+                if dbid and dbname:
+                    query = query.join(DBID).filter((DBID.db == dbname) & (DBID.db_id == dbid))
+
+                # get categories
+                if not cat_ids:
+                    cats = request.query.cat or None
+                    cat_ids = cats.split(',')
+
+                if cat_ids:
+                    query = query.join(Category).filter(Category.id.in_(cat_ids) | Category.parent_id.in_(cat_ids))
+
+                # group names
+                group_names = request.query.group or None
+                if group_names:
+                    query = query.join(Group)
+                    group_names = group_names.split(',')
+                    for group in group_names:
+                        query = query.filter(Group.name == group)
+
+                # max age
+                max_age = request.query.maxage or None
+                if max_age:
+                    oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
+                    query = query.filter(Release.posted > oldest)
+
+                # more info?
+                extended = request.query.extended or None
+                if extended:
+                    dataset['extended'] = True
+                else:
+                    dataset['extended'] = False
+
+                # set limit to request or default
+                # this will also match limit == 0, which would be infinite
+                limit = request.query.limit or None
+                if limit and int(limit) <= int(config.api.get('result_limit', 100)):
+                    limit = int(limit)
+                else:
+                    limit = int(config.api.get('result_default', 20))
+
+                # offset is only available for rss searches and won't work with text
+                offset = request.query.offset or None
+                if offset and int(offset) > 0:
+                    offset = int(offset)
+                else:
+                    offset = 0
+
+            except Exception as e:
+                # normally a try block this long would make me shudder
+                # but we don't distinguish between errors, so it's fine
+                log.error('Incorrect API Parameter or parsing error: {}'.format(e))
                 return api_error(201)
 
-            return search(dataset, query)
-    else:
-        return api_error(100)
+            search_terms = request.query.q or None
+            if search_terms:
+                # we're searching specifically for a show or something
+                if search_terms:
+                    for term in search_terms.split(' '):
+                        query = query.filter(Release.search_name.ilike('%{}%'.format(term)))
 
+            if config.api.get('postprocessed_only', False):
+                query = query.filter(Release.passworded!='UNKNOWN')
 
-def tv_search(dataset=None):
-    if auth():
-        with db_session() as db:
-            query = db.query(Release)
+            query = query.order_by(Release.posted.desc())
+
+            query = query.limit(limit)
+            query = query.offset(offset)
+
+            total = query.count()
+            results = query.all()
+
+            dataset['releases'] = results
+            dataset['offset'] = offset
+            dataset['total'] = total
+            dataset['api_key'] = request.query.apikey
 
             try:
-                tvrage_id = request.query.rid or None
-                if tvrage_id:
-                    query = query.join(TvShow).filter(TvShow.id == int(tvrage_id))
-
-                season = request.query.season or None
-                episode = request.query.ep or None
-
-                if season or episode:
-                    query = query.join(Episode, Episode.id==Release.episode_id)
-
-                    if season:
-                        # 2014, do nothing
-                        if season.isdigit() and len(season) <= 2:
-                            # 2, convert to S02
-                            season = 'S{:02d}'.format(int(season))
-
-                        query = query.filter(Episode.season == season)
-
-                    if episode:
-                        # 23/10, do nothing
-                        if episode.isdigit() and '/' not in episode:
-                            # 15, convert to E15
-                            episode = 'E{:02d}'.format(int(episode))
-
-                        query = query.filter(Episode.episode == episode)
-            except Exception as e:
-                log.error('API Error: {}'.format(e))
-                return api_error(201)
-
-            return search(dataset, query)
+                return RESULT_TEMPLATE.render(**dataset)
+            except:
+                log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
+                return None
     else:
         return api_error(100)
 
@@ -286,102 +375,15 @@ def stats(dataset=None):
             return None
 
 
-def search(dataset=None, query=None):
-    if auth():
-        # build the mongo query
-        # add params if coming from a tv-search or something
-        with db_session() as db:
-            if not query:
-                query = db.query(Release)
 
-            try:
-                # get categories
-                cat_ids = request.query.cat or []
-                if cat_ids:
-                    query = query.join(Category)
-                    cat_ids = cat_ids.split(',')
-                    query = query.filter(Category.id.in_(cat_ids) | Category.parent_id.in_(cat_ids))
-
-                # group names
-                group_names = request.query.group or []
-                if group_names:
-                    query = query.join(Group)
-                    group_names = group_names.split(',')
-                    for group in group_names:
-                        query = query.filter(Group.name == group)
-
-                # max age
-                max_age = request.query.maxage or None
-                if max_age:
-                    oldest = datetime.datetime.now() - datetime.timedelta(int(max_age))
-                    query = query.filter(Release.posted > oldest)
-
-                # more info?
-                extended = request.query.extended or None
-                if extended:
-                    dataset['extended'] = True
-                else:
-                    dataset['extended'] = False
-
-                # set limit to request or default
-                # this will also match limit == 0, which would be infinite
-                limit = request.query.limit or None
-                if limit and int(limit) <= int(config.api.get('result_limit', 100)):
-                    limit = int(limit)
-                else:
-                    limit = int(config.api.get('result_default', 20))
-
-                # offset is only available for rss searches and won't work with text
-                offset = request.query.offset or None
-                if offset and int(offset) > 0:
-                    offset = int(offset)
-                else:
-                    offset = 0
-
-            except Exception as e:
-                # normally a try block this long would make me shudder
-                # but we don't distinguish between errors, so it's fine
-                log.error('Incorrect API Parameter or parsing error: {}'.format(e))
-                return api_error(201)
-
-            search_terms = request.query.q or None
-            if search_terms:
-                # we're searching specifically for a show or something
-                if search_terms:
-                    for term in search_terms.split(' '):
-                        query = query.filter(Release.search_name.ilike('%{}%'.format(term)))
-
-            if config.api.get('postprocessed_only', False):
-                query = query.filter(Release.passworded!='UNKNOWN')
-
-            query = query.order_by(Release.posted.desc())
-
-            query = query.limit(limit)
-            query = query.offset(offset)
-
-            total = query.count()
-            results = query.all()
-
-            dataset['releases'] = results
-            dataset['offset'] = offset
-            dataset['total'] = total
-            dataset['api_key'] = request.query.apikey
-
-            try:
-                return RESULT_TEMPLATE.render(**dataset)
-            except:
-                log.error('Failed to deliver page: {0}'.format(exceptions.text_error_template().render()))
-                return None
-    else:
-        return api_error(100)
 
 
 functions = {
     's|search': search,
     'c|caps': caps,
     'd|details': details,
-    'tv|tvsearch': tv_search,
-    'm|movie': movie_search,
+    'tv|tvsearch': search,
+    'm|movie': search,
     'g|get': get_nzb,
     'gn|getnfo': get_nfo,
     'stats': stats,

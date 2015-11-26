@@ -3,8 +3,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
-import pynab.tvmaze
-import pynab.imdb
+import pynab.ids
 from pynab.db import db_session, MetaBlack
 
 
@@ -12,8 +11,8 @@ def local_postprocess():
     with db_session() as db:
         db.query(MetaBlack).filter(MetaBlack.status=='IMPOSSIBLE').filter((MetaBlack.movie!=None)|(MetaBlack.tvshow!=None)).delete(synchronize_session=False)
 
-    pynab.tvmaze.process(0, False)
-    pynab.imdb.process(0, False)
+    pynab.ids.process('movie', online=False)
+    pynab.ids.process('tv', online=False)
 
 
 if __name__ == '__main__':

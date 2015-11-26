@@ -21,14 +21,12 @@ import dateutil.parser
 from docopt import docopt
 
 from pynab import log, log_init
-from pynab.db import db_session, Group, Binary, Miss, Segment
+from pynab.db import db_session, Group, Binary, Miss, Segment, vacuum
 import pynab.groups
 import pynab.binaries
 import pynab.releases
-import pynab.tvrage
 import pynab.rars
 import pynab.nfos
-import pynab.imdb
 import pynab.debug
 import pynab.server
 import config
@@ -183,7 +181,7 @@ def main(mode='update', group=None, date=None):
                     # this may look weird, but we want to reset iterations even if full_vacuums are off
                     # so it doesn't count to infinity
                     if config.scan.get('full_vacuum', True):
-                        pynab.db.vacuum(mode='scan', full=True)
+                        vacuum(mode='scan', full=True)
                     iterations = 0
             else:
                 iterations = 0
