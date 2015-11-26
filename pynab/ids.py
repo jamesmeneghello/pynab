@@ -70,10 +70,9 @@ def process(type, interfaces=None, limit=None, online=True):
             raise Exception('wrong release type')
 
         for release in releases:
+            method = 'local'
             data = parse_func(release.search_name)
             if data:
-                method = 'local'
-
                 if type == 'movie':
                     q = db.query(Movie).filter(Movie.name.ilike('%'.join(clean_name(data['name']).split(' ')))).filter(Movie.year == data['year'])
                 elif type == 'tv':
@@ -152,7 +151,7 @@ def process(type, interfaces=None, limit=None, online=True):
                 db.add(DataLog(description='parse_{} regex'.format(attr), data=release.search_name))
 
             db.commit()
-            if online:
+            if method == 'local':
                 time.sleep(1)
 
 
