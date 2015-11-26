@@ -151,7 +151,7 @@ def process(type, interfaces=None, limit=None, online=True):
                 db.add(DataLog(description='parse_{} regex'.format(attr), data=release.search_name))
 
             db.commit()
-            if method == 'local':
+            if method != 'local':
                 time.sleep(1)
 
 
