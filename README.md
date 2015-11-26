@@ -175,6 +175,7 @@ Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-f
 Once done:
 
     > sudo chown -R www-data:www-data /opt/pynab
+    > sudo chown -R www-data:www-data /var/log/pynab [or whatever logging_dir is set to]
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -460,7 +461,7 @@ Apache using `mod_wsgi` is also very easy (thanks @Enverex):
     WSGIPythonPath /opt/pynab
     <VirtualHost *:80>
         ServerName mysite.com
-        WSGIScriptAlias / /opt/pynab.api.py
+        WSGIScriptAlias / /opt/pynab/api.py
     </VirtualHost>
 
 Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS
