@@ -140,7 +140,7 @@ def process(type, interfaces=None, limit=None, online=True):
                         setattr(mb, attr, release)
                         db.add(mb)
             else:
-                log.info('movie: [{}] - [{}] - {} data not found: no suitable regex for {} name'.format(
+                log.info('{}: [{}] - {} data not found: no suitable regex for {} name'.format(
                     attr,
                     release.id,
                     release.search_name,
