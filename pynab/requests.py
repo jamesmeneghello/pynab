@@ -11,9 +11,9 @@ GROUP_ALIASES = {
 }
 
 GROUP_REQUEST_REGEXES = {
-    'alt.binaries.etc': '^(\d+)$',
-    'alt.binaries.teevee': '^(\d+)$',
-    'alt.binaries.moovee': '^(\d+)$',
+    'alt.binaries.etc': '^(\d{4,10})$',
+    'alt.binaries.teevee': '^(\d{4,10})$',
+    'alt.binaries.moovee': '^(\d{4,10})$',
 }
 
 
@@ -55,7 +55,7 @@ def process(limit=None):
             # loop through and associate pres with their requests
             for pre in pres:
                 # no longer need to check group
-                updated_release = group_requests.get(pre.requestid)
+                updated_release = group_requests.get(str(pre.requestid))
                 updated_release.pre_id = pre.id
                 db.merge(updated_release)
                 log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, group_name,
