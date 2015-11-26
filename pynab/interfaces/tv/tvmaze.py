@@ -35,9 +35,13 @@ def search(data):
     if not year or country:
         showname = clean_name
 
-    maze_show = pytvmaze.get_show(show_name=showname, show_year=year, show_country=country)
+    maze_show = None
+    try:
+        maze_show = pytvmaze.get_show(show_name=showname, show_year=year, show_country=country)
+    except Exception:
+        pass
 
-    if maze_show is not None:
+    if maze_show:
         log.debug('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
         return maze_show.id
     else:
