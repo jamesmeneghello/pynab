@@ -152,7 +152,8 @@ def process(type, interfaces=None, limit=None, online=True):
                 db.add(DataLog(description='parse_{} regex'.format(attr), data=release.search_name))
 
             db.commit()
-            time.sleep(1)
+            if online:
+                time.sleep(1)
 
 
 def clean_name(name):
