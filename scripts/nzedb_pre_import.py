@@ -12,11 +12,11 @@ Options:
 
 """
 # This is quite possibly the most hilariously complex import process...
-#What I can gather as the column names from the csv, in case anyone else wants to do this.
-#title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
+# What I can gather as the column names from the csv, in case anyone else wants to do this.
+# title 1, nfo, size, files, filename 9, nuked 11, nukereason, category 15 , predate 17, source 19, requestid 21, groupname 23
 
-import sys
 import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
@@ -29,26 +29,26 @@ import io
 from docopt import docopt
 from pySmartDL import SmartDL
 
-#Panadas is required
+# Panadas is required
 try:
     import pandas
 except:
     print("pandas is required to use nzedb pre import: pip install pandas")
 
-#BeautifulSoup is required
+# BeautifulSoup is required
 try:
     from bs4 import BeautifulSoup
 except:
     print("BeautifulSoup is required to use nzedb pre import: pip install beautifulsoup4")
 
-
-#Regex used to strip out the file name
-FILENAME_REGEX =regex.compile("https:\/\/raw.githubusercontent.com\/nZEDb\/nZEDbPre_Dumps\/master\/dumps\/(?P<lastfile>.+)_.+_.+")
+# Regex used to strip out the file name
+FILENAME_REGEX = regex.compile(
+    "https:\/\/raw.githubusercontent.com\/nZEDb\/nZEDbPre_Dumps\/master\/dumps\/(?P<lastfile>.+)_.+_.+")
 COLNAMES = ["name", "filename", "nuked", "category", "pretime", "source", "requestid", "requestgroup"]
 INSERTFAILS = []
 
-def nzedbPre():
 
+def nzedbPre():
     downloadLinks = []
     try:
         rawpreJSON = urllib.request.urlopen("https://api.github.com/repositories/45781004/contents/dumps").read()
@@ -68,7 +68,7 @@ def nzedbPre():
         if x["name"] != "0README.txt":
             downloadLinks.append(x["download_url"])
 
-    #Try and process each of the csv's. If they are
+    # Try and process each of the csv's. If they are
     for preCSV in downloadLinks:
         processingFile = FILENAME_REGEX.search(preCSV).groupdict()
 
@@ -80,14 +80,14 @@ def nzedbPre():
             except:
                 print("pre-import: Error downloading: {} - Please run the process again".format(preCSV))
                 INSERTFAILS.append(processingFile['lastfile'])
-                #The assumption here is, if one fails, you should probably just start again at that file.
+                # The assumption here is, if one fails, you should probably just start again at that file.
                 break
 
-            #Get the data into datatable, much easier to work with.
+            # Get the data into datatable, much easier to work with.
             dirtyFile = pandas.read_csv('unformattedDL.gz', sep='\t', compression='gzip', header=None, na_values='\\N',
                                         usecols=[0, 8, 10, 14, 16, 18, 20, 22], names=COLNAMES)
 
-            #Clean and process the file
+            # Clean and process the file
             process(dirtyFile, processingFile)
 
         else:
@@ -96,6 +96,7 @@ def nzedbPre():
 
     if INSERTFAILS is not None:
         print("pre-import: Failures: {}".format(INSERTFAILS))
+
 
 def largeNzedbPre():
     if os.path.isfile('predb_dump-062714.csv.gz'):
@@ -133,7 +134,7 @@ def largeNzedbPre():
 def process(precsv, processingFile=None):
     ordering = ['name', 'filename', 'nuked', 'category', 'pretime', 'source', 'requestid', 'requestgroup', 'searchname']
 
-    #Clean up the file a bit.
+    # Clean up the file a bit.
     precsv.replace("'", "", inplace=True, regex=True)
     precsv["nuked"].replace("2", "0", inplace=True)
     precsv["nuked"].replace("3", "1", inplace=True)
@@ -142,19 +143,19 @@ def process(precsv, processingFile=None):
     precsv["nuked"].replace("69", "0", inplace=True)
     precsv.replace(".\\N$", '', inplace=True, regex=True)
 
-    #Sometimes there are duplicates within the table itself, remove them
+    # Sometimes there are duplicates within the table itself, remove them
     precsv.drop_duplicates(subset='name', take_last=True, inplace=True)
 
-    #Add clean searchname column
+    # Add clean searchname column
     precsv['searchname'] = precsv['name'].map(lambda name: releases.clean_release_name(name))
 
-    #Drop the pres without requestid's
+    # Drop the pres without requestid's
     precsv = precsv[precsv.requestid != '0']
 
-    #Create a list of names to check if they exist
+    # Create a list of names to check if they exist
     names = list(precsv.name)
 
-    #Query to find any existing pres, we need to delete them so COPY doesn't fail
+    # Query to find any existing pres, we need to delete them so COPY doesn't fail
     prenamelist = []
     with db_session() as db:
 
@@ -167,7 +168,7 @@ def process(precsv, processingFile=None):
         data = io.StringIO()
         precsv.to_csv(data, index=False, header=False)
 
-        #Delete any pres found as we are essentially going to update them
+        # Delete any pres found as we are essentially going to update them
         if prenamelist:
             for pre in pres:
                 db.delete(pre)
@@ -183,7 +184,7 @@ def process(precsv, processingFile=None):
             data.seek(0)
             copy_file(engine, data, ordering, Pre)
 
-            #Write out the last pre csv name so it can be restarted later without downloading all the pres.
+            # Write out the last pre csv name so it can be restarted later without downloading all the pres.
             with open('lastfile.json', 'w') as outfile:
                 json.dump({'lastfile': int(processingFile['lastfile'])}, outfile)
 
