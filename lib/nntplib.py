@@ -285,7 +285,7 @@ def _unparse_datetime(dt, legacy=False):
         time_str = "{0.hour:02d}{0.minute:02d}{0.second:02d}".format(dt)
     y = dt.year
     if legacy:
-        y = y % 100
+        y %= 100
         date_str = "{0:02d}{1.month:02d}{1.day:02d}".format(y, dt)
     else:
         date_str = "{0:04d}{1.month:02d}{1.day:02d}".format(y, dt)

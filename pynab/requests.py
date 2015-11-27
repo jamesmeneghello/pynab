@@ -23,6 +23,7 @@ def process(limit=None):
     with db_session() as db:
         requests = {}
         for group, reg in GROUP_REQUEST_REGEXES.items():
+            # noinspection PyComparisonWithNone
             query = db.query(Release).join(Group).filter(Group.name==group).filter(Release.pre_id == None).\
                 filter(Release.category_id == '8010').filter("releases.name ~ '{}'".format(reg))
 

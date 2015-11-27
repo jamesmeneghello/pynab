@@ -1,9 +1,8 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
-from sqlalchemy.orm import *
 import pynab.nzbs
 from pynab.db import db_session, Release
 from pynab import log
@@ -11,6 +10,7 @@ from pynab import log
 
 def fill_sizes():
     with db_session() as db:
+        # noinspection PyComparisonWithNone
         for release in db.query(Release).filter((Release.size==0)|(Release.size==None)).yield_per(500):
             size = pynab.nzbs.get_size(release.nzb)
 

@@ -324,7 +324,7 @@ def findRarHeader(handle, limit=FIND_LIMIT):
         curr_pos = handle.tell()
 
         # If we hit the end of the file without finding a RAR marker block...
-        if not temp or (limit > 0 and curr_pos > limit):
+        if not temp or (0 < limit < curr_pos):
             handle.seek(startPos)
             return None
 

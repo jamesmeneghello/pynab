@@ -14,7 +14,7 @@ def search(data):
     """
     Search TVMaze for Show Info.
 
-    :param release: release data
+    :param data: show data
     :return: show details
     """
     year = data.get('year')

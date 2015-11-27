@@ -37,6 +37,7 @@ def process(limit=None, category=0):
 
     with Server() as server:
         with db_session() as db:
+            # noinspection PyComparisonWithNone,PyComparisonWithNone
             query = db.query(Release).join(Group).join(NZB).filter(Release.nfo == None).filter(
                 Release.nfo_metablack_id == None)
             if category:

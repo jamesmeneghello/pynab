@@ -14,7 +14,7 @@ import pymysql
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
-from pynab.db import db_session, Group, Category, Release, User, TvShow, Movie
+from pynab.db import db_session, Group, Category, User, TvShow, Movie
 
 def convert_groups(mysql):
     """Converts Newznab groups table into Pynab. Only really

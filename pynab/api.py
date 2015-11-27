@@ -313,6 +313,7 @@ def caps(dataset=None):
 
     with db_session() as db:
         category_alias = aliased(Category)
+        # noinspection PyComparisonWithNone
         dataset['categories'] = db.query(Category).filter(Category.parent_id == None).join(category_alias,
                                                                                            Category.children).all()
         try:

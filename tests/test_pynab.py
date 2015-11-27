@@ -70,6 +70,10 @@ class TestPynab(unittest.TestCase):
         import pynab.util
         pynab.util.update_regex()
 
+    def test_process_requests(self):
+        import pynab.requests
+        pynab.requests.process()
+
     def test_quick_postproc(self):
         import scripts.quick_postprocess
 

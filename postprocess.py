@@ -75,7 +75,7 @@ def main():
 
     # start with a quick post-process
     #log.info('postprocess: starting with a quick post-process to clear out the cruft that\'s available locally...')
-    scripts.quick_postprocess.local_postprocess()
+    #scripts.quick_postprocess.local_postprocess()
 
     iterations = 0
     while True:
@@ -176,6 +176,7 @@ def main():
 
             # delete any orphan metablacks
             log.info('postprocess: deleting orphan metablacks...')
+            # noinspection PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone
             db.query(MetaBlack).filter(
                 (MetaBlack.movie == None) &
                 (MetaBlack.tvshow == None) &
@@ -186,14 +187,17 @@ def main():
 
             # delete any orphan nzbs
             log.info('postprocess: deleting orphan nzbs...')
+            # noinspection PyComparisonWithNone
             db.query(NZB.id).filter(NZB.release == None).delete(synchronize_session='fetch')
 
             # delete any orphan nfos
             log.info('postprocess: deleting orphan nfos...')
+            # noinspection PyComparisonWithNone
             db.query(NFO.id).filter(NFO.release == None).delete(synchronize_session='fetch')
 
             # delete any orphan sfvs
             log.info('postprocess: deleting orphan sfvs...')
+            # noinspection PyComparisonWithNone
             db.query(SFV.id).filter(SFV.release == None).delete(synchronize_session='fetch')
 
             db.commit()

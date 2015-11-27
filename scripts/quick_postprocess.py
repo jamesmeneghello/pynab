@@ -9,6 +9,7 @@ from pynab.db import db_session, MetaBlack
 
 def local_postprocess():
     with db_session() as db:
+        # noinspection PyComparisonWithNone,PyComparisonWithNone
         db.query(MetaBlack).filter(MetaBlack.status=='IMPOSSIBLE').filter((MetaBlack.movie!=None)|(MetaBlack.tvshow!=None)).delete(synchronize_session=False)
 
     pynab.ids.process('movie', online=False)

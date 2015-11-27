@@ -30,15 +30,20 @@ def process(type, interfaces=None, limit=None, online=True):
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
 
     with db_session() as db:
+        # noinspection PyComparisonWithNone,PyComparisonWithNone
         db.query(MetaBlack).filter((MetaBlack.movie != None)|(MetaBlack.tvshow != None)).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
         if type == 'movie':
+            # noinspection PyComparisonWithNone
             query = db.query(Release).filter(Release.movie == None).join(Category).filter(Category.parent_id == 2000)
             if online:
+                # noinspection PyComparisonWithNone
                 query = query.filter(Release.movie_metablack_id == None)
         elif type == 'tv':
+            # noinspection PyComparisonWithNone
             query = db.query(Release).filter(Release.tvshow == None).join(Category).filter(Category.parent_id == 5000)
             if online:
+                # noinspection PyComparisonWithNone
                 query = query.filter(Release.tvshow_metablack_id == None)
         else:
             raise Exception('wrong release type')
