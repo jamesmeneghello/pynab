@@ -8,10 +8,9 @@ from bottle import request, response
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, func, desc
 
-from pynab.db import db_session, NZB, NFO, Release, User, Category, Group, Episode, Movie, DBID, TvShow
+from pynab.db import db_session, NZB, NFO, Release, User, Category, Group, Episode, Movie, DBID, TvShow, literalquery
 from pynab import log, root_dir
 import config
-
 
 RESULT_TEMPLATE = Template(filename=os.path.join(root_dir, 'templates/api/result.mako'))
 
@@ -151,8 +150,7 @@ def search(dataset=None):
                     episode = request.query.ep or None
 
                     if season or episode:
-                        release_alias = aliased(Release)
-                        query = query.join(Episode, release_alias)
+                        query = query.join(Episode, Release.episode_id==Episode.id)
 
                         if season:
                             # 2014, do nothing
