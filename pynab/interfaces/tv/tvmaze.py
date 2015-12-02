@@ -38,8 +38,8 @@ def search(data):
     maze_show = None
     try:
         maze_show = pytvmaze.get_show(show_name=showname, show_year=year, show_country=country)
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug('tvmaze: exception: {}'.format(e))
 
     if maze_show:
         log.debug('tvmaze: returning show - {} with id - {}'.format(maze_show.name, maze_show.id))
