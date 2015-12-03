@@ -149,7 +149,7 @@ def process():
 
                         # fill name if reqid is available
                         if match.get('reqid') and not match.get('name'):
-                            match['name'] = 'REQ: {}'.format(match['reqid'])
+                            match['name'] = '{}'.format(match['reqid'])
 
                         # make sure the regex returns at least some name
                         if not match.get('name'):
