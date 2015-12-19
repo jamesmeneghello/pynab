@@ -198,6 +198,9 @@ class RarFile(object):
         the author so chooses, writing of uncompressed RAR files may be
         implemented in a later version more easily.
         """
+
+        is_header_encrypted = False
+
         while True:
             offset = self.fp.tell()
 
@@ -207,6 +210,10 @@ class RarFile(object):
             except struct.error:
                 # If it fails here, we've reached the end of the file.
                 return
+
+            if head_type == 0x73:
+                # Check for encrypted blocks in the main header
+                is_header_encrypted = head_flags & 0x0080
 
             # Read the optional field ADD_SIZE if present.
             if head_flags & 0x8000:
@@ -252,7 +259,7 @@ class RarFile(object):
                 fileinfo.flag_bits = head_flags
                 fileinfo.not_first_piece = head_flags & 0x01
                 fileinfo.not_last_piece = head_flags & 0x02
-                fileinfo.is_encrypted = head_flags & 0x04
+                fileinfo.is_encrypted = (head_flags & 0x04) | (is_header_encrypted)
                 #TODO: Handle comments
                 fileinfo.is_solid = head_flags & 0x10
 
