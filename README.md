@@ -42,12 +42,13 @@ Features
 - Newznab-API compatible (mostly, see below)
 - TVRage/IMDB/Password post-processing
 - Release renaming for most obfuscated releases
+- Pre-DB comparisons to assist in renaming
 - XMPP PubSub support to push to nzb clients
 
 In development:
 ---------------
 
-- Pre-DB comparisons to assist in renaming
+- Additional PreDB sources
 - Got an idea? Send it in!
 
 
@@ -87,7 +88,7 @@ Requirements
 - PostgreSQL 9.3+ or MySQL/Maria/Percona 5.5+
 - A u/WSGI-capable webserver (or use CherryPy)
 
-I've tested the software on both Ubuntu Server 13.04 and Windows 8, so both should work.
+I've tested the software on Ubuntu Server 12.04-14.10 and Windows 7/8/10, so all should work.
 
 Installation
 ------------
@@ -96,9 +97,9 @@ Installation
 
 Follow the instructions by broknbottle in [Issue #15](https://github.com/Murodese/pynab/issues/15) to install Python 3.3.x, then follow the 13.04 instructions.
 
-### Ubuntu 13.04/13.10 ###
+### Ubuntu 13.04/13.10 and later ###
 
-If Postgres: install PostgreSQL 9.3, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
+If Postgres: install PostgreSQL 9.3/9.4, as per instructions [here](https://wiki.postgresql.org/wiki/Apt).
 If MySQL: install MySQL 5.5+ (preferably 5.6+)
 
 You also need to install Python 3.3/3.4, associated packages and pip3:
@@ -174,6 +175,7 @@ Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-f
 Once done:
 
     > sudo chown -R www-data:www-data /opt/pynab
+    > sudo chown -R www-data:www-data /var/log/pynab [or whatever logging_dir is set to]
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -456,10 +458,10 @@ While your /etc/uwsgi/apps-enabled/pynab.ini should look like this:
 
 Apache using `mod_wsgi` is also very easy (thanks @Enverex):
 
-    WSGYPythonPath /opt/pynab
+    WSGIPythonPath /opt/pynab
     <VirtualHost *:80>
         ServerName mysite.com
-        WSGIScriptAlias / /opt/pynab.api.py
+        WSGIScriptAlias / /opt/pynab/api.py
     </VirtualHost>
 
 Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS

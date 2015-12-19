@@ -57,6 +57,7 @@ import zlib
 _struct_blockHeader = struct.Struct("<HBHH")
 _struct_addSize = struct.Struct('<L')
 _struct_fileHead_add1 = struct.Struct("<LBLLBBHL") # Plus FILE_NAME and everything after it
+_struct_bigFileHead_add1 = struct.Struct("<LBLLBBHLLL") # Plus FILE_NAME and everything after it
 
 
 class BadRarFile(Exception):
@@ -197,6 +198,9 @@ class RarFile(object):
         the author so chooses, writing of uncompressed RAR files may be
         implemented in a later version more easily.
         """
+
+        is_header_encrypted = False
+
         while True:
             offset = self.fp.tell()
 
@@ -206,6 +210,10 @@ class RarFile(object):
             except struct.error:
                 # If it fails here, we've reached the end of the file.
                 return
+
+            if head_type == 0x73:
+                # Check for encrypted blocks in the main header
+                is_header_encrypted = head_flags & 0x0080
 
             # Read the optional field ADD_SIZE if present.
             if head_flags & 0x8000:
@@ -220,9 +228,15 @@ class RarFile(object):
 
             # TODO: Rework handling of file headers.
             elif head_type == 0x74:
+                high_unp_size = 0
                 try:
-                    unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
-                        _struct_fileHead_add1)
+                    if head_flags & 0x0100:
+                        unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr, high_p_size, high_unp_size = self._read_struct(
+                            _struct_bigFileHead_add1)
+                    else:
+                        unp_size, host_os, file_crc, ftime, unp_ver, method, name_size, attr = self._read_struct(
+                            _struct_fileHead_add1)
+
                 except:
                     raise BadRarFile("Problem reading file")
 
@@ -231,7 +245,7 @@ class RarFile(object):
                 fileinfo = RarInfo(self.fp.read(name_size), ftime)
                 fileinfo.compress_size = add_size
                 fileinfo.header_offset = offset
-                fileinfo.file_size = unp_size   #TODO: What about >2GiB files? (Zip64 equivalent?)
+                fileinfo.file_size = unp_size + (high_unp_size << 32)
                 fileinfo.CRC = file_crc         #TODO: Verify the format matches that ZipInfo uses.
                 fileinfo.compress_type = method
 
@@ -245,7 +259,7 @@ class RarFile(object):
                 fileinfo.flag_bits = head_flags
                 fileinfo.not_first_piece = head_flags & 0x01
                 fileinfo.not_last_piece = head_flags & 0x02
-                fileinfo.is_encrypted = head_flags & 0x04
+                fileinfo.is_encrypted = (head_flags & 0x04) | (is_header_encrypted)
                 #TODO: Handle comments
                 fileinfo.is_solid = head_flags & 0x10
 
