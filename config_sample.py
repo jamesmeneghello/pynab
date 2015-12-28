@@ -251,13 +251,15 @@ postprocess = {
     # set it to 3 or so for normal operation
     'delete_blacklisted_days': 3,
 
-    # process_imdb: match movie releases against IMDB
+    # process_movies: list of interfaces to post-process movies against
     # couchpotato sometimes depends on this data for API usage, definitely recommended
-    'process_imdb': True,
+    # options: ['OMDB']
+    'process_movies': ['OMDB'],
 
-    # process_tvrage: match TV releases against TVRage
+    # process_tvshows: list of interfaces to post-process tvshows against
     # sickbeard sometimes depends on this data for API usage, definitely recommended
-    'process_tvrage': True,
+    # options: ['TVMAZE']
+    'process_tvshows': ['TVMAZE'],
 
     # process_nfos: grab NFOs for releases for other use
     # this can be used to clean release names, etc

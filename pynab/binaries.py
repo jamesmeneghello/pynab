@@ -111,6 +111,7 @@ def process():
                     db.query(Regex).filter(Regex.id==reg.id).delete()
                     db.commit()
 
+            # noinspection PyComparisonWithNone
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id == None)
             total_parts = query.count()
             for part in windowed_query(query, Part.id, config.scan.get('binary_process_chunk_size', 1000)):
@@ -148,7 +149,7 @@ def process():
 
                         # fill name if reqid is available
                         if match.get('reqid') and not match.get('name'):
-                            match['name'] = 'REQ: {}'.format(match['reqid'])
+                            match['name'] = '{}'.format(match['reqid'])
 
                         # make sure the regex returns at least some name
                         if not match.get('name'):

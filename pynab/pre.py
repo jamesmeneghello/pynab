@@ -1,10 +1,10 @@
 # import re
+import bs4
 import regex
 import requests
-import bs4
 
-from pynab.db import db_session, engine, Pre
 from pynab import log, releases
+from pynab.db import db_session, Pre
 
 
 def nzedbirc(unformattedPre):

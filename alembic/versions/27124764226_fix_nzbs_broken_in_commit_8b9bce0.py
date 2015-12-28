@@ -10,14 +10,12 @@ Create Date: 2014-11-13 16:22:33.207358
 revision = '27124764226'
 down_revision = '4efd6f9680d'
 
-from alembic import op
-import sqlalchemy as sa
-import sqlalchemy.orm
+import gzip
+
+import dateutil.parser
 
 from pynab.db import Release, db_session
 from pynab.nzbs import escape
-import dateutil.parser
-import gzip
 
 
 def upgrade():

@@ -10,8 +10,6 @@ Create Date: 2014-11-13 00:05:25.572547
 revision = '4efd6f9680d'
 down_revision = '49dd0ca86e1'
 
-from alembic import op
-import sqlalchemy as sa
 from pynab.db import db_session, Release, MetaBlack
 
 

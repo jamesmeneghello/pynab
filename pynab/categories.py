@@ -5,8 +5,6 @@ import os.path
 from pynab import log, root_dir
 
 
-CATEGORISER = pickle.load(open(os.path.join(root_dir, 'db/release_categoriser.pkl'), 'rb'))
-
 # category codes
 # these are stored in the db, as well
 CAT_GAME_NDS = 1010
@@ -62,6 +60,9 @@ CAT_PARENT_TV = 5000
 CAT_PARENT_XXX = 6000
 CAT_PARENT_BOOK = 7000
 CAT_PARENT_MISC = 8000
+
+
+CATEGORISER = pickle.load(open(os.path.join(root_dir, 'db/release_categoriser.pkl'), 'rb'))
 
 
 def extract_features(name):

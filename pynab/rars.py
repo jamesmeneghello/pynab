@@ -242,6 +242,7 @@ def process(limit=None, category=0):
 
     with Server() as server:
         with db_session() as db:
+            # noinspection PyComparisonWithNone
             query = db.query(Release).join(Group).join(NZB).filter(~Release.files.any()). \
                 filter(Release.passworded == 'UNKNOWN').filter(Release.rar_metablack_id == None)
             if category:
