@@ -52,6 +52,15 @@ def upgrade():
 
     print('Starting ID conversion.')
     for show in bind.execute(tvshows.select().order_by(tvshows.c.id)):
+        # Small chance that the new id might conflict with an existing
+        # id.  If so just increment and try again.
+        new_id_ok = False
+        while not new_id_ok:
+            if bind.execute(tvshows.select(tvshows.c.id == i)).first():
+                print('Found dupe id, incrementing new id')
+                i += 1
+            else:
+                new_id_ok = True
         try:
             print('TVRAGE: {} ({}) -> {}'.format(show[tvshows.c.name], show[tvshows.c.id], i))
         except:
@@ -72,6 +81,16 @@ def upgrade():
         i += 1
 
     for movie in bind.execute(movies.select().order_by(movies.c.id)):
+        # Small chance that the new id might conflict with an existing
+        # id.  If so just increment and try again.
+        new_id_ok = False
+        while not new_id_ok:
+            # movies.id is a character string
+            if bind.execute(movies.select(movies.c.id == str(i))).first():
+                print('Found dupe id, incrementing new id')
+                i += 1
+            else:
+                new_id_ok = True
         try:
             print('IMDB: {} ({}) -> {}'.format(movie[movies.c.name], movie[movies.c.id], i))
         except:
