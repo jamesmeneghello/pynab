@@ -251,6 +251,11 @@ postprocess = {
     # set it to 3 or so for normal operation
     'delete_blacklisted_days': 3,
 
+    # release_expiry_days: expire releases older than this many days.
+    # set to a value of 0 if you do not want to expire at all
+    # default value is 0
+    'release_expiry_days': 0,
+
     # process_movies: list of interfaces to post-process movies against
     # couchpotato sometimes depends on this data for API usage, definitely recommended
     # options: ['OMDB']
