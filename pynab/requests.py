@@ -11,9 +11,9 @@ GROUP_ALIASES = {
 }
 
 GROUP_REQUEST_REGEXES = {
-    'alt.binaries.etc': '^(\d{4,10})$',
-    'alt.binaries.teevee': '^(\d{4,10})$',
-    'alt.binaries.moovee': '^(\d{4,10})$',
+    'alt.binaries.etc': '^(\d{4,8})$',
+    'alt.binaries.teevee': '^(\d{4,8})$',
+    'alt.binaries.moovee': '^(\d{4,8})$',
 }
 
 
