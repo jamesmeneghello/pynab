@@ -141,7 +141,7 @@ scan = {
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so
-    # !!WARNING!! if backfilling, set this to 0.
+    # !!WARNING!! if backfilling, set this to 1.
     'dead_binary_age': 1,
 
     # publish: publish release info in json to a host
