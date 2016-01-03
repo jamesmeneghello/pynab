@@ -174,31 +174,41 @@ def main():
                 db.commit()
                 """
 
+            if config.postprocess.get('release_expiry_days', 0) > 0:
+                expire_days = config.postprocess.get('release_expiry_days', 0)
+                log.info('postprocess: expiring releases posted more than {} days ago.'.format(expire_days))
+                deleted_releases = db.query(Release).filter(Release.posted < (datetime.datetime.now(pytz.utc) - datetime.timedelta(days=expire_days))).delete(synchronize_session='fetch')
+                log.info('postprocess: expired {} releases'.format(deleted_releases))
+
             # delete any orphan metablacks
             log.info('postprocess: deleting orphan metablacks...')
             # noinspection PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone
-            db.query(MetaBlack).filter(
+            deleted_metablacks = db.query(MetaBlack).filter(
                 (MetaBlack.movie == None) &
                 (MetaBlack.tvshow == None) &
                 (MetaBlack.rar == None) &
                 (MetaBlack.nfo == None) &
                 (MetaBlack.sfv == None)
             ).delete(synchronize_session='fetch')
+            log.info('postprocess: deleted {} orphaned metablacks.'.format(deleted_metablacks))
 
             # delete any orphan nzbs
             log.info('postprocess: deleting orphan nzbs...')
             # noinspection PyComparisonWithNone
-            db.query(NZB.id).filter(NZB.release == None).delete(synchronize_session='fetch')
+            deleted_nzbs = db.query(NZB.id).filter(NZB.release == None).delete(synchronize_session='fetch')
+            log.info('postprocess: deleted {} orphaned nzbs.'.format(deleted_nzbs))
 
             # delete any orphan nfos
             log.info('postprocess: deleting orphan nfos...')
             # noinspection PyComparisonWithNone
-            db.query(NFO.id).filter(NFO.release == None).delete(synchronize_session='fetch')
+            deleted_nfos = db.query(NFO.id).filter(NFO.release == None).delete(synchronize_session='fetch')
+            log.info('postprocess: deleted {} orphaned nfos.'.format(deleted_nfos))
 
             # delete any orphan sfvs
             log.info('postprocess: deleting orphan sfvs...')
             # noinspection PyComparisonWithNone
-            db.query(SFV.id).filter(SFV.release == None).delete(synchronize_session='fetch')
+            deleted_sfvs = db.query(SFV.id).filter(SFV.release == None).delete(synchronize_session='fetch')
+            log.info('postprocess: deleted {} orphaned sfvs.'.format(deleted_sfvs))
 
             db.commit()
 
