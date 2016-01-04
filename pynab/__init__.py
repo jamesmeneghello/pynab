@@ -3,7 +3,7 @@
 
 __author__ = 'James Meneghello'
 __email__ = 'murodese@gmail.com'
-__version__ = '1.6.1'
+__version__ = '1.7.0'
 
 import logging
 import logging.handlers
