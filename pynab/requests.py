@@ -1,5 +1,8 @@
+import regex
+
 from pynab import log
-from pynab.db import db_session, Release, Pre, Group
+from pynab.db import db_session, Release, Pre, Group, windowed_query
+import config
 
 
 GROUP_ALIASES = {
@@ -7,24 +10,24 @@ GROUP_ALIASES = {
     'alt.binaries.etc': 'alt.binaries.teevee',
 }
 
+GROUP_REQUEST_REGEXES = {
+    'alt.binaries.etc': '^(\d{4,8})$',
+    'alt.binaries.teevee': '^(\d{4,8})$',
+    'alt.binaries.moovee': '^(\d{4,8})$',
+}
+
 
 def process(limit=None):
     """Process releases for requests"""
 
     with db_session() as db:
-        query = db.query(Release).join(Group).filter(Release.name.like('REQ:%')).filter(Release.pre_id == None).filter(
-            Release.category_id == '8010')
-
-        if limit:
-            releases = query.order_by(Release.posted.desc()).limit(limit)
-        else:
-            releases = query.order_by(Release.posted.desc()).all()
-
-        # create a dict of request id's and releases
         requests = {}
+        for group, reg in GROUP_REQUEST_REGEXES.items():
+            # noinspection PyComparisonWithNone
+            query = db.query(Release).join(Group).filter(Group.name==group).filter(Release.pre_id == None).\
+                filter(Release.category_id == '8010').filter("releases.name ~ '{}'".format(reg))
 
-        if releases:
-            for release in releases:
+            for release in windowed_query(query, Release.id, config.scan.get('binary_process_chunk_size')):
                 # check if it's aliased
                 if release.group.name in GROUP_ALIASES:
                     group_name = GROUP_ALIASES[release.group.name]
@@ -34,11 +37,9 @@ def process(limit=None):
                 if group_name not in requests:
                     requests[group_name] = {}
 
-                try:
-                    requests[group_name][int(release.name.split(': ')[1])] = release
-                except ValueError:
-                    # request hash?
-                    continue
+                result = regex.search(reg, release.name)
+                if result:
+                    requests[group_name][result.group(0)] = release
 
         else:
             log.info("requests: no release requests to process")
@@ -55,7 +56,7 @@ def process(limit=None):
             # loop through and associate pres with their requests
             for pre in pres:
                 # no longer need to check group
-                updated_release = group_requests.get(pre.requestid)
+                updated_release = group_requests.get(str(pre.requestid))
                 updated_release.pre_id = pre.id
                 db.merge(updated_release)
                 log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, group_name,

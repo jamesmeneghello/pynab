@@ -375,11 +375,11 @@ only limited by the number of available NNTP connections, your bandwidth and you
 processing power.
 
 Before starting a backfill, you need to change the dead_binary_age config option in config.py.
-If backfilling, set it to 0 - otherwise, leave it on 1-3. This will delete binaries that haven't
+If backfilling, set it to 1 - otherwise, leave it on 1-3. This will delete binaries that haven't
 been turned into releases after they're x days old (from time of posting, not time of collection).
 As such, you don't want to delete backfilled binaries.
 
-    > nano config.py [change dead_binary_age to 0]
+    > nano config.py [change dead_binary_age to 1]
 
 You can use the backfill scripts as so:
 

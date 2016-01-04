@@ -38,8 +38,15 @@
             % if release.category.parent_id:
             <newznab:attr name="category" value="${release.category.parent_id}"/>
             % endif
-            % if release.tvshow_id:
-            <newznab:attr name="rageid" value="${release.tvshow_id}"/>
+            % if release.tvshow:
+                % for dbid in release.tvshow.ids:
+            <newznab:attr name="${dbid.db}" value="${dbid.db_id}"/>
+                % endfor
+            % endif
+            % if release.movie:
+                % for dbid in release.movie.ids:
+            <newznab:attr name="${dbid.db}" value="${dbid.db_id}"/>
+                % endfor
             % endif
             <newznab:attr name="guid" value="${release.id}"/>
             <newznab:attr name="poster" value="${release.posted_by | x}"/>
