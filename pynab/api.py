@@ -11,6 +11,8 @@ from sqlalchemy import or_, func, desc
 from pynab.db import db_session, NZB, NFO, Release, User, Category, Group, Episode, Movie, DBID, TvShow, literalquery
 from pynab import log, root_dir
 import config
+import regex
+
 
 RESULT_TEMPLATE = Template(filename=os.path.join(root_dir, 'templates/api/result.mako'))
 
@@ -246,7 +248,7 @@ def search(dataset=None):
             if search_terms:
                 # we're searching specifically for a show or something
                 if search_terms:
-                    for term in search_terms.split(' '):
+                    for term in regex.split('[ \.]', search_terms):
                         query = query.filter(Release.search_name.ilike('%{}%'.format(term)))
 
             if config.api.get('postprocessed_only', False):
