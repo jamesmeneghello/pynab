@@ -197,7 +197,8 @@ def search(dataset=None):
                 # get categories
                 if not cat_ids:
                     cats = request.query.cat or None
-                    cat_ids = cats.split(',')
+                    if cats:
+                        cat_ids = cats.split(',')
 
                 if cat_ids:
                     query = query.join(Category).filter(Category.id.in_(cat_ids) | Category.parent_id.in_(cat_ids))
