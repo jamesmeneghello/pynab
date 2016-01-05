@@ -16,6 +16,7 @@ def rename_bad_releases(category):
     s_count = 0
     for_deletion = []
     with db_session() as db:
+        # noinspection PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone,PyComparisonWithNone
         query = db.query(Release).filter(Release.category_id==int(category)).filter(
             (Release.files.any())|(Release.nfo_id!=None)|(Release.sfv_id!=None)|(Release.pre_id!=None)
         ).filter((Release.status!=1)|(Release.status==None)).filter(Release.unwanted==False)

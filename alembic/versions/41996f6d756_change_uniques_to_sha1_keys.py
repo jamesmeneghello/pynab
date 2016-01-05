@@ -40,12 +40,15 @@ def upgrade():
     # update the hashes
     q = session.query(Release.id, Release.name, Release.group_id, Release.posted)
     for release in windowed_query(q, Release.id, 1000):
-        release.uniqhash = hashlib.sha1(
+        uniqhash = hashlib.sha1(
             '{}.{}.{}'.format(
                 release.name,
                 release.group_id,
                 release.posted,
-            ).encode('utf-8')).hexdigest()
+            ).encode('utf-8')
+        ).hexdigest()
+
+        session.query(Release).filter(Release.id==release.id).update({Release.uniqhash: uniqhash})
 
     session.commit()
     ### end Alembic commands ###

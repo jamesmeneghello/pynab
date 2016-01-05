@@ -175,6 +175,7 @@ Migrating from pynab-mongo? Go here: [Converting from pynab-mongo](#converting-f
 Once done:
 
     > sudo chown -R www-data:www-data /opt/pynab
+    > sudo chown -R www-data:www-data /var/log/pynab [or whatever logging_dir is set to]
 
 The installation script will automatically import necessary data and download the latest regex and blacklists.
 
@@ -374,11 +375,11 @@ only limited by the number of available NNTP connections, your bandwidth and you
 processing power.
 
 Before starting a backfill, you need to change the dead_binary_age config option in config.py.
-If backfilling, set it to 0 - otherwise, leave it on 1-3. This will delete binaries that haven't
+If backfilling, set it to 1 - otherwise, leave it on 1-3. This will delete binaries that haven't
 been turned into releases after they're x days old (from time of posting, not time of collection).
 As such, you don't want to delete backfilled binaries.
 
-    > nano config.py [change dead_binary_age to 0]
+    > nano config.py [change dead_binary_age to 1]
 
 You can use the backfill scripts as so:
 
@@ -460,7 +461,7 @@ Apache using `mod_wsgi` is also very easy (thanks @Enverex):
     WSGIPythonPath /opt/pynab
     <VirtualHost *:80>
         ServerName mysite.com
-        WSGIScriptAlias / /opt/pynab.api.py
+        WSGIScriptAlias / /opt/pynab/api.py
     </VirtualHost>
 
 Note that if you're using a forwarding proxy for https, you'll also need to set the HTTPS

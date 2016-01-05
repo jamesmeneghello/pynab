@@ -26,7 +26,7 @@ def scan():
     if monitor == 'supervisor':
         call('supervisorctl start pynab:scan', shell=True)
     elif monitor == 'windows':
-        Popen('start "Pynab Update (close to quit)" python scan.py', stdout=None, stderr=None, stdin=None, shell=True)
+        Popen('start "Pynab Update (close to quit)" python scan.py update', stdout=None, stderr=None, stdin=None, shell=True)
 
 
 def backfill():
@@ -85,8 +85,8 @@ def stop():
 
 def update():
     call('git pull', shell=True)
-    call('alembic upgrade head', shell=True)
     call('pip3 install -q -r requirements.txt', shell=True)
+    call('alembic upgrade head', shell=True)
     print('Pynab updated! if there were errors, you might need to re-run `pip3 install -r requirements.txt` with sudo.')
 
 def list_users():

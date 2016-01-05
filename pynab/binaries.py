@@ -104,8 +104,14 @@ def process():
                 flags = r[r.rfind('/') + 1:]
                 r = r[r.find('/') + 1:r.rfind('/')]
                 regex_flags = regex.I if 'i' in flags else 0
-                compiled_regex[reg.id] = regex.compile(r, regex_flags)
+                try:
+                    compiled_regex[reg.id] = regex.compile(r, regex_flags)
+                except Exception as e:
+                    log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
+                    db.query(Regex).filter(Regex.id==reg.id).delete()
+                    db.commit()
 
+            # noinspection PyComparisonWithNone
             query = db.query(Part).filter(Part.group_name.in_(relevant_groups)).filter(Part.binary_id == None)
             total_parts = query.count()
             for part in windowed_query(query, Part.id, config.scan.get('binary_process_chunk_size', 1000)):
@@ -128,7 +134,9 @@ def process():
                         result = compiled_regex[reg.id].search(part.subject)
                     except:
                         log.error('binary: broken regex detected. id: {:d}, removing...'.format(reg.id))
-                        db.query(Regex).filter(reg.id).remove()
+                        all_regex.remove(reg)
+                        db.query(Regex).filter(Regex.id==reg.id).delete()
+                        db.commit()
                         continue
 
                     match = result.groupdict() if result else None
@@ -141,11 +149,11 @@ def process():
 
                         # fill name if reqid is available
                         if match.get('reqid') and not match.get('name'):
-                            match['name'] = 'REQ: {}'.format(match['reqid'])
+                            match['name'] = '{}'.format(match['reqid'])
 
                         # make sure the regex returns at least some name
                         if not match.get('name'):
-                            continue
+                            match['name'] = ' '.join([v for v in match.values() if v])
 
                         # if regex are shitty, look for parts manually
                         # segment numbers have been stripped by this point, so don't worry

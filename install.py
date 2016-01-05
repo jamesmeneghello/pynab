@@ -19,7 +19,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
     import config
-    from pynab.db import Base, engine, Session, User, Group, Category, TvShow, Movie
+    from pynab.db import Base, engine, Session, User, Group, Category, TvShow, Movie, DBID
     import pynab.util
     from scripts import nzedb_pre_import
 
@@ -65,23 +65,35 @@ if __name__ == '__main__':
             sys.exit(0)
 
     print('Copying TV data into db...')
-    with open('db/initial/tvshows.json', encoding='utf-8', errors='ignore') as f:
+    with open('db/initial/tvrage.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         chunks = [data[x:x + 500] for x in range(0, len(data), 500)]
         try:
             for chunk in chunks:
-                engine.execute(TvShow.__table__.insert(), chunk)
+                #engine.execute(TvShow.__table__.insert(), chunk)
+                for item in chunk:
+                    show = TvShow(name=item['name'])
+                    id = DBID(db='TVRAGE', db_id=item['id'], tvshow=show)
+                    db.add(show)
+                    db.add(id)
+                db.commit()
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
 
     print('Copying movie data into db...')
-    with open('db/initial/movies.json', encoding='utf-8', errors='ignore') as f:
+    with open('db/initial/omdb.json', encoding='utf-8', errors='ignore') as f:
         data = json.load(f)
         chunks = [data[x:x + 500] for x in range(0, len(data), 500)]
         try:
             for chunk in chunks:
-                engine.execute(Movie.__table__.insert(), chunk)
+                #engine.execute(Movie.__table__.insert(), chunk)
+                for item in chunk:
+                    movie = Movie(name=item['name'], year=item['year'], genre=item['genre'])
+                    id = DBID(db='OMDB', db_id=item['id'], movie=movie)
+                    db.add(movie)
+                    db.add(id)
+                db.commit()
         except Exception as e:
             print('Problem inserting data into database: {}'.format(e))
             sys.exit(0)
@@ -101,15 +113,9 @@ if __name__ == '__main__':
         print(
             'Could not update blacklist. Try the URL in config.py manually - if it doesn\'t work, post an issue on Github.')
 
-    print('Copying large pre data into db...')
+    print('Copying pre data into db...')
     try:
         nzedb_pre_import.largeNzedbPre()
-    except Exception as e:
-        print('Problem inserting data into database: {}'.format(e))
-        sys.exit(0)
-
-    print('Copying small pre data into db...')
-    try:
         nzedb_pre_import.nzedbPre()
     except Exception as e:
         print('Problem inserting data into database: {}'.format(e))

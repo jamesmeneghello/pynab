@@ -141,7 +141,7 @@ scan = {
     # dead_binary_age: number of days to keep binaries for matching
     # realistically if they're not completed after a day or two, they're not going to be
     # set this to 3 days or so
-    # !!WARNING!! if backfilling, set this to 0.
+    # !!WARNING!! if backfilling, set this to 1.
     'dead_binary_age': 1,
 
     # publish: publish release info in json to a host
@@ -251,13 +251,20 @@ postprocess = {
     # set it to 3 or so for normal operation
     'delete_blacklisted_days': 3,
 
-    # process_imdb: match movie releases against IMDB
-    # couchpotato sometimes depends on this data for API usage, definitely recommended
-    'process_imdb': True,
+    # release_expiry_days: expire releases older than this many days.
+    # set to a value of 0 if you do not want to expire at all
+    # default value is 0
+    'release_expiry_days': 0,
 
-    # process_tvrage: match TV releases against TVRage
+    # process_movies: list of interfaces to post-process movies against
+    # couchpotato sometimes depends on this data for API usage, definitely recommended
+    # options: ['OMDB']
+    'process_movies': ['OMDB'],
+
+    # process_tvshows: list of interfaces to post-process tvshows against
     # sickbeard sometimes depends on this data for API usage, definitely recommended
-    'process_tvrage': True,
+    # options: ['TVMAZE']
+    'process_tvshows': ['TVMAZE'],
 
     # process_nfos: grab NFOs for releases for other use
     # this can be used to clean release names, etc
@@ -279,11 +286,13 @@ postprocess = {
     # regex update settings
     # ---------------------
 
+    # regex_type: type of dump: nn+ or nzedb
     # regex_url: url to retrieve regex updates from
     # this can be newznab's if you bought plus, include your id, ie.
     # expects data in newznab sql dump format
     # 'http://www.newznab.com/getregex.php?newznabID=<id>'
-    'regex_url': '',
+    'regex_type': 'nzedb',
+    'regex_url': 'https://raw.githubusercontent.com/nZEDb/nZEDb/master/resources/db/schema/data/10-release_naming_regexes.tsv',
 
     # blacklist_url: url to retrieve blacklists from
     # generally leave alone
@@ -342,6 +351,9 @@ news = {
 
     # ssl: True if you want to use SSL, False if not
     'ssl': True,
+    
+    # timeout: don't change this
+    'timeout': 60,
 }
 
 # xmpp pubsub bot

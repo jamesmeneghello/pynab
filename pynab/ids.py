@@ -1,194 +1,173 @@
 import unicodedata
-import difflib
-import datetime
-import time
-from collections import defaultdict
-
 import regex
 import roman
-import requests
-import xmltodict
+import datetime
 import pytz
-from lxml import etree
+import time
 
-from pynab.db import db_session, Release, Category, TvShow, MetaBlack, Episode, DataLog, windowed_query
 from pynab import log
 import pynab.util
+from pynab.interfaces.movie import INTERFACES as MOVIE_INTERFACES
+from pynab.interfaces.tv import INTERFACES as TV_INTERFACES
+from pynab.db import db_session, windowed_query, Release, MetaBlack, Category, Movie, TvShow, DBID, DataLog, Episode
+
 import config
 
 
-PROCESS_CHUNK_SIZE = 500
+CLEANING_REGEX = regex.compile(r'\b(hdtv|dvd|divx|xvid|mpeg2|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+)\b', regex.I)
 
 
-TVRAGE_FULL_SEARCH_URL = 'http://services.tvrage.com/feeds/full_search.php'
+def process(type, interfaces=None, limit=None, online=True):
+    """
+    Process ID fetching for releases.
 
-
-# use compiled xpaths and regex for speedup
-XPATH_SHOW = etree.XPath('//show')
-XPATH_NAME = etree.XPath('name/text()')
-XPATH_AKA = etree.XPath('akas/aka/text()')
-XPATH_LINK = etree.XPath('link/text()')
-XPATH_COUNTRY = etree.XPath('country/text()')
-
-RE_LINK = regex.compile('tvrage\.com\/((?!shows)[^\/]*)$', regex.I)
-
-
-def process(limit=None, online=True):
-    """Processes [limit] releases to add TVRage information."""
+    :param type: tv/movie
+    :param interfaces: interfaces to use or None will use all
+    :param limit: optional limit
+    :param online: whether to check online apis
+    :return:
+    """
     expiry = datetime.datetime.now(pytz.utc) - datetime.timedelta(config.postprocess.get('fetch_blacklist_duration', 7))
-    api_session = requests.Session()
 
     with db_session() as db:
-        # clear expired metablacks
-        db.query(MetaBlack).filter(MetaBlack.tvshow != None).filter(MetaBlack.time <= expiry).delete(
-            synchronize_session='fetch')
+        # noinspection PyComparisonWithNone,PyComparisonWithNone
+        db.query(MetaBlack).filter((MetaBlack.movie != None)|(MetaBlack.tvshow != None)).filter(MetaBlack.time <= expiry).delete(synchronize_session='fetch')
 
-        query = db.query(Release).filter((Release.tvshow == None) | (Release.episode == None)).join(Category).filter(
-            Category.parent_id == 5000)
-
-        if online:
-            query = query.filter(Release.tvshow_metablack_id == None)
+        if type == 'movie':
+            # noinspection PyComparisonWithNone
+            query = db.query(Release).filter(Release.movie == None).join(Category).filter(Category.parent_id == 2000)
+            if online:
+                # noinspection PyComparisonWithNone
+                query = query.filter(Release.movie_metablack_id == None)
+        elif type == 'tv':
+            # noinspection PyComparisonWithNone
+            query = db.query(Release).filter(Release.tvshow == None).join(Category).filter(Category.parent_id == 5000)
+            if online:
+                # noinspection PyComparisonWithNone
+                query = query.filter(Release.tvshow_metablack_id == None)
+        else:
+            raise Exception('wrong release type')
 
         query = query.order_by(Release.posted.desc())
 
         if limit:
             releases = query.limit(limit)
         else:
-            releases = windowed_query(query, Release.id, PROCESS_CHUNK_SIZE)
+            releases = windowed_query(query, Release.id, config.scan.get('binary_process_chunk_size'))
+
+        if type == 'movie':
+            parse_func = parse_movie
+            iface_list = MOVIE_INTERFACES
+            obj_class = Movie
+            attr = 'movie'
+
+            def extract_func(data):
+                return {'name': data.get('name'), 'genre': data.get('genre', None), 'year': data.get('year', None)}
+        elif type == 'tv':
+            parse_func = parse_tv
+            iface_list = TV_INTERFACES
+            obj_class = TvShow
+            attr = 'tvshow'
+
+            def extract_func(data):
+                return {'name': data.get('name'), 'country': data.get('country', None)}
+        else:
+            raise Exception('wrong release type')
 
         for release in releases:
-            method = ''
-
-            show = parse_show(release.search_name)
-            if not show:
-                show = parse_show(release.name)
-
-            if show:
-                if release.tvshow:
-                    rage = release.tvshow
+            method = 'local'
+            data = parse_func(release.search_name)
+            if data:
+                if type == 'movie':
+                    q = db.query(Movie).filter(Movie.name.ilike('%'.join(clean_name(data['name']).split(' ')))).filter(Movie.year == data['year'])
+                elif type == 'tv':
+                    q = db.query(TvShow).filter(TvShow.name.ilike('%'.join(clean_name(data['name']).split(' '))))
                 else:
-                    rage = db.query(TvShow).filter(
-                        TvShow.name.ilike('%'.join(show['clean_name'].split(' ')))
-                    ).first()
+                    q = None
 
-                if not rage and 'and' in show['clean_name']:
-                    rage = db.query(TvShow).filter(TvShow.name == show['clean_name'].replace(' and ', ' & ')).first()
+                entity = q.first()
+                if not entity and online:
+                    method = 'online'
+                    ids = {}
+                    for iface in iface_list:
+                        if interfaces and iface.NAME not in interfaces:
+                            continue
+                        exists = q.join(DBID).filter(DBID.db==iface.NAME).first()
+                        if not exists:
+                            id = iface.search(data)
+                            if id:
+                                ids[iface.NAME] = id
+                    if ids:
+                        entity = obj_class(**extract_func(data))
+                        db.add(entity)
 
-                if rage:
-                    method = 'local'
-                elif not rage and online:
-                    try:
-                        rage_data = search(api_session, show)
-                    except Exception as e:
-                        log.error('tvrage: couldn\'t access tvrage - their api getting hammered?')
-                        continue
-
-                    if rage_data:
-                        method = 'online'
-                        rage = db.query(TvShow).filter(TvShow.id == rage_data['showid']).first()
-                        if not rage:
-                            rage = TvShow(id=rage_data['showid'], name=rage_data['name'], country=rage_data['country'])
-                            db.add(rage)
-
-                    # wait slightly so we don't smash the api
-                    time.sleep(1)
-
-                if rage:
-                    log.info('tvrage: add {} [{}]'.format(
-                        method,
-                        release.search_name
+                        for interface_name, id in ids.items():
+                            i = DBID()
+                            i.db = interface_name
+                            i.db_id = id
+                            setattr(i, attr, entity)
+                            db.add(i)
+                if entity:
+                    log.info('{}: [{}] - [{}] - data added: {}'.format(
+                        attr,
+                        release.id,
+                        release.search_name,
+                        method
                     ))
 
-                    e = db.query(Episode).filter(Episode.tvshow_id == rage.id).filter(
-                        Episode.series_full == show['series_full']).first()
-                    if not e:
-                        e = Episode(
-                            season=show.get('season'),
-                            episode=show.get('episode'),
-                            series_full=show.get('series_full'),
-                            air_date=show.get('air_date'),
-                            year=show.get('year'),
-                            tvshow_id=rage.id
-                        )
-                    release.tvshow = rage
-                    release.tvshow_metablack_id = None
-                    release.episode = e
+                    if type == 'tv':
+                        # episode processing
+                        ep = db.query(Episode).filter(Episode.tvshow_id == entity.id).filter(Episode.series_full == data['series_full']).first()
+                        if not ep:
+                            ep = Episode(
+                                season=data.get('season'),
+                                episode=data.get('episode'),
+                                series_full=data.get('series_full'),
+                                air_date=data.get('air_date'),
+                                year=data.get('year'),
+                                tvshow=entity
+                            )
+
+                        release.episode = ep
+
+                    setattr(release, attr, entity)
                     db.add(release)
-                elif not rage and online:
-                    log.debug('tvrage: [{}] - tvrage failed: {}'.format(
+                else:
+                    log.info('{}: [{}] - data not found: {}'.format(
+                        attr,
                         release.search_name,
-                        'no show found (online)'
+                        method
                     ))
 
-                    mb = MetaBlack(tvshow=release, status='ATTEMPTED')
-                    db.add(mb)
-                else:
-                    log.debug('tvrage: [{}] - tvrage failed: {}'.format(
-                        release.search_name,
-                        'no show found (local)'
-                    ))
+                    if online:
+                        mb = MetaBlack(status='ATTEMPTED')
+                        setattr(mb, attr, release)
+                        db.add(mb)
             else:
-                log.debug('tvrage: [{}] - tvrage failed: {}'.format(
+                log.info('{}: [{}] - {} data not found: no suitable regex for {} name'.format(
+                    attr,
+                    release.id,
                     release.search_name,
-                    'no suitable regex for show name'
+                    attr
                 ))
-                db.add(MetaBlack(tvshow=release, status='IMPOSSIBLE'))
-                db.add(DataLog(description='tvrage parse_show regex', data=release.search_name))
+                mb = MetaBlack(status='IMPOSSIBLE')
+                setattr(mb, attr, release)
+                db.add(mb)
+                db.add(DataLog(description='parse_{} regex'.format(attr), data=release.search_name))
 
             db.commit()
-
-
-def search(session, show):
-    """Search TVRage's online API for show data."""
-    r = session.get(TVRAGE_FULL_SEARCH_URL, params={'show': show['clean_name']})
-
-    content = r.content
-    return search_lxml(show, content)
-
-
-def extract_names(xmlshow):
-    """Extract all possible show names for matching from an lxml show tree, parsed from tvrage search"""
-    for name in XPATH_NAME(xmlshow):
-        yield name
-    for aka in XPATH_AKA(xmlshow):
-        yield aka
-    link = XPATH_LINK(xmlshow)[0]
-    link_result = RE_LINK.search(link)
-    if link_result:
-        for link in link_result.groups():
-            yield link
-
-
-def search_lxml(show, content):
-    """Search TVRage online API for show data."""
-    try:
-        tree = etree.fromstring(content)
-    except:
-        log.critical('Problem parsing XML with lxml')
-        return None
-
-    matches = defaultdict(list)
-    # parse show names in the same order as returned by tvrage, first one is usually the good one
-    for xml_show in XPATH_SHOW(tree):
-        for name in extract_names(xml_show):
-            ratio = int(difflib.SequenceMatcher(None, show['clean_name'], clean_name(name)).ratio() * 100)
-            if ratio == 100:
-                return xmltodict.parse(etree.tostring(xml_show))['show']
-            matches[ratio].append(xml_show)
-
-    # if no 100% is found, check highest ratio matches
-    for ratio, xml_matches in sorted(matches.items(), reverse=True):
-        for xml_match in xml_matches:
-            if ratio >= 80:
-                return xmltodict.parse(etree.tostring(xml_match))['show']
-            elif 80 > ratio > 60:
-                if 'country' in show and show['country'] and XPATH_COUNTRY(xml_match):
-                    if str.lower(show['country']) == str.lower(XPATH_COUNTRY(xml_match)[0]):
-                        return xmltodict.parse(etree.tostring(xml_match))['show']
+            if method != 'local':
+                time.sleep(1)
 
 
 def clean_name(name):
-    """Cleans a show name for searching."""
+    """
+    Cleans a show/movie name for searching.
+
+    :param name: release name
+    :return: cleaned name
+    """
+
     name = unicodedata.normalize('NFKD', name)
 
     name = regex.sub('[._\-]', ' ', name)
@@ -205,15 +184,18 @@ def clean_name(name):
     for k, v in replace_chars.items():
         name = name.replace(k, v)
 
-    pattern = regex.compile(r'\b(hdtv|dvd|divx|xvid|mpeg2|x264|aac|flac|bd|dvdrip|10 bit|264|720p|1080p\d+x\d+)\b',
-                            regex.I)
-    name = pattern.sub('', name)
+    name = CLEANING_REGEX.sub('', name)
 
     return name.lower()
 
 
-def parse_show(search_name):
-    """Parses a show name for show name, season and episode information."""
+def parse_tv(search_name):
+    """
+    Parse a TV show name for episode, season, airdate and name information.
+
+    :param search_name: release name
+    :return: show data (dict)
+    """
 
     # i fucking hate this function and there has to be a better way of doing it
     # named capturing groups in a list and semi-intelligent processing?
@@ -343,8 +325,6 @@ def parse_show(search_name):
             else:
                 show['country'] = str.upper(country.group(1))
 
-        show['clean_name'] = clean_name(show['name'])
-
         if not isinstance(show['season'], int) and len(show['season']) == 4:
             show['series_full'] = '{}/{}'.format(show['season'], show['episode'])
         else:
@@ -365,9 +345,32 @@ def parse_show(search_name):
 
         return show
 
-    return False
+    return None
 
 
+def parse_movie(search_name):
+    """
+    Parse a movie name into name/year.
 
+    :param search_name: release name
+    :return: (name, year)
+    """
+    result = regex.search('^(?P<name>.*)[\.\-_\( ](?P<year>19\d{2}|20\d{2})', search_name, regex.I)
+    if result:
+        result = result.groupdict()
+        if 'year' not in result:
+            result = regex.search(
+                '^(?P<name>.*)[\.\-_ ](?:dvdrip|bdrip|brrip|bluray|hdtv|divx|xvid|proper|repack|real\.proper|sub\.?fix|sub\.?pack|ac3d|unrated|1080i|1080p|720p|810p)',
+                search_name, regex.I)
+            if result:
+                result = result.groupdict()
 
+        if 'name' in result:
+            name = regex.sub('\(.*?\)|\.|_', ' ', result['name'])
+            if 'year' in result:
+                year = result['year']
+            else:
+                year = ''
+            return {'name': name, 'year': year}
 
+    return None
