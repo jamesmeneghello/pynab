@@ -396,3 +396,25 @@ mongo = {
     # db: database name in mongo
     'db': 'pynab',
 }
+
+# Prebot to scrape pre/request ID's
+# Currently Regex is only set up for nZEDbPRE on irc.synirc.net
+# Defaults should most likely be kept (Except for nick)
+prebot = {
+    # nick: nick of the prebot
+    # try not to use random characters as this may result in a ban
+    # REMEMBER TO SET THIS
+    'nick': '',
+
+    # channel: channel to join
+    # default: #nZEDbPRE
+    'channel': '#nZEDbPRE',
+
+    # server: IRC server to join
+    # default: irc.synirc.net
+    'server': 'irc.synirc.net',
+
+    # port: port used to connect to the IRC server
+    # default: 6667
+    'port': 6667,
+}
