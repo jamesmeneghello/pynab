@@ -14,8 +14,6 @@ Options:
 # Thanks to Joel Rosdahl <joel@rosdahl.net> for this script
 # Taken from https://bitbucket.org/jaraco/irc/src
 
-import string
-import random
 
 import irc.bot
 import irc.strings
@@ -23,6 +21,7 @@ from docopt import docopt
 
 import pynab.pre
 from pynab import log_init, log
+import config
 
 
 class TestBot(irc.bot.SingleServerIRCBot):
@@ -42,15 +41,22 @@ class TestBot(irc.bot.SingleServerIRCBot):
 
 
 def main():
-    channel = "#nZEDbPRE"
-    nickname = ''.join([random.choice(string.ascii_letters) for n in range(8)])
-    log.info("Pre: Bot Nick - {}".format(nickname))
-    bot = TestBot(channel, nickname, "irc.synirc.net", 6667)
+    channel = config.prebot.get('channel')
+    nick = config.prebot.get('nick')
+    server = config.prebot.get('server')
+    port = config.prebot.get('port')
+
+    log.info("Pre: Bot Nick - {}".format(nick))
+    bot = TestBot(channel, nick, server, port)
     bot.start()
 
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=pynab.__version__)
+
     if arguments['start']:
         log_init('prebot')
-        main()
+        if config.prebot.get('nick'):
+            main()
+        else:
+            log.warn("Pre: Bot nick not set in config, please update and restart the bot")
