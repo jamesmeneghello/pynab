@@ -10,20 +10,21 @@ from pynab.db import db_session, Pre
 def nzedbirc(unformattedPre):
     formattedPre = parseNzedbirc(unformattedPre)
 
-    with db_session() as db:
-        p = db.query(Pre).filter(Pre.name == formattedPre['name']).first()
+    if formattedPre is not None:
+        with db_session() as db:
+            p = db.query(Pre).filter(Pre.name == formattedPre['name']).first()
+        
+            if not p:
+                p = Pre(**formattedPre)
+            else:
+                for k, v in formattedPre.items():
+                    setattr(p, k, v)
 
-        if not p:
-            p = Pre(**formattedPre)
-        else:
-            for k, v in formattedPre.items():
-                setattr(p, k, v)
-
-        try:
-            db.add(p)
-            log.info("pre: Inserted/Updated - {}".format(formattedPre["name"]))
-        except Exception as e:
-            log.debug("pre: Error - {}".format(e))
+            try:
+                db.add(p)
+                log.info("pre: Inserted/Updated - {}".format(formattedPre["name"]))
+            except Exception as e:
+                log.debug("pre: Error - {}".format(e))
 
 
 #Message legend: DT: PRE Time(UTC) | TT: Title | SC: Source | CT: Category | RQ: Requestid | SZ: Size | FL: Files | FN: Filename
@@ -38,28 +39,32 @@ def parseNzedbirc(unformattedPre):
         formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
     except Exception as e:
         log.debug("pre: Error parsing nzedbirc - {}".format(e))
+        formattedPre = None
 
-    if formattedPre['preType'] == "NUK":
-        formattedPre['nuked'] = True
+    if formattedPre is not None:
+        if formattedPre['preType'] == "NUK":
+            formattedPre['nuked'] = True
+        else:
+            formattedPre['nuked'] = False
+
+        #Deal with splitting out requests if they exist
+        if formattedPre['request'] != "N/A":
+            formattedPre['requestid'] = formattedPre['request'].split(":")[0]
+            formattedPre['requestgroup'] = formattedPre['request'].split(":")[1]
+        else:
+            formattedPre['requestid'] = None
+
+        formattedPre['searchname'] = releases.clean_release_name(formattedPre['name'])
+
+        #remove any columns we dont need. Perhaps a way to filter these out via regex? Or a way to ignore via sqlalchemy
+        formattedPre.pop("preType", None)
+        formattedPre.pop("size", None)
+        formattedPre.pop("files", None)
+        formattedPre.pop("request", None)
+
+        return formattedPre
     else:
-        formattedPre['nuked'] = False
-
-    #Deal with splitting out requests if they exist
-    if formattedPre['request'] != "N/A":
-        formattedPre['requestid'] = formattedPre['request'].split(":")[0]
-        formattedPre['requestgroup'] = formattedPre['request'].split(":")[1]
-    else:
-        formattedPre['requestid'] = None
-
-    formattedPre['searchname'] = releases.clean_release_name(formattedPre['name'])
-
-    #remove any columns we dont need. Perhaps a way to filter these out via regex? Or a way to ignore via sqlalchemy
-    formattedPre.pop("preType", None)
-    formattedPre.pop("size", None)
-    formattedPre.pop("files", None)
-    formattedPre.pop("request", None)
-
-    return formattedPre
+        return None
 
 
 # orlydb scraping
