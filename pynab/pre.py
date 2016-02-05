@@ -35,11 +35,12 @@ def parseNzedbirc(unformattedPre):
 
     formattedPre = {}
 
-    try:
-        formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
-    except Exception as e:
-        log.debug("pre: Error parsing nzedbirc - {}".format(e))
-        formattedPre = None
+    if unformattedPre is not None:
+        try:
+            formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
+        except Exception as e:
+            log.debug("pre: Error parsing nzedbirc - {}".format(e))
+            formattedPre = None
 
     if formattedPre is not None:
         if formattedPre['preType'] == "NUK":
