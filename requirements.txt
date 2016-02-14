@@ -30,4 +30,6 @@ pySmartDL
 pytvmaze
 git+https://github.com/PyMySQL/PyMySQL.git
 nltk
-
+jaraco.itertools
+jaraco.collections
+jaraco.text

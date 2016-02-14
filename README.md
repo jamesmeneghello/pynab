@@ -627,6 +627,19 @@ Run the following:
     > gem install sass --no-ri --no-rdoc
     > gem install compass --no-ri --no-rdoc 
 
+- Using Ubuntu 14.04, I'm getting strange errors with parts of pynab referring to the "six" package.
+
+(from @JameZUK)
+
+This issue only presented itself with a highly frustrating error when trying to start the prebot. The error inside supervisor looks like: pynab:prebot: ERROR (abnormal termination)
+
+To fix it, just remove six from the base Ubuntu install and force pip3 to upgrade it to the latest version:
+
+> sudo rm /usr/lib/python2.7/dist-packages/six.pyc
+> sudo rm /usr/lib/python2.7/dist-packages/six.py
+> sudo rm -rf /usr/lib/python2.7/dist-packages/six-1.5.2.egg-info
+> sudo pip3 install six --upgrade
+
 
 Newznab API
 ===========
