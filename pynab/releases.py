@@ -7,7 +7,7 @@ from requests_futures.sessions import FuturesSession
 from sqlalchemy.orm import *
 
 from pynab import log
-from pynab.db import to_json, db_session, engine, Binary, Part, Release, Group, Category, Blacklist
+from pynab.db import to_json, db_session, engine, Binary, Part, Release, Group, Category, Blacklist, _create_hash
 import pynab.categories
 import pynab.nzbs
 import pynab.rars
@@ -197,6 +197,7 @@ def process():
             r = db.query(Release).filter(Release.name == completed_binary[1]).filter(
                 Release.posted == completed_binary[2]
             ).first()
+
             if r:
                 # if it does, we have a duplicate - delete the binary
                 db.query(Binary).filter(Binary.id == completed_binary[0]).delete()
@@ -204,6 +205,15 @@ def process():
                 # get an approx size for the binary without loading everything
                 # if it's a really big file, we want to deal with it differently
                 binary = db.query(Binary).filter(Binary.id == completed_binary[0]).first()
+
+                # get the group early for use in uniqhash
+                group = db.query(Group).filter(Group.name == binary.group_name).one()
+
+                # check if the uniqhash already exists too
+                dupe_release = db.query(Release).filter(Release.uniqhash == _create_hash(binary.name, group.id, binary.posted)).first()
+                if dupe_release:
+                    db.query(Binary).filter(Binary.id == completed_binary[0]).delete()
+                    continue
 
                 # this is an estimate, so it doesn't matter too much
                 # 1 part nfo, 1 part sfv or something similar, so ignore two parts
@@ -354,7 +364,7 @@ def process():
                 release.search_name = clean_release_name(binary.name)
 
                 # assign the release group
-                release.group = db.query(Group).filter(Group.name == binary.group_name).one()
+                release.group = group
 
                 # give the release a category
                 release.category_id = pynab.categories.determine_category(binary.name, binary.group_name)

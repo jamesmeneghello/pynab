@@ -356,12 +356,19 @@ def to_json(obj):
     obj = json.dumps(dict, default=json_serial)
     return obj
 
-def create_hash(context):
+def _create_hash(name, group_id, posted):
     return hashlib.sha1('{}.{}.{}'.format(
+        name,
+        group_id,
+        posted
+    ).encode('utf-8')).hexdigest()
+
+def create_hash(context):
+    return _create_hash(
         context.current_parameters['name'],
         context.current_parameters['group_id'],
         context.current_parameters['posted']
-    ).encode('utf-8')).hexdigest()
+    )
 
 class Release(Base):
     __tablename__ = 'releases'
