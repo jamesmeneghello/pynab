@@ -120,7 +120,7 @@ def scan(group_name, direction='forward', date=None, target=None, limit=None):
 
                         iterations += 1
 
-                        if limit and iterations >= 3:#* config.scan.get('message_scan_limit') >= limit:
+                        if limit and config.scan.get('message_scan_limit') >= limit:
                             log.info(
                                 'group: {}: scan limit reached, ending early (will continue later)'.format(group_name))
                             return False
