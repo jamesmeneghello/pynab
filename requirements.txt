@@ -7,7 +7,7 @@ xmltodict
 pynzb
 requests
 roman
-regex>=2.4.44
+regex==2.4.44
 lxml
 daemonize
 colorlog
