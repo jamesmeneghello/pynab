@@ -58,6 +58,8 @@ def process(limit=None):
                 # no longer need to check group
                 updated_release = group_requests.get(str(pre.requestid))
                 updated_release.pre_id = pre.id
+                updated_release.name = pre.name
+                updated_release.search_name = pre.searchname
                 db.merge(updated_release)
                 log.info("requests: found pre request id {} ({}) for {}".format(pre.requestid, group_name,
                                                                                 updated_release.name))
