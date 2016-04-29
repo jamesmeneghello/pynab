@@ -28,8 +28,9 @@ def nzedbirc(unformattedPre):
 
 
 #Message legend: DT: PRE Time(UTC) | TT: Title | SC: Source | CT: Category | RQ: Requestid | SZ: Size | FL: Files | FN: Filename
-#Sample: NEW: [DT: 2015-01-09 16:08:45][TT: Sample-Release][SC: sample-source][CT: 0DAY][RQ: N/A][SZ: N/A][FL: N/A][FN: N/A]
+#Sample: NEW: [DT: 2016-04-29 14:57:16] [TT: RELEASE] [SC: GROUP] [CT: CATEGORY] [RQ: REQUEST] [SZ: 3550MB] [FL: 71x50MB] [FN: N/A]
 def parseNzedbirc(unformattedPre):
+    CLEAN_REGEX = regex.compile('[\x02\x0F\x16\x1D\x1F]|\x03(\d{,2}(,\d{,2})?)?')
     PRE_REGEX = regex.compile(
         '(?P<preType>.+): \[DT: (?<pretime>.+)\] \[TT: (?P<name>.+)\] \[SC: (?P<source>.+)\] \[CT: (?P<category>.+)\] \[RQ: (?P<request>.+)\] \[SZ: (?P<size>.+)\] \[FL: (?P<files>.+)\] \[FN: (?P<filename>.+)\]')
 
@@ -37,8 +38,10 @@ def parseNzedbirc(unformattedPre):
 
     if unformattedPre is not None:
         try:
-            formattedPre = PRE_REGEX.search(unformattedPre).groupdict()
+            cleanPre = regex.sub(CLEAN_REGEX, '', unformattedPre);
+            formattedPre = PRE_REGEX.search(cleanPre).groupdict()
         except Exception as e:
+            log.debug("pre: Message prior to error - {}".format(unformattedPre))
             log.debug("pre: Error parsing nzedbirc - {}".format(e))
             formattedPre = None
 
