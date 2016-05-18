@@ -6,7 +6,7 @@ bottle
 xmltodict
 pynzb
 requests
-roman
+roman>=2.0.0
 regex==2.4.44
 lxml
 daemonize
