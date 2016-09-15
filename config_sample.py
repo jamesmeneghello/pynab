@@ -292,7 +292,7 @@ postprocess = {
     # expects data in newznab sql dump format
     # 'http://www.newznab.com/getregex.php?newznabID=<id>'
     'regex_type': 'nzedb',
-    'regex_url': 'https://raw.githubusercontent.com/nZEDb/nZEDb/master/resources/db/schema/data/10-release_naming_regexes.tsv',
+    'regex_url': 'https://raw.githubusercontent.com/nZEDb/nZEDb/0.x/resources/db/schema/data/10-release_naming_regexes.tsv',
 
     # blacklist_url: url to retrieve blacklists from
     # generally leave alone
