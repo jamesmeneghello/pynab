@@ -23,6 +23,7 @@ sleekxmpp
 eventlet
 requests-futures
 irc
+six>=1.10.0
 colorama
 pandas
 beautifulsoup4
