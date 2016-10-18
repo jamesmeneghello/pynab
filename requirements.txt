@@ -28,7 +28,7 @@ colorama
 pandas
 beautifulsoup4
 pySmartDL
-pytvmaze
+pytvmaze<2.0
 git+https://github.com/PyMySQL/PyMySQL.git
 nltk
 jaraco.itertools
