@@ -8,16 +8,16 @@
     <registration available="no" open="no"/>
     <searching>
         % if 's|search' in pynab.api.functions:
-            <search available="yes"/>
+            <search available="yes" supportedparams="q"/>
         % endif
         % if 'tv|tvsearch' in pynab.api.functions:
-            <tv-search available="yes"/>
+            <tv-search available="yes" supportedparams="q,rid,season,ep"/>
         % endif
         % if 'm|movie' in pynab.api.functions:
-            <movie-search available="yes"/>
+            <movie-search available="yes" supportedparams="q"/>
         % endif
         % if 'b|book' in pynab.api.functions:
-            <book-search available="yes"/>
+            <book-search available="yes" supportedparams="q"/>
         % endif
     </searching>
     <categories>
