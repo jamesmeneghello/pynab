@@ -124,7 +124,7 @@ def main(mode='update', group=None, date=None):
                     active_groups = {group.name: None for group in db.query(Group).filter(Group.active == True).all()}
                 else:
                     if db.query(Group).filter(Group.name == group).first():
-                        active_groups = [group]
+                        active_groups = {group: None}
                     else:
                         log.error('scan: no such group exists')
                         return
