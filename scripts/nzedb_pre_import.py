@@ -43,7 +43,7 @@ except:
 
 # Regex used to strip out the file name
 FILENAME_REGEX = regex.compile(
-    "https:\/\/raw.githubusercontent.com\/nZEDb\/nZEDbPre_Dumps\/master\/dumps\/(?P<lastfile>.+)_.+_.+")
+    "https:\/\/raw.githubusercontent.com\/nZEDb\/nZEDbPre_Dumps\/master\/dumps\/\d{10,}\/(?P<lastfile>.+)_.+_.+")
 COLNAMES = ["name", "filename", "nuked", "category", "pretime", "source", "requestid", "requestgroup"]
 INSERTFAILS = []
 
@@ -51,7 +51,7 @@ INSERTFAILS = []
 def nzedbPre():
     downloadLinks = []
     try:
-        rawpreJSON = urllib.request.urlopen("https://api.github.com/repositories/45781004/contents/dumps").read()
+        rawlistJSON = urllib.request.urlopen("https://api.github.com/repositories/45781004/contents/dumps").read()
     except:
         print("pre-import: Error connecting to dropbox, try again later")
 
@@ -59,14 +59,21 @@ def nzedbPre():
         data = open('lastfile.json')
         lastFileFromDisk = json.load(data)
     except:
-        print("pre-import: No existinfg file found, will attempt to download and insert all pres")
+        print("pre-import: No existing file found, will attempt to download and insert all pres")
         lastFileFromDisk = None
 
-    preJSON = json.loads(rawpreJSON.decode('utf8'))
+    listJSON = json.loads(rawlistJSON.decode('utf8'))
 
-    for x in preJSON:
+    for x in listJSON:
         if x["name"] != "0README.txt":
-            downloadLinks.append(x["download_url"])
+            try:
+                rawpreJSON = urllib.request.urlopen(x["url"]).read()
+            except:
+                print("pre-import: failed fetching url: ", x["url"])
+
+            preJSON = json.loads(rawpreJSON.decode('utf8'))
+            for y in preJSON:
+                downloadLinks.append(y["download_url"])
 
     # Try and process each of the csv's. If they are
     for preCSV in downloadLinks:
@@ -94,7 +101,7 @@ def nzedbPre():
             print("pre-import: More than likely {} has already been imported".format(processingFile['lastfile']))
             pass
 
-    if INSERTFAILS is not None:
+    if len(INSERTFAILS) is not 0:
         print("pre-import: Failures: {}".format(INSERTFAILS))
 
 
