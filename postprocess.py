@@ -195,19 +195,19 @@ def main():
             # delete any orphan nzbs
             log.info('postprocess: deleting orphan nzbs...')
             # noinspection PyComparisonWithNone
-            deleted_nzbs = db.query(NZB.id).filter(NZB.release == None).delete(synchronize_session='fetch')
+            deleted_nzbs = db.query(NZB).filter(NZB.release == None).delete(synchronize_session='fetch')
             log.info('postprocess: deleted {} orphaned nzbs.'.format(deleted_nzbs))
 
             # delete any orphan nfos
             log.info('postprocess: deleting orphan nfos...')
             # noinspection PyComparisonWithNone
-            deleted_nfos = db.query(NFO.id).filter(NFO.release == None).delete(synchronize_session='fetch')
+            deleted_nfos = db.query(NFO).filter(NFO.release == None).delete(synchronize_session='fetch')
             log.info('postprocess: deleted {} orphaned nfos.'.format(deleted_nfos))
 
             # delete any orphan sfvs
             log.info('postprocess: deleting orphan sfvs...')
             # noinspection PyComparisonWithNone
-            deleted_sfvs = db.query(SFV.id).filter(SFV.release == None).delete(synchronize_session='fetch')
+            deleted_sfvs = db.query(SFV).filter(SFV.release == None).delete(synchronize_session='fetch')
             log.info('postprocess: deleted {} orphaned sfvs.'.format(deleted_sfvs))
 
             db.commit()
