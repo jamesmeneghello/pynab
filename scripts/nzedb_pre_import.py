@@ -151,7 +151,7 @@ def process(precsv, processingFile=None):
     precsv.replace(".\\N$", '', inplace=True, regex=True)
 
     # Sometimes there are duplicates within the table itself, remove them
-    precsv.drop_duplicates(subset='name', take_last=True, inplace=True)
+    precsv.drop_duplicates(subset='name', keep="last", inplace=True)
 
     # Add clean searchname column
     precsv['searchname'] = precsv['name'].map(lambda name: releases.clean_release_name(name))
